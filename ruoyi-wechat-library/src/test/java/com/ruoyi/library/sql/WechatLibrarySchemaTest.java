@@ -79,6 +79,16 @@ class WechatLibrarySchemaTest
     }
 
     @Test
+    void keepsEveryPointAmountNonNegative()
+    {
+        assertTrue(sql.contains("constraint `chk_document_unlock_spent_points` check (`spent_points` >= 0)"));
+        assertTrue(sql.contains("constraint `chk_signin_record_awarded_points` check (`awarded_points` >= 0)"));
+        assertTrue(sql.contains("constraint `chk_ad_reward_record_awarded_points` check (`awarded_points` >= 0)"));
+        assertTrue(sql.contains("constraint `chk_share_task_record_awarded_points` check (`awarded_points` >= 0)"));
+        assertTrue(sql.contains("constraint `chk_vip_order_gift_points_snapshot` check (`gift_points_snapshot` >= 0)"));
+    }
+
+    @Test
     void allTablesUseRequiredEngineCharsetPrimaryKeyAndAuditColumns()
     {
         String[] definitions = sql.split("create table ");

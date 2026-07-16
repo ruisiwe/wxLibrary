@@ -162,7 +162,8 @@ CREATE TABLE `wl_document_unlock` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_document_unlock_user_document` (`user_id`, `document_id`),
   KEY `idx_document_unlock_document` (`document_id`),
-  KEY `idx_document_unlock_time` (`user_id`, `unlock_time`)
+  KEY `idx_document_unlock_time` (`user_id`, `unlock_time`),
+  CONSTRAINT `chk_document_unlock_spent_points` CHECK (`spent_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档兑换记录';
 
 CREATE TABLE `wl_favorite` (
@@ -251,7 +252,8 @@ CREATE TABLE `wl_signin_record` (
   `del_flag` char(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_signin_user_date` (`user_id`, `signin_date`),
-  KEY `idx_signin_date` (`signin_date`)
+  KEY `idx_signin_date` (`signin_date`),
+  CONSTRAINT `chk_signin_record_awarded_points` CHECK (`awarded_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='每日签到';
 
 CREATE TABLE `wl_ad_reward_record` (
@@ -268,7 +270,8 @@ CREATE TABLE `wl_ad_reward_record` (
   `del_flag` char(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_ad_reward_user_biz_no` (`user_id`, `ad_biz_no`),
-  KEY `idx_ad_reward_user_date` (`user_id`, `reward_date`)
+  KEY `idx_ad_reward_user_date` (`user_id`, `reward_date`),
+  CONSTRAINT `chk_ad_reward_record_awarded_points` CHECK (`awarded_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='广告积分奖励';
 
 CREATE TABLE `wl_share_task_record` (
@@ -285,7 +288,8 @@ CREATE TABLE `wl_share_task_record` (
   `del_flag` char(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_share_task_user_date` (`user_id`, `share_date`),
-  KEY `idx_share_task_date` (`share_date`)
+  KEY `idx_share_task_date` (`share_date`),
+  CONSTRAINT `chk_share_task_record_awarded_points` CHECK (`awarded_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='邀请分享任务';
 
 CREATE TABLE `wl_invitation` (
@@ -450,7 +454,8 @@ CREATE TABLE `wl_vip_order` (
   UNIQUE KEY `uk_vip_order_wechat_transaction_id` (`wechat_transaction_id`),
   KEY `idx_vip_order_user_time` (`user_id`, `create_time`),
   KEY `idx_vip_order_status` (`order_status`),
-  CONSTRAINT `chk_vip_order_amount` CHECK (`amount_cent` >= 0)
+  CONSTRAINT `chk_vip_order_amount` CHECK (`amount_cent` >= 0),
+  CONSTRAINT `chk_vip_order_gift_points_snapshot` CHECK (`gift_points_snapshot` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员支付订单';
 
 CREATE TABLE `wl_vip_entitlement` (

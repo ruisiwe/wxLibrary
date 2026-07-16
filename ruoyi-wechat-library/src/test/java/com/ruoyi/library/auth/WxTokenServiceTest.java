@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -45,6 +46,39 @@ class WxTokenServiceTest
     }
 
     @Test
+    void issueRejectsNullUserIdBeforeWritingRedis()
+    {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> tokenService.issue(null));
+
+        assertEquals("微信用户编号必须为正数", exception.getMessage());
+        verify(redisCache, never()).setCacheObject(anyString(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any(TimeUnit.class));
+    }
+
+    @Test
+    void issueRejectsZeroUserIdBeforeWritingRedis()
+    {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> tokenService.issue(0L));
+
+        assertEquals("微信用户编号必须为正数", exception.getMessage());
+        verify(redisCache, never()).setCacheObject(anyString(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any(TimeUnit.class));
+    }
+
+    @Test
+    void issueRejectsNegativeUserIdBeforeWritingRedis()
+    {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> tokenService.issue(-1L));
+
+        assertEquals("微信用户编号必须为正数", exception.getMessage());
+        verify(redisCache, never()).setCacheObject(anyString(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any(TimeUnit.class));
+    }
+
+    @Test
     void resolveReturnsUserAndRefreshesThirtyDayTtl()
             throws Exception
     {
@@ -64,6 +98,36 @@ class WxTokenServiceTest
         when(redisCache.getCacheObject(anyString())).thenReturn(null);
         assertNull(tokenService.resolve("abcdef"));
 
+        verify(redisCache, never()).expire(anyString(), org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.any(TimeUnit.class));
+    }
+
+    @Test
+    void resolveDeletesZeroUserIdWithoutRefreshing()
+            throws Exception
+    {
+        String token = "zero-user-token";
+        String key = "wx:token:" + sha256(token);
+        when(redisCache.getCacheObject(key)).thenReturn(0L);
+
+        assertNull(tokenService.resolve(token));
+
+        verify(redisCache).deleteObject(key);
+        verify(redisCache, never()).expire(anyString(), org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.any(TimeUnit.class));
+    }
+
+    @Test
+    void resolveDeletesNegativeUserIdWithoutRefreshing()
+            throws Exception
+    {
+        String token = "negative-user-token";
+        String key = "wx:token:" + sha256(token);
+        when(redisCache.getCacheObject(key)).thenReturn(-1L);
+
+        assertNull(tokenService.resolve(token));
+
+        verify(redisCache).deleteObject(key);
         verify(redisCache, never()).expire(anyString(), org.mockito.ArgumentMatchers.anyLong(),
                 org.mockito.ArgumentMatchers.any(TimeUnit.class));
     }

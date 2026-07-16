@@ -5,17 +5,18 @@ import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
 import com.ruoyi.library.common.WxApiResponse;
 import com.ruoyi.library.common.WxUserContext;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 /**
  * 小程序接口登录拦截器，仅维护独立微信用户上下文。
  */
 @Component
-public class WxAuthInterceptor implements HandlerInterceptor
+public class WxAuthInterceptor implements AsyncHandlerInterceptor
 {
     public static final String TOKEN_HEADER = "Wx-Token";
     private static final int INVALID_TOKEN_CODE = 40101;
@@ -59,12 +60,19 @@ public class WxAuthInterceptor implements HandlerInterceptor
         WxUserContext.clear();
     }
 
+    @Override
+    public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response,
+            Object handler)
+    {
+        WxUserContext.clear();
+    }
+
     private void writeUnauthorized(HttpServletResponse response) throws IOException
     {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
         response.getWriter().write(JSON.toJSONString(
-                WxApiResponse.failure(INVALID_TOKEN_CODE, INVALID_TOKEN_MESSAGE)));
+                WxApiResponse.failure(INVALID_TOKEN_CODE, INVALID_TOKEN_MESSAGE), JSONWriter.Feature.WriteNulls));
     }
 }

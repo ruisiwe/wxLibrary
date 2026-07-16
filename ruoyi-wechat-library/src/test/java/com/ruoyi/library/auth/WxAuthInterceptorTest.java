@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -47,7 +48,26 @@ class WxAuthInterceptorTest
         JSONObject body = JSON.parseObject(response.getContentAsString());
         assertEquals(40101, body.getIntValue("code"));
         assertEquals("登录状态已失效，请重新登录", body.getString("message"));
+        assertTrue(body.containsKey("data"));
         assertNull(body.get("data"));
+    }
+
+    @Test
+    void supportsAsynchronousRequestCleanup()
+    {
+        assertTrue(interceptor instanceof AsyncHandlerInterceptor);
+    }
+
+    @Test
+    void asynchronousHandoffClearsOriginalServletThreadContext()
+            throws Exception
+    {
+        WxUserContext.set(99L);
+
+        interceptor.afterConcurrentHandlingStarted(new MockHttpServletRequest(),
+                new MockHttpServletResponse(), new Object());
+
+        assertNull(WxUserContext.get());
     }
 
     @Test

@@ -34,6 +34,10 @@ public class WxTokenService
      */
     public String issue(Long userId)
     {
+        if (userId == null || userId <= 0)
+        {
+            throw new IllegalArgumentException("微信用户编号必须为正数");
+        }
         byte[] randomBytes = new byte[TOKEN_BYTES];
         secureRandom.nextBytes(randomBytes);
         String token = toHex(randomBytes);
@@ -57,6 +61,11 @@ public class WxTokenService
         Long userId = redisCache.getCacheObject(key);
         if (userId == null)
         {
+            return null;
+        }
+        if (userId <= 0)
+        {
+            redisCache.deleteObject(key);
             return null;
         }
         redisCache.expire(key, TOKEN_TTL_DAYS, TimeUnit.DAYS);
