@@ -1,0 +1,511 @@
+-- 微信文库核心表结构。仅用于初始化脚本，本文件不会自动执行。
+
+CREATE TABLE `wl_wx_user` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `openid` varchar(64) NOT NULL COMMENT '微信用户唯一标识',
+  `unionid` varchar(64) DEFAULT NULL COMMENT '微信开放平台统一标识',
+  `nickname` varchar(64) NOT NULL DEFAULT '' COMMENT '用户确认后的昵称',
+  `avatar_url` varchar(255) NOT NULL DEFAULT '' COMMENT '本地头像访问地址',
+  `point_balance` bigint NOT NULL DEFAULT 0 COMMENT '积分余额',
+  `status` char(1) NOT NULL DEFAULT '0' COMMENT '状态：0正常，1停用',
+  `last_login_time` datetime DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_wx_user_openid` (`openid`),
+  KEY `idx_wx_user_unionid` (`unionid`),
+  KEY `idx_wx_user_status` (`status`),
+  CONSTRAINT `chk_wx_user_point_balance` CHECK (`point_balance` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='微信用户';
+
+CREATE TABLE `wl_agreement` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `agreement_type` varchar(32) NOT NULL COMMENT '协议类型',
+  `version` varchar(32) NOT NULL COMMENT '协议版本',
+  `title` varchar(128) NOT NULL,
+  `content` longtext NOT NULL,
+  `effective_time` datetime NOT NULL,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_agreement_type_version` (`agreement_type`, `version`),
+  KEY `idx_agreement_status_time` (`status`, `effective_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户协议';
+
+CREATE TABLE `wl_user_agreement` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `agreement_id` bigint NOT NULL,
+  `agreement_type` varchar(32) NOT NULL,
+  `agreement_version` varchar(32) NOT NULL,
+  `accepted_time` datetime NOT NULL,
+  `accepted_ip` varchar(64) DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_agreement_record` (`user_id`, `agreement_id`),
+  UNIQUE KEY `uk_user_agreement_version` (`user_id`, `agreement_type`, `agreement_version`),
+  KEY `idx_user_agreement_agreement` (`agreement_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户协议确认记录';
+
+CREATE TABLE `wl_banner` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(128) NOT NULL,
+  `image_url` varchar(255) NOT NULL,
+  `document_id` bigint NOT NULL COMMENT '跳转文档编号',
+  `sort_order` int NOT NULL DEFAULT 0,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_banner_status_sort` (`status`, `sort_order`),
+  KEY `idx_banner_document` (`document_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='首页宣传图片';
+
+CREATE TABLE `wl_category` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `icon` varchar(255) DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_category_name` (`name`),
+  KEY `idx_category_status_sort` (`status`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档分类';
+
+CREATE TABLE `wl_document` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `category_id` bigint NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `summary` varchar(1000) NOT NULL DEFAULT '',
+  `cover_url` varchar(255) DEFAULT NULL,
+  `file_format` varchar(16) NOT NULL COMMENT 'PDF、DOC、DOCX、PPT、PPTX、TXT或XLS',
+  `file_size` bigint NOT NULL DEFAULT 0,
+  `point_price` bigint NOT NULL DEFAULT 0,
+  `preview_pages` int NOT NULL DEFAULT 0,
+  `original_object_key` varchar(512) NOT NULL,
+  `preview_object_key` varchar(512) DEFAULT NULL,
+  `conversion_status` varchar(16) NOT NULL DEFAULT 'PENDING',
+  `publish_status` varchar(16) NOT NULL DEFAULT 'DRAFT',
+  `publish_time` datetime DEFAULT NULL,
+  `view_count` bigint NOT NULL DEFAULT 0,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_document_category_publish` (`category_id`, `publish_status`),
+  KEY `idx_document_publish_time` (`publish_status`, `publish_time`),
+  KEY `idx_document_conversion_status` (`conversion_status`),
+  CONSTRAINT `chk_document_point_price` CHECK (`point_price` >= 0),
+  CONSTRAINT `chk_document_preview_pages` CHECK (`preview_pages` >= 0),
+  CONSTRAINT `chk_document_file_format` CHECK (`file_format` IN ('PDF','DOC','DOCX','PPT','PPTX','TXT','XLS'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档';
+
+CREATE TABLE `wl_document_conversion` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `document_id` bigint NOT NULL,
+  `task_version` int NOT NULL,
+  `task_status` varchar(16) NOT NULL DEFAULT 'PENDING',
+  `source_object_key` varchar(512) NOT NULL,
+  `preview_object_key` varchar(512) DEFAULT NULL,
+  `page_count` int DEFAULT NULL,
+  `failure_reason` varchar(1000) DEFAULT NULL,
+  `started_time` datetime DEFAULT NULL,
+  `finished_time` datetime DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_document_conversion_version` (`document_id`, `task_version`),
+  KEY `idx_document_conversion_status` (`task_status`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档转换任务';
+
+CREATE TABLE `wl_document_unlock` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `document_id` bigint NOT NULL,
+  `spent_points` bigint NOT NULL,
+  `point_record_id` bigint NOT NULL,
+  `unlock_time` datetime NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_document_unlock_user_document` (`user_id`, `document_id`),
+  KEY `idx_document_unlock_document` (`document_id`),
+  KEY `idx_document_unlock_time` (`user_id`, `unlock_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档兑换记录';
+
+CREATE TABLE `wl_favorite` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `document_id` bigint NOT NULL,
+  `favorite_time` datetime NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_favorite_user_document` (`user_id`, `document_id`),
+  KEY `idx_favorite_document` (`document_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档收藏';
+
+CREATE TABLE `wl_document_view` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint DEFAULT NULL COMMENT '匿名访问时为空',
+  `document_id` bigint NOT NULL,
+  `view_type` varchar(16) NOT NULL COMMENT '列表、试读或全文',
+  `view_time` datetime NOT NULL,
+  `client_ip` varchar(64) DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_document_view_document_time` (`document_id`, `view_time`),
+  KEY `idx_document_view_user_time` (`user_id`, `view_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档访问记录';
+
+CREATE TABLE `wl_point_rule` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `event_type` varchar(32) NOT NULL,
+  `rule_name` varchar(64) NOT NULL,
+  `point_value` bigint NOT NULL,
+  `daily_limit` int DEFAULT NULL,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_point_rule_event_type` (`event_type`),
+  KEY `idx_point_rule_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分规则';
+
+CREATE TABLE `wl_point_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `rule_id` bigint DEFAULT NULL,
+  `event_type` varchar(32) NOT NULL,
+  `biz_no` varchar(128) NOT NULL COMMENT '业务幂等号',
+  `change_points` bigint NOT NULL,
+  `before_balance` bigint NOT NULL,
+  `after_balance` bigint NOT NULL,
+  `description` varchar(255) NOT NULL DEFAULT '',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_point_record_biz_no` (`biz_no`),
+  KEY `idx_point_record_user_time` (`user_id`, `create_time`),
+  KEY `idx_point_record_rule` (`rule_id`),
+  CONSTRAINT `chk_point_record_before_balance` CHECK (`before_balance` >= 0),
+  CONSTRAINT `chk_point_record_after_balance` CHECK (`after_balance` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分流水';
+
+CREATE TABLE `wl_signin_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `signin_date` date NOT NULL,
+  `awarded_points` bigint NOT NULL,
+  `point_record_id` bigint NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_signin_user_date` (`user_id`, `signin_date`),
+  KEY `idx_signin_date` (`signin_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='每日签到';
+
+CREATE TABLE `wl_ad_reward_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `ad_biz_no` varchar(128) NOT NULL COMMENT '广告完成业务编号',
+  `reward_date` date NOT NULL,
+  `awarded_points` bigint NOT NULL,
+  `point_record_id` bigint NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ad_reward_user_biz_no` (`user_id`, `ad_biz_no`),
+  KEY `idx_ad_reward_user_date` (`user_id`, `reward_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='广告积分奖励';
+
+CREATE TABLE `wl_share_task_record` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `share_date` date NOT NULL,
+  `share_scene` varchar(32) NOT NULL DEFAULT 'INVITE',
+  `awarded_points` bigint NOT NULL DEFAULT 0,
+  `point_record_id` bigint DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_share_task_user_date` (`user_id`, `share_date`),
+  KEY `idx_share_task_date` (`share_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='邀请分享任务';
+
+CREATE TABLE `wl_invitation` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `inviter_user_id` bigint NOT NULL,
+  `invited_user_id` bigint NOT NULL,
+  `invite_code` varchar(64) NOT NULL,
+  `reward_status` varchar(16) NOT NULL DEFAULT 'PENDING',
+  `inviter_point_record_id` bigint DEFAULT NULL,
+  `invited_time` datetime NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_invitation_invited_user` (`invited_user_id`),
+  KEY `idx_invitation_inviter_time` (`inviter_user_id`, `invited_time`),
+  KEY `idx_invitation_code` (`invite_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='新用户邀请关系';
+
+CREATE TABLE `wl_course` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `summary` varchar(1000) NOT NULL DEFAULT '',
+  `cover_url` varchar(255) DEFAULT NULL,
+  `access_type` varchar(8) NOT NULL COMMENT 'VIP会员或课程码',
+  `sort_order` int NOT NULL DEFAULT 0,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_course_access_status_sort` (`access_type`, `status`, `sort_order`),
+  CONSTRAINT `chk_course_access_type` CHECK (`access_type` IN ('VIP', 'CODE'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='视频课程';
+
+CREATE TABLE `wl_course_video` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `course_id` bigint NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `video_object_key` varchar(512) NOT NULL,
+  `duration_seconds` int NOT NULL DEFAULT 0,
+  `sort_order` int NOT NULL,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_course_video_sort` (`course_id`, `sort_order`),
+  KEY `idx_course_video_status` (`course_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程视频';
+
+CREATE TABLE `wl_course_code` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `course_id` bigint NOT NULL,
+  `code_digest` char(64) NOT NULL COMMENT '兑换码安全摘要',
+  `code_mask` varchar(32) NOT NULL COMMENT '仅用于后台识别的掩码',
+  `status` varchar(16) NOT NULL DEFAULT 'UNUSED',
+  `used_user_id` bigint DEFAULT NULL,
+  `used_time` datetime DEFAULT NULL,
+  `expires_time` datetime DEFAULT NULL,
+  `batch_no` varchar(64) NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_course_code_digest` (`code_digest`),
+  KEY `idx_course_code_course_status` (`course_id`, `status`),
+  KEY `idx_course_code_batch` (`batch_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程兑换码';
+
+CREATE TABLE `wl_user_course` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `course_id` bigint NOT NULL,
+  `course_code_id` bigint NOT NULL,
+  `access_source` varchar(16) NOT NULL DEFAULT 'CODE',
+  `is_permanent` char(1) NOT NULL DEFAULT '1',
+  `granted_time` datetime NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_course_user_course` (`user_id`, `course_id`),
+  UNIQUE KEY `uk_user_course_code` (`course_code_id`),
+  KEY `idx_user_course_course` (`course_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户永久课程';
+
+CREATE TABLE `wl_video_progress` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `course_id` bigint NOT NULL,
+  `video_id` bigint NOT NULL,
+  `progress_seconds` int NOT NULL DEFAULT 0,
+  `finished` char(1) NOT NULL DEFAULT '0',
+  `last_play_time` datetime NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_video_progress_user_video` (`user_id`, `video_id`),
+  KEY `idx_video_progress_user_course` (`user_id`, `course_id`),
+  CONSTRAINT `chk_video_progress_seconds` CHECK (`progress_seconds` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='视频播放进度';
+
+CREATE TABLE `wl_vip_plan` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `plan_code` varchar(32) NOT NULL,
+  `plan_name` varchar(64) NOT NULL,
+  `price_cent` bigint NOT NULL COMMENT '价格，单位分',
+  `valid_days` int NOT NULL COMMENT '有效天数',
+  `gift_points` bigint NOT NULL DEFAULT 0,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_vip_plan_code` (`plan_code`),
+  KEY `idx_vip_plan_status_sort` (`status`, `sort_order`),
+  CONSTRAINT `chk_vip_plan_price` CHECK (`price_cent` >= 0),
+  CONSTRAINT `chk_vip_plan_valid_days` CHECK (`valid_days` > 0),
+  CONSTRAINT `chk_vip_plan_gift_points` CHECK (`gift_points` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员套餐';
+
+CREATE TABLE `wl_vip_order` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `plan_id` bigint NOT NULL,
+  `merchant_order_no` varchar(64) NOT NULL,
+  `wechat_transaction_id` varchar(64) DEFAULT NULL,
+  `plan_code_snapshot` varchar(32) NOT NULL,
+  `plan_name_snapshot` varchar(64) NOT NULL,
+  `amount_cent` bigint NOT NULL,
+  `valid_days_snapshot` int NOT NULL,
+  `gift_points_snapshot` bigint NOT NULL DEFAULT 0,
+  `order_status` varchar(16) NOT NULL DEFAULT 'CREATED',
+  `paid_time` datetime DEFAULT NULL,
+  `closed_time` datetime DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_vip_order_merchant_order_no` (`merchant_order_no`),
+  UNIQUE KEY `uk_vip_order_wechat_transaction_id` (`wechat_transaction_id`),
+  KEY `idx_vip_order_user_time` (`user_id`, `create_time`),
+  KEY `idx_vip_order_status` (`order_status`),
+  CONSTRAINT `chk_vip_order_amount` CHECK (`amount_cent` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员支付订单';
+
+CREATE TABLE `wl_vip_entitlement` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `source_type` varchar(16) NOT NULL COMMENT 'PAYMENT、MANUAL或COMPENSATION',
+  `source_biz_no` varchar(64) NOT NULL,
+  `start_time` datetime NOT NULL,
+  `end_time` datetime NOT NULL,
+  `granted_days` int NOT NULL,
+  `gift_points` bigint NOT NULL DEFAULT 0 COMMENT '补偿记录固定为零，由业务层保证',
+  `point_record_id` bigint DEFAULT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'ACTIVE',
+  `revoked_time` datetime DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_vip_entitlement_source` (`source_type`, `source_biz_no`),
+  KEY `idx_vip_entitlement_user_time` (`user_id`, `start_time`, `end_time`),
+  KEY `idx_vip_entitlement_status` (`status`),
+  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAYMENT','MANUAL','COMPENSATION')),
+  CONSTRAINT `chk_vip_entitlement_days` CHECK (`granted_days` > 0),
+  CONSTRAINT `chk_vip_entitlement_gift_points` CHECK (`gift_points` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员权益变更';
+
+CREATE TABLE `wl_vip_refund` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `order_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `merchant_refund_no` varchar(64) NOT NULL,
+  `wechat_refund_id` varchar(64) DEFAULT NULL,
+  `refund_amount_cent` bigint NOT NULL COMMENT '全额退款金额',
+  `refund_status` varchar(16) NOT NULL DEFAULT 'PROCESSING',
+  `should_reclaim_points` bigint NOT NULL DEFAULT 0,
+  `reclaimed_points` bigint NOT NULL DEFAULT 0,
+  `unrecovered_points` bigint NOT NULL DEFAULT 0,
+  `entitlement_revoked` char(1) NOT NULL DEFAULT '0',
+  `success_time` datetime DEFAULT NULL,
+  `failure_reason` varchar(1000) DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_vip_refund_order_id` (`order_id`),
+  UNIQUE KEY `uk_vip_refund_merchant_refund_no` (`merchant_refund_no`),
+  UNIQUE KEY `uk_vip_refund_wechat_refund_id` (`wechat_refund_id`),
+  KEY `idx_vip_refund_user_time` (`user_id`, `create_time`),
+  KEY `idx_vip_refund_status` (`refund_status`),
+  CONSTRAINT `chk_vip_refund_amount` CHECK (`refund_amount_cent` >= 0),
+  CONSTRAINT `chk_vip_refund_should_points` CHECK (`should_reclaim_points` >= 0),
+  CONSTRAINT `chk_vip_refund_reclaimed_points` CHECK (`reclaimed_points` >= 0),
+  CONSTRAINT `chk_vip_refund_unrecovered_points` CHECK (`unrecovered_points` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员全额退款';

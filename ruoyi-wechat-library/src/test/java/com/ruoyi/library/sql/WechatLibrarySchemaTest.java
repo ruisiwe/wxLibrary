@@ -1,0 +1,95 @@
+package com.ruoyi.library.sql;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class WechatLibrarySchemaTest
+{
+    private static String sql;
+
+    @BeforeAll
+    static void loadSql() throws Exception
+    {
+        Path path = Paths.get("sql/wechat_library.sql");
+        if (!Files.exists(path))
+        {
+            path = Paths.get("../sql/wechat_library.sql");
+        }
+        sql = new String(Files.readAllBytes(path), StandardCharsets.UTF_8).toLowerCase();
+    }
+
+    @Test
+    void createsExactlyAllTwentyFiveCoreTables()
+    {
+        List<String> tables = Arrays.asList("wl_wx_user", "wl_agreement", "wl_user_agreement", "wl_banner",
+                "wl_category", "wl_document", "wl_document_conversion", "wl_document_unlock", "wl_favorite",
+                "wl_document_view", "wl_point_rule", "wl_point_record", "wl_signin_record", "wl_ad_reward_record",
+                "wl_share_task_record", "wl_invitation", "wl_course", "wl_course_video", "wl_course_code",
+                "wl_user_course", "wl_video_progress", "wl_vip_plan", "wl_vip_order", "wl_vip_entitlement",
+                "wl_vip_refund");
+        Matcher matcher = Pattern.compile("create\\s+table\\s+`?(wl_[a-z_]+)`?").matcher(sql);
+        int count = 0;
+        while (matcher.find())
+        {
+            count++;
+            assertTrue(tables.contains(matcher.group(1)), "出现非核心表：" + matcher.group(1));
+        }
+        assertEquals(25, count);
+        for (String table : tables)
+        {
+            assertTrue(sql.contains("create table `" + table + "`"), "缺少表：" + table);
+        }
+    }
+
+    @Test
+    void keepsWechatUsersIndependentAndBalancesNonNegative()
+    {
+        assertFalse(sql.contains("foreign key"));
+        assertFalse(sql.contains("sys_user"));
+        assertTrue(sql.contains("unique key `uk_wx_user_openid` (`openid`)"));
+        assertTrue(sql.contains("`point_balance` bigint not null default 0"));
+        assertTrue(sql.contains("check (`point_balance` >= 0)"));
+    }
+
+    @Test
+    void containsCriticalBusinessUniquenessAndSecurityConstraints()
+    {
+        assertTrue(sql.contains("unique key `uk_document_unlock_user_document` (`user_id`, `document_id`)"));
+        assertTrue(sql.contains("unique key `uk_course_code_digest` (`code_digest`)"));
+        assertFalse(sql.contains("`code_plain`"));
+        assertTrue(sql.contains("check (`access_type` in ('vip', 'code'))"));
+        assertTrue(sql.contains("unique key `uk_point_record_biz_no` (`biz_no`)"));
+        assertTrue(sql.contains("unique key `uk_vip_order_merchant_order_no` (`merchant_order_no`)"));
+        assertTrue(sql.contains("unique key `uk_vip_refund_order_id` (`order_id`)"));
+        assertTrue(sql.contains("`unrecovered_points` bigint not null default 0"));
+    }
+
+    @Test
+    void allTablesUseRequiredEngineCharsetPrimaryKeyAndAuditColumns()
+    {
+        String[] definitions = sql.split("create table ");
+        assertEquals(26, definitions.length);
+        for (int i = 1; i < definitions.length; i++)
+        {
+            String table = definitions[i].substring(0, definitions[i].indexOf(';'));
+            assertTrue(table.contains("`id` bigint not null"));
+            assertTrue(table.contains("primary key (`id`)"));
+            assertTrue(table.contains("`create_time` datetime not null"));
+            assertTrue(table.contains("`update_time` datetime not null"));
+            assertTrue(table.contains("`del_flag` char(1) not null default '0'"));
+            assertTrue(table.contains("engine=innodb") && table.contains("charset=utf8mb4"));
+        }
+    }
+}
