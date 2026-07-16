@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlWxUserMapper">
+    <resultMap id="WlWxUserResult" type="com.ruoyi.library.domain.WlWxUser">
+        <id property="id" column="id"/>
+        <result property="openid" column="openid"/>
+        <result property="unionid" column="unionid"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarPath" column="avatar_url"/>
+        <result property="pointBalance" column="point_balance"/>
+        <result property="status" column="status"/>
+        <result property="lastLoginTime" column="last_login_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectWxUserColumns">
+        select id, openid, unionid, nickname, avatar_url, point_balance, status,
+               last_login_time, create_by, create_time, update_by, update_time, remark
+        from wl_wx_user
+    </sql>
+
+    <select id="selectByOpenidForUpdate" resultMap="WlWxUserResult">
+        <include refid="selectWxUserColumns"/> where openid = #{openid} and del_flag = '0' for update
+    </select>
+
+    <select id="selectById" resultMap="WlWxUserResult">
+        <include refid="selectWxUserColumns"/> where id = #{id} and del_flag = '0'
+    </select>
+
+    <select id="selectByIdForUpdate" resultMap="WlWxUserResult">
+        <include refid="selectWxUserColumns"/> where id = #{id} and del_flag = '0' for update
+    </select>
+
+    <select id="selectWxUserList" parameterType="com.ruoyi.library.domain.WlWxUser" resultMap="WlWxUserResult">
+        <include refid="selectWxUserColumns"/>
+        <where>
+            del_flag = '0'
+            <if test="nickname != null and nickname != ''">and nickname like concat('%', #{nickname}, '%')</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <insert id="insertWxUser" parameterType="com.ruoyi.library.domain.WlWxUser" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_wx_user(openid, unionid, nickname, avatar_url, point_balance, status,
+            last_login_time, create_by, create_time, update_by, update_time, del_flag)
+        values(#{openid}, #{unionid}, #{nickname}, #{avatarPath}, #{pointBalance}, #{status},
+            #{lastLoginTime}, #{createBy}, now(), '', now(), '0')
+    </insert>
+
+    <update id="updateProfile" parameterType="com.ruoyi.library.domain.WlWxUser">
+        update wl_wx_user set nickname = #{nickname}, avatar_url = #{avatarPath},
+            update_by = #{updateBy}, update_time = now() where id = #{id} and del_flag = '0'
+    </update>
+
+    <update id="updateLastLoginTime">
+        update wl_wx_user set last_login_time = now(), update_time = now() where id = #{id} and del_flag = '0'
+    </update>
+
+    <update id="updateStatus">
+        update wl_wx_user set status = #{status}, update_by = #{operator}, update_time = now()
+        where id = #{id} and del_flag = '0'
+    </update>
+
+    <update id="updatePointBalance">
+        update wl_wx_user set point_balance = #{afterBalance}, update_by = #{operator}, update_time = now()
+        where id = #{id} and point_balance = #{beforeBalance} and del_flag = '0'
+    </update>
+</mapper>

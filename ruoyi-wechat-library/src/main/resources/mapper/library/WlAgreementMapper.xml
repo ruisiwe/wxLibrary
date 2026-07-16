@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlAgreementMapper">
+    <resultMap id="WlAgreementResult" type="com.ruoyi.library.domain.WlAgreement">
+        <id property="id" column="id"/>
+        <result property="agreementType" column="agreement_type"/>
+        <result property="version" column="version"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="effectiveTime" column="effective_time"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    <sql id="columns">select id, agreement_type, version, title, content, effective_time, status,
+        create_by, create_time, update_by, update_time from wl_agreement</sql>
+
+    <select id="selectCurrentByType" resultMap="WlAgreementResult">
+        <include refid="columns"/> where agreement_type = #{agreementType} and status = '1'
+        and effective_time &lt;= now() and del_flag = '0' order by effective_time desc, id desc limit 1
+    </select>
+    <select id="selectAgreementById" resultMap="WlAgreementResult">
+        <include refid="columns"/> where id = #{id} and del_flag = '0'
+    </select>
+    <select id="selectAgreementByIdForUpdate" resultMap="WlAgreementResult">
+        <include refid="columns"/> where id = #{id} and del_flag = '0' for update
+    </select>
+    <select id="selectAgreementList" parameterType="com.ruoyi.library.domain.WlAgreement" resultMap="WlAgreementResult">
+        <include refid="columns"/>
+        <where>
+            del_flag = '0'
+            <if test="agreementType != null and agreementType != ''">and agreement_type = #{agreementType}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
+        </where>
+        order by id desc
+    </select>
+    <insert id="insertAgreement" parameterType="com.ruoyi.library.domain.WlAgreement" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_agreement(agreement_type, version, title, content, effective_time, status,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{agreementType}, #{version}, #{title}, #{content}, #{effectiveTime}, #{status},
+            #{createBy}, now(), '', now(), '0')
+    </insert>
+    <update id="updateDraft" parameterType="com.ruoyi.library.domain.WlAgreement">
+        update wl_agreement set agreement_type = #{agreementType}, version = #{version}, title = #{title},
+            content = #{content}, effective_time = #{effectiveTime}, update_by = #{updateBy}, update_time = now()
+        where id = #{id} and status = '0' and del_flag = '0'
+    </update>
+    <update id="disablePublishedByType">
+        update wl_agreement set status = '2', update_by = #{operator}, update_time = now()
+        where agreement_type = #{agreementType} and id != #{excludeId} and status = '1' and del_flag = '0'
+    </update>
+    <update id="publishAgreement">
+        update wl_agreement set status = '1', update_by = #{operator}, update_time = now()
+        where id = #{id} and status = '0' and del_flag = '0'
+    </update>
+</mapper>

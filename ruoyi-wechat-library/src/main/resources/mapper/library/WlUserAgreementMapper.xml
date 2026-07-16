@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlUserAgreementMapper">
+    <resultMap id="WlUserAgreementResult" type="com.ruoyi.library.domain.WlUserAgreement">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="agreementId" column="agreement_id"/>
+        <result property="agreementType" column="agreement_type"/>
+        <result property="agreementVersion" column="agreement_version"/>
+        <result property="acceptedTime" column="accepted_time"/>
+        <result property="acceptedIp" column="accepted_ip"/>
+    </resultMap>
+    <select id="selectByUserAndAgreement" resultMap="WlUserAgreementResult">
+        select id, user_id, agreement_id, agreement_type, agreement_version, accepted_time, accepted_ip
+        from wl_user_agreement where user_id = #{userId} and agreement_id = #{agreementId} and del_flag = '0'
+    </select>
+    <select id="countAcceptedAgreementIds" resultType="int">
+        select count(distinct agreement_id) from wl_user_agreement
+        where user_id = #{userId} and agreement_id in (#{privacyId}, #{statementId}) and del_flag = '0'
+    </select>
+    <insert id="insertUserAgreement" parameterType="com.ruoyi.library.domain.WlUserAgreement" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_user_agreement(user_id, agreement_id, agreement_type, agreement_version,
+            accepted_time, accepted_ip, create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{agreementId}, #{agreementType}, #{agreementVersion},
+            #{acceptedTime}, #{acceptedIp}, 'wx', now(), '', now(), '0')
+    </insert>
+</mapper>
