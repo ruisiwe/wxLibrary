@@ -27,6 +27,10 @@
         <include refid="selectWxUserColumns"/> where openid = #{openid} and del_flag = '0' for update
     </select>
 
+    <select id="selectByOpenid" resultMap="WlWxUserResult">
+        <include refid="selectWxUserColumns"/> where openid = #{openid} and del_flag = '0'
+    </select>
+
     <select id="selectById" resultMap="WlWxUserResult">
         <include refid="selectWxUserColumns"/> where id = #{id} and del_flag = '0'
     </select>

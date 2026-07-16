@@ -30,6 +30,7 @@ class LibraryMapperXmlContractTest
             }
         }
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlWxUserMapper.selectByOpenidForUpdate"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlWxUserMapper.selectByOpenid"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlAgreementMapper.disablePublishedByType"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlUserAgreementMapper.countAcceptedAgreementIds"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlPointRecordMapper.insertPointRecord"));

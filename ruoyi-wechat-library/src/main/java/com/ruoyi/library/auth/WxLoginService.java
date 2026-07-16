@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class WxLoginService
 {
-    private static final Pattern CONTROL_OR_HTML = Pattern.compile("[<>\\p{Cntrl}]");
+    private static final Pattern CONTROL_OR_HTML = Pattern.compile("[<>\\p{Cc}\\p{Cf}]");
     private final WechatCodeClient codeClient;
     private final WlWxUserMapper userMapper;
     private final WxAgreementService agreementService;
@@ -42,13 +42,16 @@ public class WxLoginService
     {
         if (request == null) throw new ServiceException("登录参数不能为空");
         String openid = codeClient.exchange(request.getCode());
-        WlWxUser user = userMapper.selectByOpenidForUpdate(openid);
-        if (user == null)
+        WlWxUser existing = userMapper.selectByOpenid(openid);
+        WlWxUser user;
+        if (existing == null)
         {
             user = createFirstUser(openid, request, avatar, acceptedIp);
         }
         else
         {
+            user = userMapper.selectByOpenidForUpdate(openid);
+            if (user == null) throw new ServiceException("微信用户状态已变化，请重新登录");
             ensureEnabled(user);
             updateExistingProfile(user, request, avatar);
             if (request.hasAgreementSubmission())

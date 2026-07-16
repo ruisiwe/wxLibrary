@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 /** 微信用户数据访问。 */
 public interface WlWxUserMapper
 {
+    WlWxUser selectByOpenid(@Param("openid") String openid);
     WlWxUser selectByOpenidForUpdate(@Param("openid") String openid);
     WlWxUser selectById(@Param("id") Long id);
     WlWxUser selectByIdForUpdate(@Param("id") Long id);

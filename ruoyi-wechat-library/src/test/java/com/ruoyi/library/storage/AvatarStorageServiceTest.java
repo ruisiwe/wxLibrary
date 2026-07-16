@@ -17,6 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AvatarStorageServiceTest
 {
@@ -83,6 +86,45 @@ class AvatarStorageServiceTest
 
         assertEquals("头像图片尺寸超出限制", assertThrows(ServiceException.class,
                 () -> limited.store(file("a.png", "image/png", image("png")))).getMessage());
+    }
+
+    @Test
+    void hardLimitCannotBeExpandedByExternalConfiguration()
+    {
+        AvatarStorageProperties properties = new AvatarStorageProperties();
+        properties.setRootDirectory(root.toString());
+        properties.setMaxBytes(10L * 1024 * 1024);
+        AvatarStorageService configuredLarger = new AvatarStorageService(properties);
+        byte[] tooLarge = new byte[2 * 1024 * 1024 + 1];
+
+        assertEquals("头像文件不能超过2MB", assertThrows(ServiceException.class,
+                () -> configuredLarger.store(file("a.jpg", "image/jpeg", tooLarge))).getMessage());
+    }
+
+    @Test
+    void rechecksActualTemporaryFileSizeAndRejectsInvalidLimitConfiguration() throws Exception
+    {
+        AvatarStorageProperties invalid = new AvatarStorageProperties();
+        invalid.setRootDirectory(root.toString());
+        invalid.setMaxBytes(0);
+        AvatarStorageService invalidService = new AvatarStorageService(invalid);
+        assertEquals("头像文件大小配置必须大于0", assertThrows(ServiceException.class,
+                () -> invalidService.store(file("a.jpg", "image/jpeg", new byte[] {1}))).getMessage());
+
+        org.springframework.web.multipart.MultipartFile misleading =
+                mock(org.springframework.web.multipart.MultipartFile.class);
+        when(misleading.isEmpty()).thenReturn(false);
+        when(misleading.getSize()).thenReturn(1L);
+        when(misleading.getOriginalFilename()).thenReturn("a.jpg");
+        when(misleading.getContentType()).thenReturn("image/jpeg");
+        doAnswer(invocation -> {
+            java.io.File target = invocation.getArgument(0);
+            Files.write(target.toPath(), new byte[2 * 1024 * 1024 + 1]);
+            return null;
+        }).when(misleading).transferTo(org.mockito.ArgumentMatchers.any(java.io.File.class));
+
+        assertEquals("头像文件不能超过2MB", assertThrows(ServiceException.class,
+                () -> service.store(misleading)).getMessage());
     }
 
     private MockMultipartFile file(String name, String mime, byte[] content)

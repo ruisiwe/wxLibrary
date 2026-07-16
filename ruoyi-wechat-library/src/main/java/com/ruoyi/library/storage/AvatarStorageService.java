@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class AvatarStorageService
 {
+    private static final long HARD_MAX_BYTES = 2L * 1024 * 1024;
     private static final Map<String, String> MIME_BY_EXTENSION = new HashMap<>();
     static
     {
@@ -49,8 +50,9 @@ public class AvatarStorageService
     public String store(MultipartFile file)
     {
         ensureConfigured();
+        long maxBytes = effectiveMaxBytes();
         if (file == null || file.isEmpty()) throw new ServiceException("首次登录必须上传有效头像");
-        if (file.getSize() > properties.getMaxBytes()) throw new ServiceException("头像文件不能超过2MB");
+        if (file.getSize() > maxBytes) throw fileTooLarge(maxBytes);
         String extension = extension(file.getOriginalFilename());
         String expectedMime = MIME_BY_EXTENSION.get(extension);
         if (expectedMime == null) throw new ServiceException("头像仅支持JPEG、PNG或WebP格式");
@@ -63,6 +65,7 @@ public class AvatarStorageService
             Files.createDirectories(root);
             temp = Files.createTempFile(root, ".avatar-", ".tmp");
             file.transferTo(temp.toFile());
+            if (Files.size(temp) > maxBytes) throw fileTooLarge(maxBytes);
             validateImage(temp, extension);
             String month = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
             Path directory = root.resolve(month);
@@ -171,5 +174,17 @@ public class AvatarStorageService
     private void ensureConfigured()
     {
         if (root == null) throw new ServiceException("头像存储根目录尚未配置");
+    }
+
+    private long effectiveMaxBytes()
+    {
+        if (properties.getMaxBytes() <= 0) throw new ServiceException("头像文件大小配置必须大于0");
+        return Math.min(properties.getMaxBytes(), HARD_MAX_BYTES);
+    }
+
+    private ServiceException fileTooLarge(long maxBytes)
+    {
+        return maxBytes == HARD_MAX_BYTES ? new ServiceException("头像文件不能超过2MB")
+                : new ServiceException("头像文件超过配置的大小限制");
     }
 }

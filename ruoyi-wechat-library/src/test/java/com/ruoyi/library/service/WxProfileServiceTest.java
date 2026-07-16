@@ -71,6 +71,20 @@ class WxProfileServiceTest
                 () -> service.update(3L, "昵称", null)).getMessage());
     }
 
+    @Test
+    void profileUpdateRejectsUnicodeFormatCharacter()
+    {
+        WlWxUser user = user();
+        when(mapper.selectByIdForUpdate(3L)).thenReturn(user);
+        WxLoginService realValidator = new WxLoginService(mock(com.ruoyi.library.auth.WechatCodeClient.class),
+                mapper, mock(com.ruoyi.library.agreement.WxAgreementService.class), storage,
+                mock(com.ruoyi.library.auth.WxTokenService.class));
+        WxProfileService profileService = new WxProfileService(mapper, storage, realValidator);
+
+        assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
+                () -> profileService.update(3L, "用户" + new String(Character.toChars(0x202E)), null)).getMessage());
+    }
+
     private WlWxUser user()
     {
         WlWxUser user = new WlWxUser();

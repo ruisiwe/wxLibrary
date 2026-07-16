@@ -26,6 +26,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.inOrder;
+import org.mockito.InOrder;
 
 class WxLoginServiceTest
 {
@@ -79,6 +81,29 @@ class WxLoginServiceTest
     }
 
     @Test
+    void missingOpenidDoesNotAcquireGapLockBeforeInsert()
+    {
+        WxLoginRequest request = completeRequest();
+        MockMultipartFile avatar = avatar();
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(null);
+        when(avatarStorageService.store(avatar)).thenReturn("202607/avatar.jpg");
+        doAnswer(invocation -> {
+            WlWxUser user = invocation.getArgument(0);
+            user.setId(18L);
+            return 1;
+        }).when(userMapper).insertWxUser(any(WlWxUser.class));
+        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(true);
+        when(tokenService.issue(18L)).thenReturn("wx-token");
+
+        loginService.login(request, avatar, "127.0.0.1");
+
+        InOrder order = inOrder(userMapper);
+        order.verify(userMapper).selectByOpenid("openid-secret");
+        order.verify(userMapper).insertWxUser(any(WlWxUser.class));
+        verify(userMapper, never()).selectByOpenidForUpdate("openid-secret");
+    }
+
+    @Test
     void firstLoginRequiresAvatar()
     {
         ServiceException exception = assertThrows(ServiceException.class,
@@ -115,9 +140,24 @@ class WxLoginServiceTest
     }
 
     @Test
+    void firstLoginRejectsUnicodeControlAndFormatCharacters()
+    {
+        WxLoginRequest control = completeRequest();
+        control.setNickname("用户" + new String(Character.toChars(0x85)));
+        assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
+                () -> loginService.login(control, avatar(), null)).getMessage());
+
+        WxLoginRequest format = completeRequest();
+        format.setNickname("用户" + new String(Character.toChars(0x202E)));
+        assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
+                () -> loginService.login(format, avatar(), null)).getMessage());
+    }
+
+    @Test
     void existingUserCanLoginWithoutRepeatedProfileInput()
     {
         WlWxUser existing = user(9L, "旧昵称", "202601/old.png", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(existing);
         when(userMapper.selectByOpenidForUpdate("openid-secret")).thenReturn(existing);
         when(agreementService.hasAcceptedAllCurrent(9L)).thenReturn(true);
         when(tokenService.issue(9L)).thenReturn("token");
@@ -136,6 +176,8 @@ class WxLoginServiceTest
     @Test
     void disabledUserCannotLogin()
     {
+        when(userMapper.selectByOpenid("openid-secret"))
+                .thenReturn(user(9L, "用户", "202601/a.png", "1"));
         when(userMapper.selectByOpenidForUpdate("openid-secret"))
                 .thenReturn(user(9L, "用户", "202601/a.png", "1"));
 
@@ -148,6 +190,8 @@ class WxLoginServiceTest
     @Test
     void existingUserMayLoginWhenNewAgreementIsNotAccepted()
     {
+        when(userMapper.selectByOpenid("openid-secret"))
+                .thenReturn(user(9L, "用户", "202601/a.png", "0"));
         when(userMapper.selectByOpenidForUpdate("openid-secret"))
                 .thenReturn(user(9L, "用户", "202601/a.png", "0"));
         when(agreementService.hasAcceptedAllCurrent(9L)).thenReturn(false);
@@ -163,8 +207,9 @@ class WxLoginServiceTest
     void duplicateOpenidDuringFirstLoginRecoversExistingUser()
     {
         WlWxUser concurrent = user(21L, "并发用户", "202607/a.jpg", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(null);
         when(userMapper.selectByOpenidForUpdate("openid-secret"))
-                .thenReturn(null, concurrent);
+                .thenReturn(concurrent);
         when(userMapper.insertWxUser(any(WlWxUser.class)))
                 .thenThrow(new DuplicateKeyException("uk_wx_user_openid"));
         when(agreementService.hasAcceptedAllCurrent(21L)).thenReturn(true);
