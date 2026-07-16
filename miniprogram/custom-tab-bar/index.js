@@ -21,8 +21,16 @@ Component({
   methods: {
     onChange(event) {
       const url = event.detail.value;
-      this.setData({ value: url });
-      wx.switchTab({ url });
+      const currentUrl = this.data.value;
+      wx.switchTab({
+        url,
+        success: () => {
+          this.setData({ value: url });
+        },
+        fail: () => {
+          this.setData({ value: currentUrl });
+        }
+      });
     }
   }
 });
