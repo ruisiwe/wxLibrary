@@ -456,7 +456,7 @@ CREATE TABLE `wl_vip_order` (
 CREATE TABLE `wl_vip_entitlement` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
-  `source_type` varchar(16) NOT NULL COMMENT 'PAYMENT、MANUAL或COMPENSATION',
+  `source_type` varchar(16) NOT NULL COMMENT 'PAY、MANUAL或COMPENSATION',
   `source_biz_no` varchar(64) NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
@@ -474,7 +474,7 @@ CREATE TABLE `wl_vip_entitlement` (
   UNIQUE KEY `uk_vip_entitlement_source` (`source_type`, `source_biz_no`),
   KEY `idx_vip_entitlement_user_time` (`user_id`, `start_time`, `end_time`),
   KEY `idx_vip_entitlement_status` (`status`),
-  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAYMENT','MANUAL','COMPENSATION')),
+  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAY','MANUAL','COMPENSATION')),
   CONSTRAINT `chk_vip_entitlement_days` CHECK (`granted_days` > 0),
   CONSTRAINT `chk_vip_entitlement_gift_points` CHECK (`gift_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员权益变更';

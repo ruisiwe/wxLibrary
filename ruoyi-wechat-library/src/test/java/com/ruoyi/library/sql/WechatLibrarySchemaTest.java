@@ -74,6 +74,8 @@ class WechatLibrarySchemaTest
         assertTrue(sql.contains("unique key `uk_vip_order_merchant_order_no` (`merchant_order_no`)"));
         assertTrue(sql.contains("unique key `uk_vip_refund_order_id` (`order_id`)"));
         assertTrue(sql.contains("`unrecovered_points` bigint not null default 0"));
+        assertTrue(sql.contains("check (`source_type` in ('pay','manual','compensation'))"));
+        assertFalse(sql.contains("payment"));
     }
 
     @Test
