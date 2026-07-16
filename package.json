@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node --test miniprogram/tests/*.test.js"
+  },
+  "dependencies": {
+    "tdesign-miniprogram": "1.15.3"
+  }
+}

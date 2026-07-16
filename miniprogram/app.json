@@ -1,0 +1,35 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/courses/courses",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0B1F3A",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "微信图书馆",
+    "backgroundColor": "#F5F7FA",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#64748B",
+    "selectedColor": "#2457D6",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/courses/courses",
+        "text": "视频课程"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2"
+}

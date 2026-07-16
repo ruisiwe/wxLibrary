@@ -1,0 +1,11 @@
+{
+  "appid": "touristappid",
+  "projectname": "wechat-library",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "miniprogram/",
+  "setting": {
+    "es6": true,
+    "nodeModules": true,
+    "minified": true
+  }
+}

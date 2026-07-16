@@ -1,0 +1,3 @@
+.page-shell {
+  border-top: 8rpx solid var(--color-navy);
+}

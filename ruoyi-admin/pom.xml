@@ -61,6 +61,12 @@
             <artifactId>ruoyi-generator</artifactId>
         </dependency>
 
+        <!-- 微信图书馆模块 -->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-wechat-library</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

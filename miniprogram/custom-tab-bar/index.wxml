@@ -1,0 +1,15 @@
+<t-tab-bar
+  value="{{value}}"
+  fixed
+  safe-area-inset-bottom
+  bind:change="onChange"
+>
+  <t-tab-bar-item
+    wx:for="{{list}}"
+    wx:key="value"
+    value="{{item.value}}"
+    icon="{{item.icon}}"
+  >
+    {{item.text}}
+  </t-tab-bar-item>
+</t-tab-bar>
