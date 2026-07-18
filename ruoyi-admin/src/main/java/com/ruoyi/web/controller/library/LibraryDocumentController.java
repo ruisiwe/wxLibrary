@@ -6,6 +6,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.library.domain.WlDocument;
+import com.ruoyi.library.service.DocumentConversionService;
 import com.ruoyi.library.service.DocumentService;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,8 +25,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class LibraryDocumentController extends BaseController
 {
     private final DocumentService documentService;
+    private final DocumentConversionService conversionService;
 
-    public LibraryDocumentController(DocumentService documentService) { this.documentService = documentService; }
+    public LibraryDocumentController(DocumentService documentService, DocumentConversionService conversionService)
+    {
+        this.documentService = documentService;
+        this.conversionService = conversionService;
+    }
 
     /** 分页查询文档元数据。 */
     @PreAuthorize("@ss.hasPermi('library:document:list')")
@@ -75,7 +81,7 @@ public class LibraryDocumentController extends BaseController
     @PutMapping("/{id}/publish")
     public AjaxResult publish(@PathVariable Long id)
     {
-        documentService.publishDocument(id, getUsername());
+        conversionService.publishDocument(id, getUsername());
         return success();
     }
 

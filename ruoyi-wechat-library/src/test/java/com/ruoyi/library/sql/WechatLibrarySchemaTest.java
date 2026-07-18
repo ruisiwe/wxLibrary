@@ -89,6 +89,7 @@ class WechatLibrarySchemaTest
         assertTrue(sql.contains("constraint `chk_document_preview_boundary` check (`preview_pages` <= `page_count`)"));
         assertTrue(sql.contains("constraint `chk_document_file_size` check (`file_size` >= 0)"));
         assertTrue(sql.contains("`full_object_key` varchar(512) default null"));
+        assertTrue(sql.contains("constraint `chk_document_conversion_status` check (`task_status` in ('pending','converting','success','failed'))"));
         assertTrue(sql.contains("('ad_reward', '激励视频广告', 1, 5, '0'"));
     }
 

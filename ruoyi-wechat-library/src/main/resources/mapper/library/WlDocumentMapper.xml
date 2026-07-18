@@ -119,6 +119,28 @@
             update_by = #{operator}, update_time = now()
         where id = #{id} and del_flag = '0' and publish_status != #{publishStatus}
     </update>
+    <update id="updateConversionPending">
+        update wl_document set original_object_key = #{originalObjectKey},
+            file_format = coalesce(#{fileFormat}, file_format), file_size = coalesce(#{fileSize}, file_size),
+            full_object_key = null, preview_object_key = null, conversion_status = 'PENDING',
+            update_by = #{operator}, update_time = now()
+        where id = #{id} and publish_status = 'DRAFT' and del_flag = '0'
+    </update>
+    <update id="updateConversionStarted">
+        update wl_document set conversion_status = 'CONVERTING', update_by = #{operator}, update_time = now()
+        where id = #{id} and publish_status = 'DRAFT' and conversion_status in ('PENDING','FAILED')
+          and del_flag = '0'
+    </update>
+    <update id="updateConversionSuccess">
+        update wl_document set full_object_key = #{fullObjectKey}, preview_object_key = #{previewObjectKey},
+            page_count = #{pageCount}, conversion_status = 'SUCCESS', update_by = #{operator}, update_time = now()
+        where id = #{id} and publish_status = 'DRAFT' and conversion_status in ('PENDING','CONVERTING','FAILED')
+          and del_flag = '0'
+    </update>
+    <update id="updateConversionFailed">
+        update wl_document set conversion_status = 'FAILED', update_by = #{operator}, update_time = now()
+        where id = #{id} and publish_status = 'DRAFT' and conversion_status != 'SUCCESS' and del_flag = '0'
+    </update>
     <update id="deleteDocuments">
         update wl_document set del_flag = '2', update_by = #{operator}, update_time = now()
         where publish_status != 'PUBLISHED' and del_flag = '0' and id in

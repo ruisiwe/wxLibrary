@@ -19,5 +19,13 @@ public interface WlDocumentMapper
     int updateDocument(WlDocument document);
     int updatePublishStatus(@Param("id") Long id, @Param("publishStatus") String publishStatus,
             @Param("operator") String operator);
+    int updateConversionPending(@Param("id") Long id, @Param("originalObjectKey") String originalObjectKey,
+            @Param("fileFormat") String fileFormat, @Param("fileSize") Long fileSize,
+            @Param("operator") String operator);
+    int updateConversionStarted(@Param("id") Long id, @Param("operator") String operator);
+    int updateConversionSuccess(@Param("id") Long id, @Param("fullObjectKey") String fullObjectKey,
+            @Param("previewObjectKey") String previewObjectKey, @Param("pageCount") Integer pageCount,
+            @Param("operator") String operator);
+    int updateConversionFailed(@Param("id") Long id, @Param("operator") String operator);
     int deleteDocuments(@Param("ids") Long[] ids, @Param("operator") String operator);
 }

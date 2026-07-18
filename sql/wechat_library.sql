@@ -141,6 +141,7 @@ CREATE TABLE `wl_document_conversion` (
   `task_version` int NOT NULL,
   `task_status` varchar(16) NOT NULL DEFAULT 'PENDING',
   `source_object_key` varchar(512) NOT NULL,
+  `full_object_key` varchar(512) DEFAULT NULL,
   `preview_object_key` varchar(512) DEFAULT NULL,
   `page_count` int DEFAULT NULL,
   `failure_reason` varchar(1000) DEFAULT NULL,
@@ -153,7 +154,8 @@ CREATE TABLE `wl_document_conversion` (
   `del_flag` char(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_document_conversion_version` (`document_id`, `task_version`),
-  KEY `idx_document_conversion_status` (`task_status`, `create_time`)
+  KEY `idx_document_conversion_status` (`task_status`, `create_time`),
+  CONSTRAINT `chk_document_conversion_status` CHECK (`task_status` IN ('PENDING','CONVERTING','SUCCESS','FAILED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档转换任务';
 
 CREATE TABLE `wl_document_unlock` (
