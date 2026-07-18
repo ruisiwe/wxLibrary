@@ -2,7 +2,14 @@
   "pages": [
     "pages/index/index",
     "pages/courses/courses",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/category/category",
+    "pages/search/search",
+    "pages/document-detail/document-detail",
+    "pages/document-reader/document-reader",
+    "pages/my-documents/my-documents",
+    "pages/favorites/favorites",
+    "pages/points/points"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0B1F3A",
@@ -31,5 +38,6 @@
       }
     ]
   },
-  "style": "v2"
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
 }

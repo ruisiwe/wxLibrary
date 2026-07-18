@@ -1,0 +1,5 @@
+<scroll-view class="promotions" scroll-x enhanced show-scrollbar="false">
+  <view class="promotions__track">
+    <image wx:for="{{items}}" wx:key="id" class="promotions__image" src="{{item.imageUrl}}" mode="aspectFill" data-item="{{item}}" bindtap="open" />
+  </view>
+</scroll-view>

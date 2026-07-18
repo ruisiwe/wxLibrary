@@ -1,3 +1,6 @@
-<view class="page-shell">
-  <view class="page-shell__title">首页</view>
+<view class="home">
+  <promotion-strip items="{{banners}}" />
+  <category-grid items="{{categories}}" />
+  <view class="documents"><document-row wx:for="{{documents}}" wx:key="id" document="{{item}}" /></view>
+  <state-view loading="{{loading}}" error="{{error}}" empty="{{!loading && !error && !documents.length}}" bindretry="load" />
 </view>

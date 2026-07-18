@@ -1,0 +1,4 @@
+<view class="row" bindtap="open">
+  <image class="row__cover" src="{{document.coverUrl}}" mode="aspectFill" />
+  <view class="row__body"><text class="row__title">{{document.title}}</text><text class="row__summary">{{document.summary || '暂无简介'}}</text><view><text class="row__tag">{{document.pageCount || 0}} 页</text><text class="row__points">{{document.pointPrice || 0}} 积分</text></view></view>
+</view>

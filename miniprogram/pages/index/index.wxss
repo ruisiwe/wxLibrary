@@ -1,3 +1,1 @@
-.page-shell {
-  border-top: 8rpx solid var(--color-cobalt);
-}
+.home{min-height:100vh;padding:28rpx 28rpx 160rpx;box-sizing:border-box}.home promotion-strip,.home category-grid{display:block;margin-bottom:28rpx}.documents{background:#fff;border-radius:24rpx;padding:0 24rpx}

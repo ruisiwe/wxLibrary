@@ -1,0 +1,1 @@
+<view wx:if="{{loading}}" class="state">加载中…</view><view wx:elif="{{error}}" class="state"><text>{{error}}</text><button size="mini" bindtap="retry">重试</button></view><view wx:elif="{{empty}}" class="state">{{emptyText}}</view>

@@ -1,0 +1,1 @@
+<view class="reader"><state-view loading="{{loading}}" error="{{error}}" bindretry="open"/><view wx:if="{{!loading && !error}}">文档已在微信阅读器中打开</view></view>

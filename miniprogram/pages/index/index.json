@@ -1,3 +1,1 @@
-{
-  "navigationBarTitleText": "首页"
-}
+{"navigationBarTitleText":"首页","usingComponents":{"promotion-strip":"/components/promotion-strip/index","category-grid":"/components/category-grid/index","document-row":"/components/document-row/index","state-view":"/components/state-view/index"}}

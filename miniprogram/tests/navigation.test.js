@@ -47,7 +47,7 @@ function createComponentInstance(definition, value = '/pages/index/index') {
 }
 
 test('底部导航固定为首页、视频课程、我的', () => {
-  assert.deepEqual(app.pages, expectedPages);
+  assert.deepEqual(app.pages.slice(0, 3), expectedPages);
   assert.equal(app.tabBar.custom, true);
   assert.deepEqual(app.tabBar.list, expectedTabs);
 });

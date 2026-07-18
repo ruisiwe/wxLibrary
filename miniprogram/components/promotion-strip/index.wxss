@@ -1,0 +1,1 @@
+.promotions{width:100%;white-space:nowrap}.promotions__track{display:flex;gap:20rpx}.promotions__image{width:620rpx;height:240rpx;border-radius:24rpx;flex:none;background:#dbeafe}

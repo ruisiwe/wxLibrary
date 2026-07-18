@@ -1,0 +1,1 @@
+.page{min-height:100vh;padding:28rpx;background:#fff}.search{display:flex;gap:20rpx;margin-bottom:20rpx}.search input{flex:1;padding:18rpx 24rpx;background:#f1f5f9;border-radius:40rpx}.search button{background:#2457d6;color:#fff}

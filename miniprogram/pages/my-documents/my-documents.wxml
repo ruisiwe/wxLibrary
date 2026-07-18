@@ -1,0 +1,1 @@
+<view class="list"><document-row wx:for="{{items}}" wx:key="id" document="{{item}}"/><state-view loading="{{loading}}" error="{{error}}" empty="{{!loading && !error && !items.length}}" empty-text="还没有兑换文档" bindretry="load"/></view>
