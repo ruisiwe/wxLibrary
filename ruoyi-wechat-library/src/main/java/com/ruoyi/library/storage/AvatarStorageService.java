@@ -27,6 +27,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class AvatarStorageService
 {
     private static final long HARD_MAX_BYTES = 2L * 1024 * 1024;
+    private static final int HARD_MAX_WIDTH = 2048;
+    private static final int HARD_MAX_HEIGHT = 2048;
+    private static final long HARD_MAX_PIXELS = 4194304L;
     private static final Map<String, String> MIME_BY_EXTENSION = new HashMap<>();
     static
     {
@@ -62,14 +65,18 @@ public class AvatarStorageService
         Path temp = null;
         try
         {
+            rejectSymbolicLink(root);
             Files.createDirectories(root);
+            rejectSymbolicLink(root);
             temp = Files.createTempFile(root, ".avatar-", ".tmp");
             file.transferTo(temp.toFile());
             if (Files.size(temp) > maxBytes) throw fileTooLarge(maxBytes);
             validateImage(temp, extension);
             String month = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
             Path directory = root.resolve(month);
+            rejectSymbolicLink(directory);
             Files.createDirectories(directory);
+            rejectSymbolicLink(directory);
             String storedExtension = "jpeg".equals(extension) ? "jpg" : extension;
             Path target = directory.resolve(UUID.randomUUID().toString() + "." + storedExtension);
             Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE);
@@ -104,18 +111,11 @@ public class AvatarStorageService
         if (relative.isAbsolute()) throw new ServiceException("头像路径不合法");
         Path resolved = root.resolve(relative).normalize();
         if (!resolved.startsWith(root)) throw new ServiceException("头像路径不合法");
-        try
-        {
-            Path realRoot = root.toRealPath();
-            Path realFile = resolved.toRealPath();
-            if (!realFile.startsWith(realRoot) || !Files.isRegularFile(realFile, LinkOption.NOFOLLOW_LINKS))
-                throw new ServiceException("头像路径不合法");
-            return realFile;
-        }
-        catch (IOException exception)
-        {
+        rejectSymbolicLink(root);
+        rejectSymbolicLinkComponents(resolved);
+        if (!Files.isRegularFile(resolved, LinkOption.NOFOLLOW_LINKS))
             throw new ServiceException("头像路径不合法");
-        }
+        return resolved;
     }
 
     public void deleteQuietly(String relativePath)
@@ -141,8 +141,13 @@ public class AvatarStorageService
                 int width = reader.getWidth(0);
                 int height = reader.getHeight(0);
                 long pixels = (long) width * height;
-                if (width <= 0 || height <= 0 || width > properties.getMaxWidth()
-                        || height > properties.getMaxHeight() || pixels > properties.getMaxPixels())
+                int maxWidth = Math.min(properties.getMaxWidth(), HARD_MAX_WIDTH);
+                int maxHeight = Math.min(properties.getMaxHeight(), HARD_MAX_HEIGHT);
+                long maxPixels = Math.min(properties.getMaxPixels(), HARD_MAX_PIXELS);
+                if (maxWidth <= 0 || maxHeight <= 0 || maxPixels <= 0)
+                    throw new ServiceException("头像图片尺寸配置必须大于0");
+                if (width <= 0 || height <= 0 || width > maxWidth
+                        || height > maxHeight || pixels > maxPixels)
                     throw new ServiceException("头像图片尺寸超出限制");
                 BufferedImage decoded = reader.read(0);
                 if (decoded == null) throw new ServiceException("头像文件内容不是有效图片");
@@ -180,6 +185,21 @@ public class AvatarStorageService
     {
         if (properties.getMaxBytes() <= 0) throw new ServiceException("头像文件大小配置必须大于0");
         return Math.min(properties.getMaxBytes(), HARD_MAX_BYTES);
+    }
+
+    private void rejectSymbolicLink(Path directory)
+    {
+        if (Files.isSymbolicLink(directory)) throw new ServiceException("头像存储目录不合法");
+    }
+
+    private void rejectSymbolicLinkComponents(Path path)
+    {
+        Path current = root;
+        for (Path component : root.relativize(path))
+        {
+            current = current.resolve(component);
+            if (Files.isSymbolicLink(current)) throw new ServiceException("头像路径不合法");
+        }
     }
 
     private ServiceException fileTooLarge(long maxBytes)

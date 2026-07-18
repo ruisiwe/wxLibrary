@@ -16,17 +16,21 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 class WxAuthInterceptorTest
 {
     private WxTokenService tokenService;
+    private WxUserAccessService userAccessService;
     private WxAuthInterceptor interceptor;
 
     @BeforeEach
     void setUp()
     {
         tokenService = mock(WxTokenService.class);
-        interceptor = new WxAuthInterceptor(tokenService);
+        userAccessService = mock(WxUserAccessService.class);
+        interceptor = new WxAuthInterceptor(tokenService, userAccessService);
     }
 
     @AfterEach
@@ -40,7 +44,7 @@ class WxAuthInterceptorTest
             throws Exception
     {
         MockHttpServletResponse response = new MockHttpServletResponse();
-        when(tokenService.resolve(null)).thenReturn(null);
+        when(tokenService.resolveWithoutRefresh(null)).thenReturn(null);
 
         assertFalse(interceptor.preHandle(new MockHttpServletRequest(), response, new Object()));
         assertEquals(401, response.getStatus());
@@ -76,10 +80,31 @@ class WxAuthInterceptorTest
     {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Wx-Token", "valid-token");
-        when(tokenService.resolve("valid-token")).thenReturn(99L);
+        when(tokenService.resolveWithoutRefresh("valid-token")).thenReturn(99L);
+        when(userAccessService.isEnabled(99L)).thenReturn(true);
 
         assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), new Object()));
         assertEquals(99L, WxUserContext.get());
+        verify(tokenService).refresh("valid-token");
+    }
+
+    @Test
+    void disabledUserIsRejectedWithoutRefreshingToken() throws Exception
+    {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Wx-Token", "disabled-token");
+        when(tokenService.resolveWithoutRefresh("disabled-token")).thenReturn(66L);
+        when(userAccessService.isEnabled(66L)).thenReturn(false);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertFalse(interceptor.preHandle(request, response, new Object()));
+
+        assertEquals(403, response.getStatus());
+        JSONObject body = JSON.parseObject(response.getContentAsString());
+        assertEquals(40301, body.getIntValue("code"));
+        assertEquals("该微信用户已被停用，无法访问", body.getString("message"));
+        verify(tokenService, never()).refresh("disabled-token");
+        verify(tokenService).revoke("disabled-token");
     }
 
     @Test

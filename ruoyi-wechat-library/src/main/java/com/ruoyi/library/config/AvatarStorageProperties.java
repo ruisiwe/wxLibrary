@@ -12,9 +12,9 @@ public class AvatarStorageProperties
 {
     private String rootDirectory;
     private long maxBytes = 2L * 1024 * 1024;
-    private int maxWidth = 4096;
-    private int maxHeight = 4096;
-    private long maxPixels = 16000000L;
+    private int maxWidth = 2048;
+    private int maxHeight = 2048;
+    private long maxPixels = 4194304L;
 
     public String getRootDirectory() { return rootDirectory; }
     public void setRootDirectory(String rootDirectory) { this.rootDirectory = rootDirectory; }

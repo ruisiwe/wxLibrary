@@ -13,6 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.TransactionSystemException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -219,6 +223,77 @@ class WxLoginServiceTest
 
         assertEquals(21L, response.getUserId());
         verify(userMapper).updateLastLoginTime(21L);
+    }
+
+    @Test
+    void tokenIsIssuedOnlyAfterDatabaseCommit()
+    {
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        TransactionStatus transactionStatus = mock(TransactionStatus.class);
+        when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(transactionStatus);
+        loginService = new WxLoginService(codeClient, userMapper, agreementService,
+                avatarStorageService, tokenService, transactionManager);
+        WlWxUser existing = user(9L, "用户", "202601/old.png", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(existing);
+        when(userMapper.selectByOpenidForUpdate("openid-secret")).thenReturn(existing);
+        when(agreementService.hasAcceptedAllCurrent(9L)).thenReturn(true);
+        when(tokenService.issue(9L)).thenReturn("token");
+
+        loginService.login(codeOnly(), null, null);
+
+        InOrder order = inOrder(transactionManager, tokenService);
+        order.verify(transactionManager).commit(transactionStatus);
+        order.verify(tokenService).issue(9L);
+    }
+
+    @Test
+    void commitFailureDeletesFirstLoginAvatarAndNeverIssuesToken()
+    {
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        TransactionStatus transactionStatus = mock(TransactionStatus.class);
+        when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(transactionStatus);
+        doThrow(new TransactionSystemException("commit failed"))
+                .when(transactionManager).commit(transactionStatus);
+        loginService = new WxLoginService(codeClient, userMapper, agreementService,
+                avatarStorageService, tokenService, transactionManager);
+        when(avatarStorageService.store(any())).thenReturn("202607/new.jpg");
+        doAnswer(invocation -> {
+            WlWxUser user = invocation.getArgument(0);
+            user.setId(18L);
+            return 1;
+        }).when(userMapper).insertWxUser(any(WlWxUser.class));
+
+        assertThrows(TransactionSystemException.class,
+                () -> loginService.login(completeRequest(), avatar(), "127.0.0.1"));
+
+        verify(avatarStorageService).deleteQuietly("202607/new.jpg");
+        verify(tokenService, never()).issue(anyLong());
+    }
+
+    @Test
+    void replacingAvatarDeletesOldOnlyAfterCommit()
+    {
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        TransactionStatus transactionStatus = mock(TransactionStatus.class);
+        when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(transactionStatus);
+        loginService = new WxLoginService(codeClient, userMapper, agreementService,
+                avatarStorageService, tokenService, transactionManager);
+        WlWxUser existing = user(9L, "用户", "202601/old.png", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(existing);
+        when(userMapper.selectByOpenidForUpdate("openid-secret")).thenReturn(existing);
+        when(avatarStorageService.store(any())).thenReturn("202607/new.png");
+        when(agreementService.hasAcceptedAllCurrent(9L)).thenReturn(true);
+        when(tokenService.issue(9L)).thenReturn("token");
+        WxLoginRequest request = codeOnly();
+        request.setNickname("新昵称");
+
+        loginService.login(request, avatar(), null);
+
+        InOrder order = inOrder(transactionManager, avatarStorageService, tokenService);
+        order.verify(transactionManager).commit(transactionStatus);
+        order.verify(avatarStorageService).deleteQuietly("202601/old.png");
+        order.verify(tokenService).issue(9L);
+        verify(avatarStorageService, never()).deleteQuietly("202607/new.png");
     }
 
     private WxLoginRequest completeRequest()

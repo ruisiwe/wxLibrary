@@ -11,6 +11,7 @@ import com.ruoyi.library.agreement.WxAgreementInterceptor;
 import com.ruoyi.library.agreement.WxAgreementService;
 import com.ruoyi.library.auth.WxAuthInterceptor;
 import com.ruoyi.library.auth.WxTokenService;
+import com.ruoyi.library.auth.WxUserAccessService;
 import com.ruoyi.library.common.WxUserContext;
 import com.ruoyi.library.config.WxWebMvcConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -57,6 +58,9 @@ class WxSecurityIntegrationTest
     private WxAgreementService agreementService;
 
     @MockBean
+    private WxUserAccessService userAccessService;
+
+    @MockBean
     private TokenService backendTokenService;
 
     @MockBean
@@ -65,8 +69,11 @@ class WxSecurityIntegrationTest
     @BeforeEach
     void setUp()
     {
-        when(wxTokenService.resolve("valid-token")).thenReturn(7L);
-        when(wxTokenService.resolve(null)).thenReturn(null);
+        when(wxTokenService.resolveWithoutRefresh("valid-token")).thenReturn(7L);
+        when(wxTokenService.resolveWithoutRefresh("disabled-token")).thenReturn(8L);
+        when(wxTokenService.resolveWithoutRefresh(null)).thenReturn(null);
+        when(userAccessService.isEnabled(7L)).thenReturn(true);
+        when(userAccessService.isEnabled(8L)).thenReturn(false);
         when(backendTokenService.getLoginUser(any())).thenReturn(null);
     }
 
@@ -91,7 +98,7 @@ class WxSecurityIntegrationTest
         mockMvc.perform(get("/wx/protected"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(40101));
-        verify(wxTokenService).resolve(null);
+        verify(wxTokenService).resolveWithoutRefresh(null);
     }
 
     @Test
@@ -120,6 +127,15 @@ class WxSecurityIntegrationTest
                 .andExpect(jsonPath("$.code").value(401));
     }
 
+    @Test
+    void disabledWechatUserCannotAccessAgreementAcceptancePath() throws Exception
+    {
+        mockMvc.perform(post("/wx/agreements/accept").header("Wx-Token", "disabled-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(40301));
+        verify(wxTokenService, org.mockito.Mockito.never()).refresh("disabled-token");
+    }
+
     @RestController
     static class ProbeController
     {
@@ -134,6 +150,9 @@ class WxSecurityIntegrationTest
 
         @GetMapping("/admin/protected")
         String backendProtected() { return "admin-ok"; }
+
+        @PostMapping("/wx/agreements/accept")
+        String acceptAgreement() { return "accepted"; }
     }
 
     @Configuration

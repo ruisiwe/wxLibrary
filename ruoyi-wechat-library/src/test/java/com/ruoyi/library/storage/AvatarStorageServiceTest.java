@@ -3,7 +3,10 @@ package com.ruoyi.library.storage;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import javax.imageio.ImageIO;
 import com.ruoyi.common.exception.ServiceException;
@@ -17,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -50,6 +54,9 @@ class AvatarStorageServiceTest
         assertTrue(png.endsWith(".png"));
         assertTrue(webp.endsWith(".webp"));
         assertFalse(jpeg.contains(root.toString()));
+        Path storedJpeg = root.resolve(jpeg);
+        assertTrue(Files.exists(storedJpeg));
+        assertTrue(Files.isRegularFile(storedJpeg, LinkOption.NOFOLLOW_LINKS));
         assertTrue(Files.isRegularFile(service.resolveForRead(jpeg)));
     }
 
@@ -99,6 +106,82 @@ class AvatarStorageServiceTest
 
         assertEquals("头像文件不能超过2MB", assertThrows(ServiceException.class,
                 () -> configuredLarger.store(file("a.jpg", "image/jpeg", tooLarge))).getMessage());
+    }
+
+    @Test
+    void imageDimensionHardLimitCannotBeExpandedByExternalConfiguration() throws Exception
+    {
+        AvatarStorageProperties properties = new AvatarStorageProperties();
+        properties.setRootDirectory(root.toString());
+        properties.setMaxWidth(10000);
+        properties.setMaxHeight(10000);
+        properties.setMaxPixels(100000000L);
+        AvatarStorageService configuredLarger = new AvatarStorageService(properties);
+        BufferedImage image = new BufferedImage(2049, 1, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", output);
+
+        assertEquals("头像图片尺寸超出限制", assertThrows(ServiceException.class,
+                () -> configuredLarger.store(file("a.png", "image/png", output.toByteArray()))).getMessage());
+    }
+
+    @Test
+    void rejectsSymbolicLinkStorageRoot() throws Exception
+    {
+        Path target = Files.createDirectory(root.resolve("target"));
+        Path link = root.resolve("link");
+        try
+        {
+            Files.createSymbolicLink(link, target);
+        }
+        catch (UnsupportedOperationException | java.io.IOException | SecurityException exception)
+        {
+            assumeTrue(false, "当前环境不允许创建符号链接");
+        }
+        AvatarStorageProperties properties = new AvatarStorageProperties();
+        properties.setRootDirectory(link.toString());
+        AvatarStorageService linked = new AvatarStorageService(properties);
+
+        assertEquals("头像存储目录不合法", assertThrows(ServiceException.class,
+                () -> linked.store(file("a.png", "image/png", image("png")))).getMessage());
+    }
+
+    @Test
+    void rejectsSymbolicLinkMonthDirectory() throws Exception
+    {
+        String month = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+        Path target = Files.createDirectory(root.resolve("month-target"));
+        Path link = root.resolve(month);
+        try
+        {
+            Files.createSymbolicLink(link, target);
+        }
+        catch (UnsupportedOperationException | java.io.IOException | SecurityException exception)
+        {
+            assumeTrue(false, "当前环境不允许创建符号链接");
+        }
+
+        assertEquals("头像存储目录不合法", assertThrows(ServiceException.class,
+                () -> service.store(file("a.png", "image/png", image("png")))).getMessage());
+    }
+
+    @Test
+    void rejectsSymbolicLinkAvatarDuringRead() throws Exception
+    {
+        Path target = root.resolve("target.png");
+        Files.write(target, image("png"));
+        Path link = root.resolve("link.png");
+        try
+        {
+            Files.createSymbolicLink(link, target);
+        }
+        catch (UnsupportedOperationException | java.io.IOException | SecurityException exception)
+        {
+            assumeTrue(false, "当前环境不允许创建符号链接");
+        }
+
+        assertEquals("头像路径不合法", assertThrows(ServiceException.class,
+                () -> service.resolveForRead("link.png")).getMessage());
     }
 
     @Test

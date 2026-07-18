@@ -5,6 +5,7 @@ import com.ruoyi.library.domain.WlAgreement;
 import com.ruoyi.library.domain.WlUserAgreement;
 import com.ruoyi.library.mapper.WlAgreementMapper;
 import com.ruoyi.library.mapper.WlUserAgreementMapper;
+import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -85,6 +86,48 @@ class WxAgreementServiceTest
     }
 
     @Test
+    void futureAgreementCannotBePublished()
+    {
+        WlAgreement draft = agreement(3L, "PRIVACY", "p2");
+        draft.setStatus(WxAgreementService.STATUS_DRAFT);
+        draft.setEffectiveTime(new Date(System.currentTimeMillis() + 60000));
+        when(agreementMapper.selectAgreementByIdForUpdate(3L)).thenReturn(draft);
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.publish(3L, "admin"));
+
+        assertEquals("协议生效时间不能晚于当前时间", exception.getMessage());
+        verify(agreementMapper, never()).disablePublishedByType(any(), any(), any());
+        verify(agreementMapper, never()).publishAgreement(any(), any());
+    }
+
+    @Test
+    void retryPublishingCurrentAgreementIsIdempotent()
+    {
+        WlAgreement published = agreement(3L, "PRIVACY", "p2");
+        when(agreementMapper.selectAgreementByIdForUpdate(3L)).thenReturn(published);
+        when(agreementMapper.selectCurrentByType("PRIVACY")).thenReturn(published);
+
+        service.publish(3L, "admin");
+
+        verify(agreementMapper, never()).disablePublishedByType(any(), any(), any());
+        verify(agreementMapper, never()).publishAgreement(any(), any());
+    }
+
+    @Test
+    void supersededAgreementCannotBePublishedAgain()
+    {
+        WlAgreement superseded = agreement(3L, "PRIVACY", "p2");
+        superseded.setStatus("2");
+        when(agreementMapper.selectAgreementByIdForUpdate(3L)).thenReturn(superseded);
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.publish(3L, "admin"));
+
+        assertEquals("该协议已被后续版本替代，不能重复发布", exception.getMessage());
+    }
+
+    @Test
     void publishedAgreementCannotBeEditedAsDraft()
     {
         WlAgreement published = agreement(3L, "PRIVACY", "p2");
@@ -106,6 +149,7 @@ class WxAgreementServiceTest
         agreement.setTitle(type);
         agreement.setContent("内容");
         agreement.setStatus(WxAgreementService.STATUS_PUBLISHED);
+        agreement.setEffectiveTime(new Date(0));
         return agreement;
     }
 }

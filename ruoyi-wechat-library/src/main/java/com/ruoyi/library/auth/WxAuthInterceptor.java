@@ -21,12 +21,16 @@ public class WxAuthInterceptor implements AsyncHandlerInterceptor
     public static final String TOKEN_HEADER = "Wx-Token";
     private static final int INVALID_TOKEN_CODE = 40101;
     private static final String INVALID_TOKEN_MESSAGE = "登录状态已失效，请重新登录";
+    private static final int DISABLED_USER_CODE = 40301;
+    private static final String DISABLED_USER_MESSAGE = "该微信用户已被停用，无法访问";
 
     private final WxTokenService tokenService;
+    private final WxUserAccessService userAccessService;
 
-    public WxAuthInterceptor(WxTokenService tokenService)
+    public WxAuthInterceptor(WxTokenService tokenService, WxUserAccessService userAccessService)
     {
         this.tokenService = tokenService;
+        this.userAccessService = userAccessService;
     }
 
     @Override
@@ -37,7 +41,7 @@ public class WxAuthInterceptor implements AsyncHandlerInterceptor
         Long userId;
         try
         {
-            userId = tokenService.resolve(request.getHeader(TOKEN_HEADER));
+            userId = tokenService.resolveWithoutRefresh(request.getHeader(TOKEN_HEADER));
         }
         catch (RuntimeException exception)
         {
@@ -49,6 +53,14 @@ public class WxAuthInterceptor implements AsyncHandlerInterceptor
             writeUnauthorized(response);
             return false;
         }
+        String token = request.getHeader(TOKEN_HEADER);
+        if (!userAccessService.isEnabled(userId))
+        {
+            tokenService.revoke(token);
+            writeError(response, HttpServletResponse.SC_FORBIDDEN, DISABLED_USER_CODE, DISABLED_USER_MESSAGE);
+            return false;
+        }
+        tokenService.refresh(token);
         WxUserContext.set(userId);
         return true;
     }
@@ -69,10 +81,15 @@ public class WxAuthInterceptor implements AsyncHandlerInterceptor
 
     private void writeUnauthorized(HttpServletResponse response) throws IOException
     {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        writeError(response, HttpServletResponse.SC_UNAUTHORIZED, INVALID_TOKEN_CODE, INVALID_TOKEN_MESSAGE);
+    }
+
+    private void writeError(HttpServletResponse response, int status, int code, String message) throws IOException
+    {
+        response.setStatus(status);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
         response.getWriter().write(JSON.toJSONString(
-                WxApiResponse.failure(INVALID_TOKEN_CODE, INVALID_TOKEN_MESSAGE), JSONWriter.Feature.WriteNulls));
+                WxApiResponse.failure(code, message), JSONWriter.Feature.WriteNulls));
     }
 }

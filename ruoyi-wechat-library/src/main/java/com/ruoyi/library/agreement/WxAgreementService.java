@@ -97,7 +97,16 @@ public class WxAgreementService
     {
         WlAgreement draft = agreementMapper.selectAgreementByIdForUpdate(id);
         if (draft == null) throw new ServiceException("协议不存在");
-        if (!STATUS_DRAFT.equals(draft.getStatus())) throw new ServiceException("仅草稿协议允许发布");
+        if (STATUS_PUBLISHED.equals(draft.getStatus()))
+        {
+            WlAgreement current = agreementMapper.selectCurrentByType(draft.getAgreementType());
+            if (current != null && id.equals(current.getId())) return;
+            throw new ServiceException("该协议已被后续版本替代，不能重复发布");
+        }
+        if (!STATUS_DRAFT.equals(draft.getStatus()))
+            throw new ServiceException("该协议已被后续版本替代，不能重复发布");
+        if (draft.getEffectiveTime() == null) throw new ServiceException("协议生效时间不能为空");
+        if (draft.getEffectiveTime().after(new Date())) throw new ServiceException("协议生效时间不能晚于当前时间");
         agreementMapper.disablePublishedByType(draft.getAgreementType(), id, operator);
         if (agreementMapper.publishAgreement(id, operator) != 1) throw new ServiceException("协议发布失败");
     }

@@ -53,6 +53,14 @@ public class WxTokenService
      */
     public Long resolve(String token)
     {
+        Long userId = resolveWithoutRefresh(token);
+        if (userId != null) refresh(token);
+        return userId;
+    }
+
+    /** 解析令牌但不刷新有效期，用于先校验用户状态。 */
+    public Long resolveWithoutRefresh(String token)
+    {
         if (isBlank(token))
         {
             return null;
@@ -68,8 +76,13 @@ public class WxTokenService
             redisCache.deleteObject(key);
             return null;
         }
-        redisCache.expire(key, TOKEN_TTL_DAYS, TimeUnit.DAYS);
         return userId;
+    }
+
+    /** 用户状态校验通过后刷新令牌滑动有效期。 */
+    public void refresh(String token)
+    {
+        if (!isBlank(token)) redisCache.expire(buildCacheKey(token), TOKEN_TTL_DAYS, TimeUnit.DAYS);
     }
 
     /**

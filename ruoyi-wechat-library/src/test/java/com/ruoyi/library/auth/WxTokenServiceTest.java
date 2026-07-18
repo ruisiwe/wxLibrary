@@ -91,6 +91,31 @@ class WxTokenServiceTest
     }
 
     @Test
+    void resolveWithoutRefreshReturnsUserWithoutChangingTtl()
+            throws Exception
+    {
+        String token = "valid-token";
+        String key = "wx:token:" + sha256(token);
+        when(redisCache.getCacheObject(key)).thenReturn(88L);
+
+        assertEquals(88L, tokenService.resolveWithoutRefresh(token));
+
+        verify(redisCache, never()).expire(anyString(), org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.any(TimeUnit.class));
+    }
+
+    @Test
+    void refreshExtendsDigestKeyTtlOnlyAfterCallerValidation()
+            throws Exception
+    {
+        String token = "valid-token";
+
+        tokenService.refresh(token);
+
+        verify(redisCache).expire("wx:token:" + sha256(token), 30, TimeUnit.DAYS);
+    }
+
+    @Test
     void resolveReturnsNullForBlankOrMissingTokenWithoutRefreshing()
     {
         assertNull(tokenService.resolve(null));
