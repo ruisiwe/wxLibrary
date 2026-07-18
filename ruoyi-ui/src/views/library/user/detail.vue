@@ -1,0 +1,1 @@
+<template><div class="app-container"><el-descriptions title="微信用户详情" border><el-descriptions-item label="用户编号">{{ $route.params.id }}</el-descriptions-item><el-descriptions-item label="说明">OpenID 始终脱敏展示</el-descriptions-item></el-descriptions></div></template><script>export default{name:'LibraryWxUserDetail'}</script>
