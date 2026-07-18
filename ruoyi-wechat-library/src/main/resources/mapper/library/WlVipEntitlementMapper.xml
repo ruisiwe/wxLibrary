@@ -17,10 +17,11 @@
         <result property="reason" column="reason"/>
         <result property="oldExpireTime" column="old_expire_time"/>
         <result property="newExpireTime" column="new_expire_time"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
     <sql id="columns">select id, user_id, source_type, source_biz_no, start_time, end_time,
         granted_days, gift_points, point_record_id, status, revoked_time, operator_id, reason,
-        old_expire_time, new_expire_time from wl_vip_entitlement</sql>
+        old_expire_time, new_expire_time, create_time from wl_vip_entitlement</sql>
     <select id="selectBySource" resultMap="VipEntitlementResult">
         <include refid="columns"/> where source_type = #{sourceType} and source_biz_no = #{sourceBizNo}
           and del_flag = '0'
@@ -47,5 +48,13 @@
         update wl_vip_entitlement set status = 'REVOKED', revoked_time = now(), update_by = #{operator},
             update_time = now() where source_type = #{sourceType} and source_biz_no = #{sourceBizNo}
             and status = 'ACTIVE' and del_flag = '0'
+    </update>
+    <select id="selectActiveAfterId" resultMap="VipEntitlementResult">
+        <include refid="columns"/> where user_id=#{userId} and id &gt; #{id} and status='ACTIVE' and del_flag='0'
+        order by id asc
+    </select>
+    <update id="revokeById">
+        update wl_vip_entitlement set status='REVOKED', revoked_time=now(), update_by=#{operator}, update_time=now()
+        where id=#{id} and status='ACTIVE' and del_flag='0'
     </update>
 </mapper>

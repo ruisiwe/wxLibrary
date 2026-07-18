@@ -79,6 +79,10 @@ class WechatLibrarySchemaTest
         assertTrue(sql.contains("`operator_id` bigint default null"));
         assertTrue(sql.contains("`old_expire_time` datetime default null"));
         assertTrue(sql.contains("`new_expire_time` datetime not null"));
+        assertTrue(sql.contains("`currency` char(3) not null default 'cny'"));
+        assertTrue(sql.contains("'refund_processing','refunded'"));
+        assertTrue(sql.contains("`operator_id` bigint not null comment '发起退款的后台操作人'"));
+        assertTrue(sql.contains("'processing','accepted','success','failed'"));
     }
 
     @Test

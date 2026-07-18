@@ -452,6 +452,7 @@ CREATE TABLE `wl_vip_order` (
   `plan_code_snapshot` varchar(32) NOT NULL,
   `plan_name_snapshot` varchar(64) NOT NULL,
   `amount_cent` bigint NOT NULL,
+  `currency` char(3) NOT NULL DEFAULT 'CNY',
   `valid_days_snapshot` int NOT NULL,
   `gift_points_snapshot` bigint NOT NULL DEFAULT 0,
   `order_status` varchar(16) NOT NULL DEFAULT 'CREATED',
@@ -468,7 +469,8 @@ CREATE TABLE `wl_vip_order` (
   KEY `idx_vip_order_user_time` (`user_id`, `create_time`),
   KEY `idx_vip_order_status` (`order_status`),
   CONSTRAINT `chk_vip_order_amount` CHECK (`amount_cent` >= 0),
-  CONSTRAINT `chk_vip_order_gift_points_snapshot` CHECK (`gift_points_snapshot` >= 0)
+  CONSTRAINT `chk_vip_order_gift_points_snapshot` CHECK (`gift_points_snapshot` >= 0),
+  CONSTRAINT `chk_vip_order_status` CHECK (`order_status` IN ('CREATED','PREPAY_READY','PAID','CLOSED','FAILED','REFUND_PROCESSING','REFUNDED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员支付订单';
 
 CREATE TABLE `wl_vip_entitlement` (
@@ -515,6 +517,9 @@ CREATE TABLE `wl_vip_refund` (
   `entitlement_revoked` char(1) NOT NULL DEFAULT '0',
   `success_time` datetime DEFAULT NULL,
   `failure_reason` varchar(1000) DEFAULT NULL,
+  `operator_id` bigint NOT NULL COMMENT '发起退款的后台操作人',
+  `reason` varchar(500) NOT NULL COMMENT '退款原因',
+  `accepted_time` datetime DEFAULT NULL,
   `create_by` varchar(64) NOT NULL DEFAULT '',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_by` varchar(64) NOT NULL DEFAULT '',
@@ -528,6 +533,7 @@ CREATE TABLE `wl_vip_refund` (
   KEY `idx_vip_refund_status` (`refund_status`),
   CONSTRAINT `chk_vip_refund_amount` CHECK (`refund_amount_cent` >= 0),
   CONSTRAINT `chk_vip_refund_should_points` CHECK (`should_reclaim_points` >= 0),
+  CONSTRAINT `chk_vip_refund_status` CHECK (`refund_status` IN ('CREATED','PROCESSING','ACCEPTED','SUCCESS','FAILED')),
   CONSTRAINT `chk_vip_refund_reclaimed_points` CHECK (`reclaimed_points` >= 0),
   CONSTRAINT `chk_vip_refund_unrecovered_points` CHECK (`unrecovered_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员全额退款';
