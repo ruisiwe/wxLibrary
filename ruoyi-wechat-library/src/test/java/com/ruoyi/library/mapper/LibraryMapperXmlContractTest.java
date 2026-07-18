@@ -32,7 +32,11 @@ class LibraryMapperXmlContractTest
                 "mapper/library/WlVipPlanMapper.xml",
                 "mapper/library/WlVipEntitlementMapper.xml",
                 "mapper/library/WlVipOrderMapper.xml",
-                "mapper/library/WlVipRefundMapper.xml");
+                "mapper/library/WlVipRefundMapper.xml",
+                "mapper/library/WlCourseMapper.xml",
+                "mapper/library/WlCourseCodeMapper.xml",
+                "mapper/library/WlUserCourseMapper.xml",
+                "mapper/library/WlVideoProgressMapper.xml");
         Configuration configuration = new Configuration();
         for (String resource : resources)
         {
@@ -57,6 +61,8 @@ class LibraryMapperXmlContractTest
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipEntitlementMapper.insertEntitlement"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipOrderMapper.markPaid"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipRefundMapper.markSuccess"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlCourseCodeMapper.selectByDigestForUpdate"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVideoProgressMapper.upsertProgress"));
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("keyword", "质量");

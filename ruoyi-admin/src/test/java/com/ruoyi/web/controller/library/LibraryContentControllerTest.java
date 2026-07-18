@@ -114,6 +114,11 @@ class LibraryContentControllerTest
         assertPermission(LibraryVipOrderController.class, "list", "library:vip:order");
         assertPermission(LibraryVipRefundController.class, "list", "library:vip:refund");
         assertPermission(LibraryVipRefundController.class, "refund", "library:vip:refund");
+        assertPermission(LibraryCourseController.class, "list", "library:course:list");
+        assertPermission(LibraryCourseController.class, "add", "library:course:add");
+        assertPermission(LibraryCourseController.class, "edit", "library:course:edit");
+        assertPermission(LibraryCourseCodeController.class, "list", "library:course:code");
+        assertPermission(LibraryCourseCodeController.class, "generate", "library:course:code");
     }
 
     private void assertPermission(Class<?> controllerClass, String methodName, String permission)

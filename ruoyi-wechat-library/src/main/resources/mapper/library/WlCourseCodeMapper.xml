@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlCourseCodeMapper">
+ <resultMap id="r" type="com.ruoyi.library.domain.WlCourseCode"><id property="id" column="id"/><result property="courseId" column="course_id"/><result property="codeDigest" column="code_digest"/><result property="codeMask" column="code_mask"/><result property="status" column="status"/><result property="usedUserId" column="used_user_id"/><result property="usedTime" column="used_time"/><result property="expiresTime" column="expires_time"/><result property="batchNo" column="batch_no"/></resultMap>
+ <sql id="c">select id,course_id,code_digest,code_mask,status,used_user_id,used_time,expires_time,batch_no from wl_course_code</sql>
+ <select id="selectByDigest" resultMap="r"><include refid="c"/> where code_digest=#{digest} and del_flag='0'</select><select id="selectByDigestForUpdate" resultMap="r"><include refid="c"/> where code_digest=#{digest} and del_flag='0' for update</select>
+ <select id="selectList" parameterType="com.ruoyi.library.domain.WlCourseCode" resultMap="r"><include refid="c"/><where>del_flag='0'<if test="courseId != null"> and course_id=#{courseId}</if><if test="status != null and status != ''"> and status=#{status}</if><if test="batchNo != null and batchNo != ''"> and batch_no=#{batchNo}</if></where> order by id desc</select>
+ <insert id="insertCode" parameterType="com.ruoyi.library.domain.WlCourseCode" useGeneratedKeys="true" keyProperty="id">insert into wl_course_code(course_id,code_digest,code_mask,status,expires_time,batch_no,create_by,create_time,update_by,update_time,del_flag) values(#{courseId},#{codeDigest},#{codeMask},#{status},#{expiresTime},#{batchNo},#{createBy},now(),'',now(),'0')</insert>
+ <update id="markUsed">update wl_course_code set status='USED',used_user_id=#{userId},used_time=now(),update_time=now() where id=#{id} and status='UNUSED' and del_flag='0'</update>
+</mapper>

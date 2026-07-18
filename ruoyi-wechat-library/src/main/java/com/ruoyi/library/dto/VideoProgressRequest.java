@@ -1,0 +1,1 @@
+package com.ruoyi.library.dto;/** 小程序视频进度请求。 */public class VideoProgressRequest{private Integer progressSeconds;private Boolean finished;public Integer getProgressSeconds(){return progressSeconds;}public void setProgressSeconds(Integer v){progressSeconds=v;}public Boolean getFinished(){return finished;}public void setFinished(Boolean v){finished=v;}}

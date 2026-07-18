@@ -379,7 +379,8 @@ CREATE TABLE `wl_course_code` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_course_code_digest` (`code_digest`),
   KEY `idx_course_code_course_status` (`course_id`, `status`),
-  KEY `idx_course_code_batch` (`batch_no`)
+  KEY `idx_course_code_batch` (`batch_no`),
+  CONSTRAINT `chk_course_code_status` CHECK (`status` IN ('UNUSED','USED','DISABLED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程兑换码';
 
 CREATE TABLE `wl_user_course` (
@@ -398,7 +399,9 @@ CREATE TABLE `wl_user_course` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_course_user_course` (`user_id`, `course_id`),
   UNIQUE KEY `uk_user_course_code` (`course_code_id`),
-  KEY `idx_user_course_course` (`course_id`)
+  KEY `idx_user_course_course` (`course_id`),
+  CONSTRAINT `chk_user_course_source` CHECK (`access_source` = 'CODE'),
+  CONSTRAINT `chk_user_course_permanent` CHECK (`is_permanent` = '1')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户永久课程';
 
 CREATE TABLE `wl_video_progress` (

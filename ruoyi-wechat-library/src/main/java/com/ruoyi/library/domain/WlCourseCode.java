@@ -1,0 +1,6 @@
+package com.ruoyi.library.domain;
+import com.fasterxml.jackson.annotation.JsonIgnore;import com.ruoyi.common.core.domain.BaseEntity;import java.util.Date;
+/** 课程兑换码摘要记录，不保存明文。 */
+public class WlCourseCode extends BaseEntity
+{private static final long serialVersionUID=1L;private Long id;private Long courseId;@JsonIgnore private String codeDigest;private String codeMask;private String status;private Long usedUserId;private Date usedTime;private Date expiresTime;private String batchNo;
+public Long getId(){return id;}public void setId(Long v){id=v;}public Long getCourseId(){return courseId;}public void setCourseId(Long v){courseId=v;}public String getCodeDigest(){return codeDigest;}public void setCodeDigest(String v){codeDigest=v;}public String getCodeMask(){return codeMask;}public void setCodeMask(String v){codeMask=v;}public String getStatus(){return status;}public void setStatus(String v){status=v;}public Long getUsedUserId(){return usedUserId;}public void setUsedUserId(Long v){usedUserId=v;}public Date getUsedTime(){return usedTime;}public void setUsedTime(Date v){usedTime=v;}public Date getExpiresTime(){return expiresTime;}public void setExpiresTime(Date v){expiresTime=v;}public String getBatchNo(){return batchNo;}public void setBatchNo(String v){batchNo=v;}}

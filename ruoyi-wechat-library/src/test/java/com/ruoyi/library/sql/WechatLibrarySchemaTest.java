@@ -83,6 +83,8 @@ class WechatLibrarySchemaTest
         assertTrue(sql.contains("'refund_processing','refunded'"));
         assertTrue(sql.contains("`operator_id` bigint not null comment '发起退款的后台操作人'"));
         assertTrue(sql.contains("'processing','accepted','success','failed'"));
+        assertTrue(sql.contains("check (`status` in ('unused','used','disabled'))"));
+        assertTrue(sql.contains("check (`is_permanent` = '1')"));
     }
 
     @Test
