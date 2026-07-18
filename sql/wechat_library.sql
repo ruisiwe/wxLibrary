@@ -7,6 +7,7 @@ CREATE TABLE `wl_wx_user` (
   `nickname` varchar(64) NOT NULL DEFAULT '' COMMENT '用户确认后的昵称',
   `avatar_url` varchar(255) NOT NULL DEFAULT '' COMMENT '本地头像访问地址',
   `point_balance` bigint NOT NULL DEFAULT 0 COMMENT '积分余额',
+  `vip_expire_time` datetime DEFAULT NULL COMMENT '当前会员权益到期时间',
   `status` char(1) NOT NULL DEFAULT '0' COMMENT '状态：0正常，1停用',
   `last_login_time` datetime DEFAULT NULL,
   `create_by` varchar(64) NOT NULL DEFAULT '',
@@ -473,7 +474,7 @@ CREATE TABLE `wl_vip_order` (
 CREATE TABLE `wl_vip_entitlement` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
-  `source_type` varchar(16) NOT NULL COMMENT 'PAY、MANUAL或COMPENSATION',
+  `source_type` varchar(16) NOT NULL COMMENT 'PAYMENT、MANUAL或COMPENSATION',
   `source_biz_no` varchar(64) NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
@@ -482,6 +483,10 @@ CREATE TABLE `wl_vip_entitlement` (
   `point_record_id` bigint DEFAULT NULL,
   `status` varchar(16) NOT NULL DEFAULT 'ACTIVE',
   `revoked_time` datetime DEFAULT NULL,
+  `operator_id` bigint DEFAULT NULL COMMENT '后台操作人编号，支付开通为空',
+  `reason` varchar(500) NOT NULL DEFAULT '' COMMENT '后台操作原因',
+  `old_expire_time` datetime DEFAULT NULL COMMENT '操作前会员到期时间',
+  `new_expire_time` datetime NOT NULL COMMENT '操作后会员到期时间',
   `create_by` varchar(64) NOT NULL DEFAULT '',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_by` varchar(64) NOT NULL DEFAULT '',
@@ -491,7 +496,7 @@ CREATE TABLE `wl_vip_entitlement` (
   UNIQUE KEY `uk_vip_entitlement_source` (`source_type`, `source_biz_no`),
   KEY `idx_vip_entitlement_user_time` (`user_id`, `start_time`, `end_time`),
   KEY `idx_vip_entitlement_status` (`status`),
-  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAY','MANUAL','COMPENSATION')),
+  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAYMENT','MANUAL','COMPENSATION')),
   CONSTRAINT `chk_vip_entitlement_days` CHECK (`granted_days` > 0),
   CONSTRAINT `chk_vip_entitlement_gift_points` CHECK (`gift_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员权益变更';

@@ -16,6 +16,7 @@ public class WlWxUser extends BaseEntity
     private String nickname;
     private String avatarPath;
     private Long pointBalance;
+    private Date vipExpireTime;
     private String status;
     private Date lastLoginTime;
 
@@ -31,6 +32,8 @@ public class WlWxUser extends BaseEntity
     public void setAvatarPath(String avatarPath) { this.avatarPath = avatarPath; }
     public Long getPointBalance() { return pointBalance; }
     public void setPointBalance(Long pointBalance) { this.pointBalance = pointBalance; }
+    public Date getVipExpireTime() { return vipExpireTime; }
+    public void setVipExpireTime(Date vipExpireTime) { this.vipExpireTime = vipExpireTime; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public Date getLastLoginTime() { return lastLoginTime; }

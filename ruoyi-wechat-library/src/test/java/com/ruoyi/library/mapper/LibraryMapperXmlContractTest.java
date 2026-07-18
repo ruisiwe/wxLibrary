@@ -28,7 +28,9 @@ class LibraryMapperXmlContractTest
                 "mapper/library/WlDocumentMapper.xml",
                 "mapper/library/WlDocumentConversionMapper.xml",
                 "mapper/library/WlPointMapper.xml",
-                "mapper/library/WlDocumentUnlockMapper.xml");
+                "mapper/library/WlDocumentUnlockMapper.xml",
+                "mapper/library/WlVipPlanMapper.xml",
+                "mapper/library/WlVipEntitlementMapper.xml");
         Configuration configuration = new Configuration();
         for (String resource : resources)
         {
@@ -49,6 +51,8 @@ class LibraryMapperXmlContractTest
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentConversionMapper.markConverting"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlPointMapper.deductIfEnough"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentUnlockMapper.selectUnlock"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipPlanMapper.selectEnabledById"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipEntitlementMapper.insertEntitlement"));
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("keyword", "质量");

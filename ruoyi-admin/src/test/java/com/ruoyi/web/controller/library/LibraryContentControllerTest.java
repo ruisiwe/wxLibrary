@@ -105,6 +105,12 @@ class LibraryContentControllerTest
         assertPermission(LibraryPointRuleController.class, "detail", "library:points:rule");
         assertPermission(LibraryPointRuleController.class, "edit", "library:points:rule");
         assertPermission(LibraryPointRecordController.class, "list", "library:points:record");
+        assertPermission(LibraryVipPlanController.class, "list", "library:vip:plan");
+        assertPermission(LibraryVipPlanController.class, "add", "library:vip:plan");
+        assertPermission(LibraryVipPlanController.class, "edit", "library:vip:plan");
+        assertPermission(LibraryVipOperationController.class, "list", "library:vip:operation");
+        assertPermission(LibraryVipOperationController.class, "open", "library:vip:operation");
+        assertPermission(LibraryVipOperationController.class, "compensate", "library:vip:operation");
     }
 
     private void assertPermission(Class<?> controllerClass, String methodName, String permission)

@@ -11,6 +11,7 @@ public class LibraryWxUserView
     private String nickname;
     private String avatarPath;
     private Long pointBalance;
+    private Date vipExpireTime;
     private String status;
     private Date lastLoginTime;
 
@@ -23,6 +24,7 @@ public class LibraryWxUserView
         view.nickname = user.getNickname();
         view.avatarPath = user.getAvatarPath();
         view.pointBalance = user.getPointBalance();
+        view.vipExpireTime = user.getVipExpireTime();
         view.status = user.getStatus();
         view.lastLoginTime = user.getLastLoginTime();
         return view;
@@ -39,6 +41,7 @@ public class LibraryWxUserView
     public String getNickname() { return nickname; }
     public String getAvatarPath() { return avatarPath; }
     public Long getPointBalance() { return pointBalance; }
+    public Date getVipExpireTime() { return vipExpireTime; }
     public String getStatus() { return status; }
     public Date getLastLoginTime() { return lastLoginTime; }
 }

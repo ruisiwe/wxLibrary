@@ -74,8 +74,11 @@ class WechatLibrarySchemaTest
         assertTrue(sql.contains("unique key `uk_vip_order_merchant_order_no` (`merchant_order_no`)"));
         assertTrue(sql.contains("unique key `uk_vip_refund_order_id` (`order_id`)"));
         assertTrue(sql.contains("`unrecovered_points` bigint not null default 0"));
-        assertTrue(sql.contains("check (`source_type` in ('pay','manual','compensation'))"));
-        assertFalse(sql.contains("payment"));
+        assertTrue(sql.contains("`vip_expire_time` datetime default null"));
+        assertTrue(sql.contains("check (`source_type` in ('payment','manual','compensation'))"));
+        assertTrue(sql.contains("`operator_id` bigint default null"));
+        assertTrue(sql.contains("`old_expire_time` datetime default null"));
+        assertTrue(sql.contains("`new_expire_time` datetime not null"));
     }
 
     @Test

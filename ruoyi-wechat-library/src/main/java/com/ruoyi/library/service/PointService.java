@@ -223,6 +223,25 @@ public class PointService
                 rule.getPointValue(), before, after, description);
     }
 
+    /** 仅由已持有微信用户行锁的会员事务调用，按业务编号幂等赠送固定积分。 */
+    WlPointRecord creditFixedAfterLock(WlWxUser locked, Long amount, String bizNo, String description)
+    {
+        validateAmount(amount);
+        requireEnabledUser(locked);
+        WlPointRecord existing = findIdempotent(locked.getId(), "VIP_GIFT", bizNo);
+        if (existing != null) return existing;
+        long before = balanceOf(locked);
+        long after;
+        try { after = Math.addExact(before, amount); }
+        catch (ArithmeticException exception) { throw new ServiceException("积分余额超出范围"); }
+        if (amount > 0 && pointMapper.addPoints(locked.getId(), amount) != 1)
+            throw new ServiceException("积分余额已变化，请重试");
+        WlPointRecord record = insertRecord(locked.getId(), null, "VIP_GIFT", bizNo,
+                amount, before, after, description);
+        locked.setPointBalance(after);
+        return record;
+    }
+
     private void completeInvitation(Long invitedUserId, Long pointRecordId)
     {
         if (pointMapper.completeInvitation(invitedUserId, pointRecordId) != 1)

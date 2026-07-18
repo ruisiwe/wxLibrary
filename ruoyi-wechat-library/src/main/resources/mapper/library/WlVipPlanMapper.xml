@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlVipPlanMapper">
+    <resultMap id="VipPlanResult" type="com.ruoyi.library.domain.WlVipPlan">
+        <id property="id" column="id"/>
+        <result property="planCode" column="plan_code"/>
+        <result property="planName" column="plan_name"/>
+        <result property="priceCent" column="price_cent"/>
+        <result property="validDays" column="valid_days"/>
+        <result property="giftPoints" column="gift_points"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <sql id="columns">select id, plan_code, plan_name, price_cent, valid_days, gift_points,
+        sort_order, status, remark from wl_vip_plan</sql>
+    <select id="selectById" resultMap="VipPlanResult">
+        <include refid="columns"/> where id = #{id} and del_flag = '0'
+    </select>
+    <select id="selectEnabledById" resultMap="VipPlanResult">
+        <include refid="columns"/> where id = #{id} and status = '0' and del_flag = '0'
+    </select>
+    <select id="selectList" parameterType="com.ruoyi.library.domain.WlVipPlan" resultMap="VipPlanResult">
+        <include refid="columns"/>
+        <where>
+            del_flag = '0'
+            <if test="planName != null and planName != ''">and plan_name like concat('%', #{planName}, '%')</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by sort_order asc, id asc
+    </select>
+    <insert id="insertPlan" parameterType="com.ruoyi.library.domain.WlVipPlan" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_vip_plan(plan_code, plan_name, price_cent, valid_days, gift_points, sort_order,
+            status, create_by, create_time, update_by, update_time, del_flag, remark)
+        values(#{planCode}, #{planName}, #{priceCent}, #{validDays}, #{giftPoints}, #{sortOrder},
+            #{status}, #{createBy}, now(), '', now(), '0', #{remark})
+    </insert>
+    <update id="updatePlan" parameterType="com.ruoyi.library.domain.WlVipPlan">
+        update wl_vip_plan set plan_code = #{planCode}, plan_name = #{planName}, price_cent = #{priceCent},
+            valid_days = #{validDays}, gift_points = #{giftPoints}, sort_order = #{sortOrder}, status = #{status},
+            update_by = #{updateBy}, update_time = now(), remark = #{remark}
+        where id = #{id} and del_flag = '0'
+    </update>
+    <update id="deletePlan">
+        update wl_vip_plan set del_flag = '2', update_by = #{operator}, update_time = now()
+        where id = #{id} and del_flag = '0'
+    </update>
+</mapper>

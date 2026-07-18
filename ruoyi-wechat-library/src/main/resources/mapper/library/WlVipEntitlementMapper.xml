@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlVipEntitlementMapper">
+    <resultMap id="VipEntitlementResult" type="com.ruoyi.library.domain.WlVipEntitlement">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="sourceBizNo" column="source_biz_no"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="grantedDays" column="granted_days"/>
+        <result property="giftPoints" column="gift_points"/>
+        <result property="pointRecordId" column="point_record_id"/>
+        <result property="status" column="status"/>
+        <result property="revokedTime" column="revoked_time"/>
+        <result property="operatorId" column="operator_id"/>
+        <result property="reason" column="reason"/>
+        <result property="oldExpireTime" column="old_expire_time"/>
+        <result property="newExpireTime" column="new_expire_time"/>
+    </resultMap>
+    <sql id="columns">select id, user_id, source_type, source_biz_no, start_time, end_time,
+        granted_days, gift_points, point_record_id, status, revoked_time, operator_id, reason,
+        old_expire_time, new_expire_time from wl_vip_entitlement</sql>
+    <select id="selectBySource" resultMap="VipEntitlementResult">
+        <include refid="columns"/> where source_type = #{sourceType} and source_biz_no = #{sourceBizNo}
+          and del_flag = '0'
+    </select>
+    <select id="selectList" parameterType="com.ruoyi.library.domain.WlVipEntitlement" resultMap="VipEntitlementResult">
+        <include refid="columns"/>
+        <where>
+            del_flag = '0'
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="sourceType != null and sourceType != ''">and source_type = #{sourceType}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+    <insert id="insertEntitlement" parameterType="com.ruoyi.library.domain.WlVipEntitlement" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_vip_entitlement(user_id, source_type, source_biz_no, start_time, end_time,
+            granted_days, gift_points, point_record_id, status, operator_id, reason, old_expire_time,
+            new_expire_time, create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{sourceType}, #{sourceBizNo}, #{startTime}, #{endTime}, #{grantedDays},
+            #{giftPoints}, #{pointRecordId}, #{status}, #{operatorId}, #{reason}, #{oldExpireTime},
+            #{newExpireTime}, #{createBy}, now(), '', now(), '0')
+    </insert>
+    <update id="revokeBySource">
+        update wl_vip_entitlement set status = 'REVOKED', revoked_time = now(), update_by = #{operator},
+            update_time = now() where source_type = #{sourceType} and source_biz_no = #{sourceBizNo}
+            and status = 'ACTIVE' and del_flag = '0'
+    </update>
+</mapper>

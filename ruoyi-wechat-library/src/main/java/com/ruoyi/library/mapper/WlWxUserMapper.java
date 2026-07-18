@@ -1,6 +1,7 @@
 package com.ruoyi.library.mapper;
 
 import java.util.List;
+import java.util.Date;
 import com.ruoyi.library.domain.WlWxUser;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,4 +19,6 @@ public interface WlWxUserMapper
     int updateStatus(@Param("id") Long id, @Param("status") String status, @Param("operator") String operator);
     int updatePointBalance(@Param("id") Long id, @Param("beforeBalance") Long beforeBalance,
             @Param("afterBalance") Long afterBalance, @Param("operator") String operator);
+    int updateVipExpireTime(@Param("id") Long id, @Param("vipExpireTime") Date vipExpireTime,
+            @Param("operator") String operator);
 }
