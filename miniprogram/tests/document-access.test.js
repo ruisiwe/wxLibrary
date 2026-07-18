@@ -32,3 +32,9 @@ test('原文件分享调用不包含固定接收人字段', () => {
   assert.match(source, /wx\.shareFileMessage\(documents\.buildShareOptions\(filePath\)\)/);
   assert.doesNotMatch(source, /toUser|openId|openid/);
 });
+
+test('已登录用户重新进入详情时恢复兑换和收藏状态', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '../pages/document-detail/document-detail.js'), 'utf8');
+  assert.match(source, /Promise\.all\(\[documents\.unlocked\(\), documents\.favorites\(\)\]\)/);
+  assert.match(source, /unlocked: matches\(unlocked\), favorite: matches\(favorites\)/);
+});

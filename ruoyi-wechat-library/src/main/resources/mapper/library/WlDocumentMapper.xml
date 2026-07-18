@@ -105,10 +105,8 @@
     </insert>
     <update id="updateDocument" parameterType="com.ruoyi.library.domain.WlDocument">
         update wl_document set category_id = #{categoryId}, title = #{title}, summary = #{summary},
-            tags = #{tags}, cover_url = #{coverUrl}, uploader_name = #{uploaderName}, file_format = #{fileFormat},
-            file_size = #{fileSize}, page_count = #{pageCount}, point_price = #{pointPrice},
-            preview_pages = #{previewPages}, original_object_key = #{originalObjectKey},
-            full_object_key = #{fullObjectKey}, preview_object_key = #{previewObjectKey},
+            tags = #{tags}, cover_url = #{coverUrl}, point_price = #{pointPrice},
+            preview_pages = #{previewPages},
             sort_order = #{sortOrder}, update_by = #{updateBy},
             update_time = now(), remark = #{remark}
         where id = #{id} and publish_status = 'DRAFT' and del_flag = '0'

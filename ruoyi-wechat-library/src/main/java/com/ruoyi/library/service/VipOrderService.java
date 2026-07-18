@@ -37,7 +37,6 @@ public class VipOrderService
             WechatPayProperties properties)
     { this(orderMapper,entitlementService,properties,null,null,null); }
 
-    @Transactional
     public Map<String,String> createPrepay(Long userId, Long planId)
     {
         WlWxUser user=userMapper.selectById(userId);

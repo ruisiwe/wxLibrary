@@ -8,7 +8,7 @@ Page({
       if (progress) this.setData({ progressSeconds: progress.progressSeconds || 0 });
     }).catch(() => {}).then(() => this.authorize());
   },
-  onUnload() { this.persist(false); },
+  onUnload() { if (!this.finishedSaved) this.persist(false); },
   authorize() {
     this.setData({ loading: true, error: '', playUrl: '' });
     courses.play(this.data.videoId).then(result => this.setData({ playUrl: result.playUrl, loading: false }))
@@ -21,7 +21,7 @@ Page({
       this.lastSaved = progressSeconds; this.persist(false);
     }
   },
-  ended() { this.persist(true); },
+  ended() { this.finishedSaved = true; this.persist(true); },
   persist(finished) {
     if (!this.data.videoId) return;
     courses.saveProgress(this.data.videoId, this.data.progressSeconds, finished).catch(() => {});

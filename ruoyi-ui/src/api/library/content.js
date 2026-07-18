@@ -15,5 +15,11 @@ export const deleteDocument = id => request({ url: `/library/document/${id}`, me
 export const publishDocument = id => request({ url: `/library/document/${id}/publish`, method: 'put' })
 export const unpublishDocument = id => request({ url: `/library/document/${id}/unpublish`, method: 'put' })
 export const listConversions = query => request({ url: '/library/document-file/list', method: 'get', params: query })
+export const uploadDocumentFile = (documentId, data) => request({
+  url: `/library/document-file/document/${documentId}/upload`,
+  method: 'post',
+  data,
+  headers: { 'Content-Type': 'multipart/form-data' }
+})
 export const executeConversion = id => request({ url: `/library/document-file/${id}/execute`, method: 'post' })
 export const retryConversion = id => request({ url: `/library/document-file/${id}/retry`, method: 'post' })

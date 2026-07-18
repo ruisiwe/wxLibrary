@@ -62,7 +62,8 @@ class DocumentAccessServiceTest
         when(userMapper.selectById(11L)).thenReturn(locked);
         when(userMapper.selectByIdForUpdate(11L)).thenReturn(locked);
         WlPointRecord pointRecord = pointRecord(31L, 50L, 30L);
-        when(pointService.deductAfterLock(eq(locked), eq(20L), eq("DOCUMENT_UNLOCK"), eq("request-1"), any()))
+        when(pointService.deductAfterLock(eq(locked), eq(20L), eq("DOCUMENT_UNLOCK"),
+                eq("DOCUMENT_UNLOCK:22:request-1"), any()))
                 .thenReturn(pointRecord);
 
         DocumentUnlockResult first = service.unlock(11L, 22L, "request-1");
@@ -72,7 +73,7 @@ class DocumentAccessServiceTest
         assertEquals(30L, first.getPointBalance());
         assertEquals(20L, second.getSpentPoints());
         verify(pointService, times(1)).deductAfterLock(eq(locked), eq(20L),
-                eq("DOCUMENT_UNLOCK"), eq("request-1"), any());
+                eq("DOCUMENT_UNLOCK"), eq("DOCUMENT_UNLOCK:22:request-1"), any());
         verify(unlockMapper, times(1)).insertUnlock(any(WlDocumentUnlock.class));
     }
 
@@ -87,6 +88,31 @@ class DocumentAccessServiceTest
         assertEquals("当前账号已停用，请联系管理员", assertThrows(ServiceException.class,
                 () -> service.unlock(11L, 22L, "request-2")).getMessage());
         verify(pointService, never()).deductAfterLock(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void requestIdIsScopedToDocumentWhenChargingPoints()
+    {
+        WlWxUser locked = user(11L, 50L);
+        when(userMapper.selectById(11L)).thenReturn(locked);
+        when(userMapper.selectByIdForUpdate(11L)).thenReturn(locked);
+        when(documentMapper.selectDocumentById(22L)).thenReturn(document());
+        WlDocument second = document();
+        second.setId(23L);
+        second.setTitle("第二份文档");
+        when(documentMapper.selectDocumentById(23L)).thenReturn(second);
+        when(unlockMapper.selectUnlock(any(), any())).thenReturn(null);
+        when(unlockMapper.insertUnlock(any())).thenReturn(1);
+        when(pointService.deductAfterLock(any(), any(), any(), any(), any()))
+                .thenReturn(pointRecord(31L, 50L, 30L));
+
+        service.unlock(11L, 22L, "reused-request");
+        service.unlock(11L, 23L, "reused-request");
+
+        verify(pointService).deductAfterLock(eq(locked), eq(20L), eq("DOCUMENT_UNLOCK"),
+                eq("DOCUMENT_UNLOCK:22:reused-request"), any());
+        verify(pointService).deductAfterLock(eq(locked), eq(20L), eq("DOCUMENT_UNLOCK"),
+                eq("DOCUMENT_UNLOCK:23:reused-request"), any());
     }
 
     @Test

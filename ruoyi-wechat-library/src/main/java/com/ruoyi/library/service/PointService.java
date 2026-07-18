@@ -26,6 +26,7 @@ public class PointService
     private static final Set<String> RULE_EVENTS = new HashSet<>(
             Arrays.asList("SIGN_IN", "AD_REWARD", "SHARE", "INVITE"));
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
+    private static final int MAX_DAILY_AD_REWARDS = 5;
 
     private final WlPointMapper pointMapper;
     private final WlPointRecordMapper recordMapper;
@@ -131,7 +132,8 @@ public class PointService
         if (existing != null) return existing;
         WlPointRule rule = requireRule("AD_REWARD");
         LocalDate today = today();
-        int limit = rule.getDailyLimit() == null ? 0 : rule.getDailyLimit();
+        int configuredLimit = rule.getDailyLimit() == null ? 0 : rule.getDailyLimit();
+        int limit = Math.min(configuredLimit, MAX_DAILY_AD_REWARDS);
         if (limit <= 0 || pointMapper.countAdRewards(userId, Date.valueOf(today)) >= limit)
             throw new ServiceException("今日广告奖励次数已达上限");
         WlPointRecord record = creditAfterLock(locked, rule, bizNo, "完整观看激励视频广告");
@@ -201,6 +203,9 @@ public class PointService
             throw new ServiceException("奖励积分不能小于0");
         if (rule.getDailyLimit() != null && rule.getDailyLimit() < 1)
             throw new ServiceException("每日上限必须大于0");
+        if ("AD_REWARD".equals(existing.getEventType()) && rule.getDailyLimit() != null
+                && rule.getDailyLimit() > MAX_DAILY_AD_REWARDS)
+            throw new ServiceException("激励视频每日上限不能超过5次");
         if (!"0".equals(rule.getStatus()) && !"1".equals(rule.getStatus()))
             throw new ServiceException("积分规则状态不正确");
         if (rule.getRemark() != null && rule.getRemark().length() > 500)

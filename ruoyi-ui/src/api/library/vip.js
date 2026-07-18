@@ -2,6 +2,7 @@ import request from '@/utils/request'
 export const listVipPlans = query => request({ url: '/library/vip-plan/list', method: 'get', params: query })
 export const addVipPlan = data => request({ url: '/library/vip-plan', method: 'post', data })
 export const updateVipPlan = data => request({ url: '/library/vip-plan', method: 'put', data })
+export const deleteVipPlan = id => request({ url: `/library/vip-plan/${id}`, method: 'delete' })
 export const listVipOrders = query => request({ url: '/library/vip-order/list', method: 'get', params: query })
 export const listEntitlements = query => request({ url: '/library/vip-operation/list', method: 'get', params: query })
 export const openVip = data => request({ url: '/library/vip-operation/open', method: 'post', data })

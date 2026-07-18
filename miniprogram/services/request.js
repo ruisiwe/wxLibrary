@@ -22,16 +22,24 @@ function apiBaseUrl() {
 function request(options) {
   const token = options.protected === false ? '' : session.getToken();
   return new Promise((resolve, reject) => {
+    const baseUrl = apiBaseUrl();
+    if (!baseUrl) {
+      reject(new Error('小程序服务地址尚未配置'));
+      return;
+    }
     wx.request({
-      url: `${apiBaseUrl()}${options.url}`,
+      url: `${baseUrl}${options.url}`,
       method: options.method || 'GET',
       data: options.data,
       header: buildHeaders({ wxToken: token }),
       success(response) {
         try {
+          if (response.statusCode === 401 || response.statusCode === 403) {
+            session.clear();
+          }
           resolve(unwrapResponse(response.data));
         } catch (error) {
-          if (error.code === 401) session.clear();
+          if ([401, 40101, 40301].includes(error.code)) session.clear();
           reject(error);
         }
       },

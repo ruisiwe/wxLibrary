@@ -12,3 +12,7 @@ project.private.config.json
 **/application-druid.yml
 *.pem
 *.p12
+*.pfx
+*.key
+*.jks
+*.keystore

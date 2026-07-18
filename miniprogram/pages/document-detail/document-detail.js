@@ -8,7 +8,14 @@ Page({
   onLoad(options) { this.setData({ id: options.id }); this.load(); },
   load() {
     this.setData({ loading: true, error: '' });
-    documents.detail(this.data.id).then(document => this.setData({ document, loading: false }))
+    documents.detail(this.data.id).then(document => {
+      this.setData({ document, loading: false });
+      if (!session.getToken()) return;
+      return Promise.all([documents.unlocked(), documents.favorites()]).then(([unlocked, favorites]) => {
+        const matches = items => (items || []).some(item => String(item.id || item.documentId) === String(this.data.id));
+        this.setData({ unlocked: matches(unlocked), favorite: matches(favorites) });
+      }).catch(() => {});
+    })
       .catch(error => this.setData({ loading: false, error: error.message }));
   },
   requireLogin(action) {

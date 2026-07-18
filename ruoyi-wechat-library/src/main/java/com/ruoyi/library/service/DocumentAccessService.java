@@ -56,7 +56,7 @@ public class DocumentAccessService
         if (existing != null) return existingResult(existing, lockedUser);
         long price = document.getPointPrice() == null ? 0L : document.getPointPrice();
         WlPointRecord record = pointService.deductAfterLock(lockedUser, price,
-                "DOCUMENT_UNLOCK", requestId.trim(),
+                "DOCUMENT_UNLOCK", pointBizNo(documentId, requestId),
                 "兑换文档：" + document.getTitle() + "（价格快照：" + price + "积分）");
         WlDocumentUnlock unlock = new WlDocumentUnlock();
         unlock.setUserId(userId);
@@ -206,7 +206,12 @@ public class DocumentAccessService
     private void validateRequestId(String requestId)
     {
         if (requestId == null || requestId.trim().isEmpty()) throw new ServiceException("请求编号不能为空");
-        if (requestId.trim().length() > 128) throw new ServiceException("请求编号不能超过128个字符");
+        if (requestId.trim().length() > 80) throw new ServiceException("请求编号不能超过80个字符");
+    }
+
+    private String pointBizNo(Long documentId, String requestId)
+    {
+        return "DOCUMENT_UNLOCK:" + documentId + ":" + requestId.trim();
     }
 
     private void requireObjectKey(String value, String message)

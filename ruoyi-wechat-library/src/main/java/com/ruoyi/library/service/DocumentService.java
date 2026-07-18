@@ -7,11 +7,7 @@ import com.ruoyi.library.domain.WlDocument;
 import com.ruoyi.library.mapper.WlBannerMapper;
 import com.ruoyi.library.mapper.WlCategoryMapper;
 import com.ruoyi.library.mapper.WlDocumentMapper;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DocumentService
 {
-    private static final Set<String> SUPPORTED_FORMATS = new HashSet<>(
-            Arrays.asList("PDF", "DOC", "DOCX", "PPT", "PPTX", "TXT", "XLS"));
-
     private final WlBannerMapper bannerMapper;
     private final WlCategoryMapper categoryMapper;
     private final WlDocumentMapper documentMapper;
@@ -125,7 +118,8 @@ public class DocumentService
 
     public int addDocument(WlDocument document, String operator)
     {
-        validateDocument(document);
+        prepareNewDocument(document, operator);
+        validateDocumentMetadata(document);
         normalizeDocument(document);
         document.setPublishStatus("DRAFT");
         document.setConversionStatus("PENDING");
@@ -140,7 +134,8 @@ public class DocumentService
         WlDocument existing = getDocument(document.getId());
         if ("PUBLISHED".equals(existing.getPublishStatus()))
             throw new ServiceException("请先下架文档后再修改");
-        validateDocument(document);
+        preserveServerManagedFileFields(document, existing);
+        validateDocumentMetadata(document);
         normalizeDocument(document);
         document.setUpdateBy(operator);
         return documentMapper.updateDocument(document);
@@ -206,7 +201,7 @@ public class DocumentService
             throw new ServiceException("文档分类名称已存在");
     }
 
-    private void validateDocument(WlDocument document)
+    private void validateDocumentMetadata(WlDocument document)
     {
         if (document == null) throw new ServiceException("文档参数不能为空");
         requireId(document.getCategoryId(), "文档分类不能为空");
@@ -214,12 +209,6 @@ public class DocumentService
             throw new ServiceException("文档分类不存在");
         requireText(document.getTitle(), "文档标题不能为空");
         requireMaxLength(document.getTitle().trim(), 255, "文档标题不能超过255个字符");
-        requireText(document.getUploaderName(), "上传人不能为空");
-        requireMaxLength(document.getUploaderName().trim(), 128, "上传人不能超过128个字符");
-        requireText(document.getFileFormat(), "文档格式不能为空");
-        String format = document.getFileFormat().trim().toUpperCase(Locale.ROOT);
-        if (!SUPPORTED_FORMATS.contains(format)) throw new ServiceException("文档格式不支持");
-        requireText(document.getOriginalObjectKey(), "原文件对象键不能为空");
         if (document.getFileSize() == null || document.getFileSize() < 0)
             throw new ServiceException("文档大小不能小于0");
         if (document.getPageCount() == null || document.getPageCount() < 0)
@@ -241,10 +230,34 @@ public class DocumentService
         document.setTitle(document.getTitle().trim());
         document.setSummary(defaultText(document.getSummary(), ""));
         document.setTags(defaultText(document.getTags(), ""));
-        document.setUploaderName(document.getUploaderName().trim());
-        document.setFileFormat(document.getFileFormat().trim().toUpperCase(Locale.ROOT));
-        document.setOriginalObjectKey(document.getOriginalObjectKey().trim());
         document.setSortOrder(defaultZero(document.getSortOrder()));
+    }
+
+    /** 新建文档只接收公开元数据，私有文件字段由后续上传流程维护。 */
+    private void prepareNewDocument(WlDocument document, String operator)
+    {
+        if (document == null) throw new ServiceException("文档参数不能为空");
+        document.setUploaderName(operator);
+        document.setFileFormat(null);
+        document.setFileSize(0L);
+        document.setPageCount(0);
+        document.setOriginalObjectKey(null);
+        document.setFullObjectKey(null);
+        document.setPreviewObjectKey(null);
+    }
+
+    /** 普通元数据修改禁止覆盖上传和转换流程管理的私有对象键。 */
+    private void preserveServerManagedFileFields(WlDocument document, WlDocument existing)
+    {
+        document.setUploaderName(existing.getUploaderName());
+        document.setFileFormat(existing.getFileFormat());
+        document.setFileSize(existing.getFileSize());
+        document.setPageCount(existing.getPageCount());
+        document.setOriginalObjectKey(existing.getOriginalObjectKey());
+        document.setFullObjectKey(existing.getFullObjectKey());
+        document.setPreviewObjectKey(existing.getPreviewObjectKey());
+        document.setConversionStatus(existing.getConversionStatus());
+        document.setPublishStatus(existing.getPublishStatus());
     }
 
     private String normalizeStatus(String status)

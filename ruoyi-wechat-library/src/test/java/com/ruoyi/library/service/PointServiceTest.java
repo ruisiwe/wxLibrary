@@ -97,6 +97,31 @@ class PointServiceTest
     }
 
     @Test
+    void rewardedAdHardLimitCannotBeRaisedAboveFive()
+    {
+        WlPointRule rule = rule("AD_REWARD", 1L, 99);
+        when(pointMapper.selectEnabledRule("AD_REWARD")).thenReturn(rule);
+        when(userMapper.selectByIdForUpdate(11L)).thenReturn(user(11L, 8L));
+        when(pointMapper.countAdRewards(11L, java.sql.Date.valueOf("2026-07-18"))).thenReturn(5);
+
+        assertEquals("今日广告奖励次数已达上限", assertThrows(ServiceException.class,
+                () -> service.rewardAd(11L, "ad-complete-6")).getMessage());
+        verify(pointMapper, never()).addPoints(any(), any());
+    }
+
+    @Test
+    void administratorCannotConfigureAdLimitAboveFive()
+    {
+        WlPointRule existing = rule("AD_REWARD", 1L, 5);
+        WlPointRule update = rule("AD_REWARD", 1L, 6);
+        when(pointMapper.selectRuleById(existing.getId())).thenReturn(existing);
+
+        assertEquals("激励视频每日上限不能超过5次", assertThrows(ServiceException.class,
+                () -> service.updateRule(update, "admin")).getMessage());
+        verify(pointMapper, never()).updateRule(any());
+    }
+
+    @Test
     void disabledRuleDoesNotGrantPoints()
     {
         when(pointMapper.selectEnabledRule("SIGN_IN")).thenReturn(null);

@@ -58,18 +58,21 @@ class DocumentServiceTest
     }
 
     @Test
-    void invalidFormatAndPreviewBoundaryAreRejected()
+    void newDocumentDoesNotTrustClientStorageFieldsAndEnforcesPreviewBoundary()
     {
         WlDocument document = validDocument();
         document.setFileFormat("XLSX");
-        assertEquals("文档格式不支持", assertThrows(ServiceException.class,
-                () -> service.addDocument(document, "admin")).getMessage());
-
-        document.setFileFormat("PDF");
-        document.setPageCount(4);
-        document.setPreviewPages(5);
+        document.setOriginalObjectKey("other-tenant/secret.pdf");
+        document.setPreviewPages(1);
         assertEquals("试读页数不能大于文档总页数", assertThrows(ServiceException.class,
                 () -> service.addDocument(document, "admin")).getMessage());
+
+        document.setPreviewPages(0);
+        when(documentMapper.insertDocument(any(WlDocument.class))).thenReturn(1);
+        service.addDocument(document, "admin");
+        assertEquals(null, document.getFileFormat());
+        assertEquals(null, document.getOriginalObjectKey());
+        assertEquals("admin", document.getUploaderName());
     }
 
     @Test
@@ -118,7 +121,7 @@ class DocumentServiceTest
     }
 
     @Test
-    void newDocumentNormalizesNonNullColumnsAndForcesDraftPendingState()
+    void newDocumentNormalizesMetadataAndForcesDraftPendingState()
     {
         WlDocument document = validDocument();
         document.setTitle(" 质量管理手册 ");
@@ -127,6 +130,7 @@ class DocumentServiceTest
         document.setUploaderName(" 资料组 ");
         document.setFileFormat(" pdf ");
         document.setSortOrder(null);
+        document.setPreviewPages(0);
         when(documentMapper.insertDocument(any(WlDocument.class))).thenReturn(1);
 
         assertEquals(1, service.addDocument(document, "admin"));
@@ -137,8 +141,8 @@ class DocumentServiceTest
         assertEquals("质量管理手册", saved.getTitle());
         assertEquals("", saved.getSummary());
         assertEquals("", saved.getTags());
-        assertEquals("资料组", saved.getUploaderName());
-        assertEquals("PDF", saved.getFileFormat());
+        assertEquals("admin", saved.getUploaderName());
+        assertEquals(null, saved.getFileFormat());
         assertEquals("DRAFT", saved.getPublishStatus());
         assertEquals("PENDING", saved.getConversionStatus());
         assertEquals(0, saved.getSortOrder());
@@ -154,6 +158,28 @@ class DocumentServiceTest
 
         assertEquals("文档状态已变化，请刷新后重试", assertThrows(ServiceException.class,
                 () -> service.removeDocuments(new Long[] {7L}, "admin")).getMessage());
+    }
+
+    @Test
+    void metadataUpdatePreservesServerManagedStorageFields()
+    {
+        WlDocument existing = validDocument();
+        existing.setId(7L);
+        existing.setFullObjectKey("documents/full.pdf");
+        existing.setPreviewObjectKey("documents/preview.pdf");
+        when(documentMapper.selectDocumentById(7L)).thenReturn(existing);
+        when(documentMapper.updateDocument(any(WlDocument.class))).thenReturn(1);
+        WlDocument request = validDocument();
+        request.setId(7L);
+        request.setOriginalObjectKey("forged/original.pdf");
+        request.setFullObjectKey("forged/full.pdf");
+        request.setPreviewObjectKey("forged/preview.pdf");
+
+        service.updateDocument(request, "admin");
+
+        assertEquals("documents/original.pdf", request.getOriginalObjectKey());
+        assertEquals("documents/full.pdf", request.getFullObjectKey());
+        assertEquals("documents/preview.pdf", request.getPreviewObjectKey());
     }
 
     private WlDocument validDocument()

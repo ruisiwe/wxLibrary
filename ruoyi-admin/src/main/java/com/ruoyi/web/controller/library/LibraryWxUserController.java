@@ -6,6 +6,8 @@ import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.library.domain.WlWxUser;
 import com.ruoyi.library.dto.LibraryWxUserView;
 import com.ruoyi.library.dto.PointAdjustmentRequest;
@@ -49,6 +51,7 @@ public class LibraryWxUserController extends BaseController
 
     /** 启用或停用微信用户。 */
     @PreAuthorize("@ss.hasPermi('library:wxUser:edit')")
+    @Log(title = "微信用户状态", businessType = BusinessType.UPDATE)
     @PutMapping("/{id}/status")
     public AjaxResult status(@PathVariable Long id, @RequestParam String status)
     {
@@ -57,6 +60,7 @@ public class LibraryWxUserController extends BaseController
 
     /** 人工调整积分，业务编号用于幂等控制。 */
     @PreAuthorize("@ss.hasPermi('library:wxUser:points')")
+    @Log(title = "微信用户积分调整", businessType = BusinessType.UPDATE)
     @PostMapping("/{id}/points")
     public AjaxResult points(@PathVariable Long id, @RequestBody PointAdjustmentRequest request)
     {
