@@ -100,9 +100,12 @@ CREATE TABLE `wl_document` (
   `category_id` bigint NOT NULL,
   `title` varchar(255) NOT NULL,
   `summary` varchar(1000) NOT NULL DEFAULT '',
+  `tags` varchar(500) NOT NULL DEFAULT '',
   `cover_url` varchar(255) DEFAULT NULL,
+  `uploader_name` varchar(128) NOT NULL,
   `file_format` varchar(16) NOT NULL COMMENT 'PDF、DOC、DOCX、PPT、PPTX、TXT或XLS',
   `file_size` bigint NOT NULL DEFAULT 0,
+  `page_count` int NOT NULL DEFAULT 0,
   `point_price` bigint NOT NULL DEFAULT 0,
   `preview_pages` int NOT NULL DEFAULT 0,
   `original_object_key` varchar(512) NOT NULL,
@@ -111,6 +114,7 @@ CREATE TABLE `wl_document` (
   `publish_status` varchar(16) NOT NULL DEFAULT 'DRAFT',
   `publish_time` datetime DEFAULT NULL,
   `view_count` bigint NOT NULL DEFAULT 0,
+  `sort_order` int NOT NULL DEFAULT 0,
   `create_by` varchar(64) NOT NULL DEFAULT '',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_by` varchar(64) NOT NULL DEFAULT '',
@@ -122,7 +126,11 @@ CREATE TABLE `wl_document` (
   KEY `idx_document_publish_time` (`publish_status`, `publish_time`),
   KEY `idx_document_conversion_status` (`conversion_status`),
   CONSTRAINT `chk_document_point_price` CHECK (`point_price` >= 0),
+  CONSTRAINT `chk_document_file_size` CHECK (`file_size` >= 0),
+  CONSTRAINT `chk_document_page_count` CHECK (`page_count` >= 0),
   CONSTRAINT `chk_document_preview_pages` CHECK (`preview_pages` >= 0),
+  CONSTRAINT `chk_document_preview_boundary` CHECK (`preview_pages` <= `page_count`),
+  CONSTRAINT `chk_document_view_count` CHECK (`view_count` >= 0),
   CONSTRAINT `chk_document_file_format` CHECK (`file_format` IN ('PDF','DOC','DOCX','PPT','PPTX','TXT','XLS'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档';
 

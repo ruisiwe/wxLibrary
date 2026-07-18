@@ -1,0 +1,18 @@
+package com.ruoyi.library.mapper;
+
+import com.ruoyi.library.domain.WlBanner;
+import com.ruoyi.library.dto.BannerDto;
+import java.util.Date;
+import java.util.List;
+import org.apache.ibatis.annotations.Param;
+
+/** 宣传图片数据访问。 */
+public interface WlBannerMapper
+{
+    List<BannerDto> selectPublicBanners(@Param("currentTime") Date currentTime);
+    WlBanner selectBannerById(@Param("id") Long id);
+    List<WlBanner> selectBannerList(WlBanner query);
+    int insertBanner(WlBanner banner);
+    int updateBanner(WlBanner banner);
+    int deleteBanners(@Param("ids") Long[] ids, @Param("operator") String operator);
+}

@@ -79,6 +79,18 @@ class WechatLibrarySchemaTest
     }
 
     @Test
+    void documentMetadataSupportsApprovedPublicContract()
+    {
+        assertTrue(sql.contains("`tags` varchar(500) not null default ''"));
+        assertTrue(sql.contains("`uploader_name` varchar(128) not null"));
+        assertTrue(sql.contains("`page_count` int not null default 0"));
+        assertTrue(sql.contains("`sort_order` int not null default 0"));
+        assertTrue(sql.contains("constraint `chk_document_page_count` check (`page_count` >= 0)"));
+        assertTrue(sql.contains("constraint `chk_document_preview_boundary` check (`preview_pages` <= `page_count`)"));
+        assertTrue(sql.contains("constraint `chk_document_file_size` check (`file_size` >= 0)"));
+    }
+
+    @Test
     void keepsEveryPointAmountNonNegative()
     {
         assertTrue(sql.contains("constraint `chk_document_unlock_spent_points` check (`spent_points` >= 0)"));

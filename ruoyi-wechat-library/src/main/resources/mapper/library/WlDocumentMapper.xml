@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlDocumentMapper">
+    <resultMap id="WlDocumentResult" type="com.ruoyi.library.domain.WlDocument">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="title" column="title"/>
+        <result property="summary" column="summary"/>
+        <result property="tags" column="tags"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="uploaderName" column="uploader_name"/>
+        <result property="fileFormat" column="file_format"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="pageCount" column="page_count"/>
+        <result property="pointPrice" column="point_price"/>
+        <result property="previewPages" column="preview_pages"/>
+        <result property="originalObjectKey" column="original_object_key"/>
+        <result property="previewObjectKey" column="preview_object_key"/>
+        <result property="conversionStatus" column="conversion_status"/>
+        <result property="publishStatus" column="publish_status"/>
+        <result property="publishTime" column="publish_time"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <resultMap id="DocumentSummaryResult" type="com.ruoyi.library.dto.DocumentSummaryDto">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="title" column="title"/>
+        <result property="summary" column="summary"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="uploaderName" column="uploader_name"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="fileFormat" column="file_format"/>
+        <result property="pageCount" column="page_count"/>
+        <result property="pointPrice" column="point_price"/>
+    </resultMap>
+    <sql id="documentColumns">select id, category_id, title, summary, tags, cover_url, uploader_name,
+        file_format, file_size, page_count, point_price, preview_pages, original_object_key,
+        preview_object_key, conversion_status, publish_status, publish_time, view_count, sort_order,
+        create_by, create_time, update_by, update_time, remark from wl_document</sql>
+    <sql id="publicDocumentColumns">d.id, d.category_id, c.name as category_name, d.title, d.summary,
+        d.cover_url, d.uploader_name, d.view_count, d.file_format, d.page_count, d.point_price</sql>
+    <sql id="publicDocumentWhere">
+        d.del_flag = '0' and d.publish_status = 'PUBLISHED' and c.del_flag = '0' and c.status = '0'
+        <if test="categoryId != null">and d.category_id = #{categoryId}</if>
+        <if test="keyword != null and keyword != ''">
+            and (d.title like concat('%', #{keyword}, '%') escape '\\'
+                or d.summary like concat('%', #{keyword}, '%') escape '\\'
+                or d.tags like concat('%', #{keyword}, '%') escape '\\')
+        </if>
+    </sql>
+
+    <select id="selectPublishedDocuments" resultMap="DocumentSummaryResult">
+        select <include refid="publicDocumentColumns"/>
+        from wl_document d inner join wl_category c on c.id = d.category_id
+        where <include refid="publicDocumentWhere"/>
+        order by d.sort_order asc, d.id desc
+        limit #{offset}, #{limit}
+    </select>
+    <select id="countPublishedDocuments" resultType="long">
+        select count(1) from wl_document d inner join wl_category c on c.id = d.category_id
+        where <include refid="publicDocumentWhere"/>
+    </select>
+    <select id="selectPublishedDocumentById" resultMap="DocumentSummaryResult">
+        select <include refid="publicDocumentColumns"/>
+        from wl_document d inner join wl_category c on c.id = d.category_id
+        where d.id = #{id} and d.del_flag = '0' and d.publish_status = 'PUBLISHED'
+          and c.del_flag = '0' and c.status = '0'
+    </select>
+    <select id="selectDocumentById" resultMap="WlDocumentResult">
+        <include refid="documentColumns"/> where id = #{id} and del_flag = '0'
+    </select>
+    <select id="selectDocumentList" parameterType="com.ruoyi.library.domain.WlDocument" resultMap="WlDocumentResult">
+        <include refid="documentColumns"/>
+        <where>
+            del_flag = '0'
+            <if test="categoryId != null">and category_id = #{categoryId}</if>
+            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
+            <if test="fileFormat != null and fileFormat != ''">and file_format = #{fileFormat}</if>
+            <if test="conversionStatus != null and conversionStatus != ''">and conversion_status = #{conversionStatus}</if>
+            <if test="publishStatus != null and publishStatus != ''">and publish_status = #{publishStatus}</if>
+        </where>
+        order by sort_order asc, id desc
+    </select>
+    <select id="countDocumentsByCategoryIds" resultType="int">
+        select count(1) from wl_document where del_flag = '0' and category_id in
+        <foreach collection="categoryIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+    <insert id="insertDocument" parameterType="com.ruoyi.library.domain.WlDocument" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_document(category_id, title, summary, tags, cover_url, uploader_name, file_format,
+            file_size, page_count, point_price, preview_pages, original_object_key, preview_object_key,
+            conversion_status, publish_status, publish_time, view_count, sort_order, create_by, create_time,
+            update_by, update_time, del_flag, remark)
+        values(#{categoryId}, #{title}, #{summary}, #{tags}, #{coverUrl}, #{uploaderName}, #{fileFormat},
+            #{fileSize}, #{pageCount}, #{pointPrice}, #{previewPages}, #{originalObjectKey}, #{previewObjectKey},
+            #{conversionStatus}, #{publishStatus}, null, #{viewCount}, #{sortOrder}, #{createBy}, now(),
+            '', now(), '0', #{remark})
+    </insert>
+    <update id="updateDocument" parameterType="com.ruoyi.library.domain.WlDocument">
+        update wl_document set category_id = #{categoryId}, title = #{title}, summary = #{summary},
+            tags = #{tags}, cover_url = #{coverUrl}, uploader_name = #{uploaderName}, file_format = #{fileFormat},
+            file_size = #{fileSize}, page_count = #{pageCount}, point_price = #{pointPrice},
+            preview_pages = #{previewPages}, original_object_key = #{originalObjectKey},
+            preview_object_key = #{previewObjectKey}, sort_order = #{sortOrder}, update_by = #{updateBy},
+            update_time = now(), remark = #{remark}
+        where id = #{id} and publish_status = 'DRAFT' and del_flag = '0'
+    </update>
+    <update id="updatePublishStatus">
+        update wl_document set publish_status = #{publishStatus},
+            publish_time = case when #{publishStatus} = 'PUBLISHED' then now() else null end,
+            update_by = #{operator}, update_time = now()
+        where id = #{id} and del_flag = '0' and publish_status != #{publishStatus}
+    </update>
+    <update id="deleteDocuments">
+        update wl_document set del_flag = '2', update_by = #{operator}, update_time = now()
+        where publish_status != 'PUBLISHED' and del_flag = '0' and id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+</mapper>
