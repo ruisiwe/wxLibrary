@@ -1,3 +1,1 @@
-.page-shell {
-  border-top: 8rpx solid var(--color-navy);
-}
+.page{min-height:100vh;padding:30rpx 30rpx 160rpx}.login{margin-top:160rpx;text-align:center;color:#64748b}.login button{margin-top:32rpx;width:360rpx;background:#2457d6;color:#fff}.user{display:flex;align-items:center;padding:36rpx;background:#0b1f3a;color:#fff;border-radius:28rpx}.user image{width:120rpx;height:120rpx;border-radius:60rpx;margin-right:24rpx;background:#e2e8f0}.nickname{margin-bottom:14rpx;font-size:36rpx;font-weight:600}.menu{margin-top:28rpx;background:#fff;border-radius:24rpx;overflow:hidden}.menu>view{display:flex;justify-content:space-between;padding:30rpx;border-bottom:1rpx solid #eef2f7}.feedback{margin:24rpx;background:#f1f5f9;color:#334155}

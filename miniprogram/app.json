@@ -9,7 +9,13 @@
     "pages/document-reader/document-reader",
     "pages/my-documents/my-documents",
     "pages/favorites/favorites",
-    "pages/points/points"
+    "pages/points/points",
+    "pages/course-detail/course-detail",
+    "pages/course-player/course-player",
+    "pages/my-courses/my-courses",
+    "pages/redeem-course/redeem-course",
+    "pages/vip/vip",
+    "pages/agreement/agreement"
   ],
   "window": {
     "navigationBarBackgroundColor": "#0B1F3A",

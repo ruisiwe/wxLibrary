@@ -1,3 +1,1 @@
-.page-shell {
-  border-top: 8rpx solid var(--color-orange);
-}
+.page{min-height:100vh;padding:28rpx 28rpx 160rpx}.course{display:flex;margin-bottom:24rpx;padding:24rpx;background:#fff;border-radius:24rpx}.course image{width:220rpx;height:150rpx;border-radius:16rpx;background:#e2e8f0}.course__body{flex:1;margin-left:22rpx}.course__title{font-size:31rpx;font-weight:600}.course__summary{margin:12rpx 0;color:#64748b;font-size:24rpx}.course__label{display:inline-block;padding:8rpx 16rpx;border-radius:20rpx;font-size:22rpx}.vip{color:#92400e;background:#fef3c7}.code{color:#1e40af;background:#dbeafe}

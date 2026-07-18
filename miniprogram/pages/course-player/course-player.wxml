@@ -1,0 +1,1 @@
+<view class="page"><state-view loading="{{loading}}" error="{{error}}" bindretry="authorize"/><video wx:if="{{playUrl}}" class="player" src="{{playUrl}}" initial-time="{{progressSeconds}}" autoplay controls enable-progress-gesture bindtimeupdate="timeUpdate" bindended="ended"/><view class="tip">播放地址为短时授权，每次进入页面都会重新获取，不会写入本地缓存。</view></view>

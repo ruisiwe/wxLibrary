@@ -1,3 +1,1 @@
-<view class="page-shell">
-  <view class="page-shell__title">视频课程</view>
-</view>
+<view class="page"><view wx:for="{{items}}" wx:key="id" class="course" data-id="{{item.id}}" bindtap="open"><image src="{{item.coverUrl}}" mode="aspectFill"/><view class="course__body"><view class="course__title">{{item.title}}</view><view class="course__summary">{{item.summary}}</view><text class="course__label {{item.accessType==='VIP'?'vip':'code'}}">{{item.accessLabel}}</text></view></view><state-view loading="{{loading}}" error="{{error}}" empty="{{!loading && !error && !items.length}}" bindretry="load"/></view>

@@ -11,6 +11,7 @@ import com.ruoyi.library.payment.PaymentTransaction;
 import com.ruoyi.library.payment.WechatPayGateway;
 import java.util.Date;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +50,9 @@ public class VipOrderService
         order.setAmountCent(plan.getPriceCent());order.setCurrency("CNY");order.setValidDaysSnapshot(plan.getValidDays());
         order.setGiftPointsSnapshot(plan.getGiftPoints());order.setOrderStatus("CREATED");order.setCreateBy(String.valueOf(userId));
         if(orderMapper.insertOrder(order)!=1) throw new ServiceException("会员订单创建失败，请重试");
-        Map<String,String> prepay=gateway.createJsapiPrepay(order,user.getOpenid());
+        Map<String,String> prepay=new LinkedHashMap<>(gateway.createJsapiPrepay(order,user.getOpenid()));
         if(orderMapper.markPrepayReady(order.getId())!=1) throw new ServiceException("会员订单预支付状态更新失败，请重试");
+        prepay.put("merchantOrderNo", order.getMerchantOrderNo());
         order.setOrderStatus("PREPAY_READY"); return prepay;
     }
 
@@ -78,6 +80,15 @@ public class VipOrderService
 
     public List<WlVipOrder> list(WlVipOrder query){return orderMapper.selectList(query==null?new WlVipOrder():query);}
     public WlVipOrder get(Long id){WlVipOrder o=orderMapper.selectById(id);if(o==null)throw new ServiceException("会员订单不存在");return o;}
+    public WlVipOrder getForUser(Long userId, String merchantOrderNo)
+    {
+        if (userId == null || merchantOrderNo == null || merchantOrderNo.trim().isEmpty())
+            throw new ServiceException("会员订单不存在");
+        WlVipOrder order = orderMapper.selectByMerchantOrderNo(merchantOrderNo.trim());
+        if (order == null || !userId.equals(order.getUserId()))
+            throw new ServiceException("会员订单不存在");
+        return order;
+    }
 
     private void validateTransaction(PaymentTransaction t)
     { if(t==null||t.getOutTradeNo()==null||t.getTransactionId()==null||t.getAmountCent()==null||t.getSuccessTime()==null)

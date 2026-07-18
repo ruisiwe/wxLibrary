@@ -9,6 +9,7 @@ import com.ruoyi.library.storage.AvatarStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,6 +41,19 @@ class WxProfileServiceTest
         WxProfileResponse response = service.get(3L);
         assertEquals("昵称", response.getNickname());
         assertThrows(NoSuchMethodException.class, () -> WxProfileResponse.class.getMethod("getOpenid"));
+    }
+
+    @Test
+    void profileIncludesCurrentVipState()
+    {
+        WlWxUser user = user();
+        user.setVipExpireTime(new Date(4102444800000L));
+        when(mapper.selectById(3L)).thenReturn(user);
+
+        WxProfileResponse response = service.get(3L);
+
+        assertEquals(user.getVipExpireTime(), response.getVipExpireTime());
+        assertEquals(true, response.isVipActive());
     }
 
     @Test

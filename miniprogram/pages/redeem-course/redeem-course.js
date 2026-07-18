@@ -1,0 +1,2 @@
+const courses = require('../../services/course');
+Page({ data:{code:''},input(event){this.setData({code:event.detail.value.toUpperCase().replace(/\s/g,'')})},submit(){if(!this.data.code)return wx.showToast({title:'请输入课程码',icon:'none'});courses.redeem(this.data.code).then(result=>{wx.showModal({title:'兑换成功',content:'该课程已获得永久访问权限。',showCancel:false,success:()=>wx.redirectTo({url:`/pages/course-detail/course-detail?id=${result.courseId}`})})}).catch(error=>wx.showToast({title:error.message,icon:'none'}))} });
