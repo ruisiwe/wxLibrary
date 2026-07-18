@@ -20,6 +20,7 @@ public class WlDocument extends BaseEntity
     private Long pointPrice;
     private Integer previewPages;
     private String originalObjectKey;
+    private String fullObjectKey;
     private String previewObjectKey;
     private String conversionStatus;
     private String publishStatus;
@@ -53,6 +54,8 @@ public class WlDocument extends BaseEntity
     public void setPreviewPages(Integer previewPages) { this.previewPages = previewPages; }
     public String getOriginalObjectKey() { return originalObjectKey; }
     public void setOriginalObjectKey(String originalObjectKey) { this.originalObjectKey = originalObjectKey; }
+    public String getFullObjectKey() { return fullObjectKey; }
+    public void setFullObjectKey(String fullObjectKey) { this.fullObjectKey = fullObjectKey; }
     public String getPreviewObjectKey() { return previewObjectKey; }
     public void setPreviewObjectKey(String previewObjectKey) { this.previewObjectKey = previewObjectKey; }
     public String getConversionStatus() { return conversionStatus; }

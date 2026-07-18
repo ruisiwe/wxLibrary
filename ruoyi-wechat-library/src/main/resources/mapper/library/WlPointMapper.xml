@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlPointMapper">
+    <resultMap id="PointRuleResult" type="com.ruoyi.library.domain.WlPointRule">
+        <id property="id" column="id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="ruleName" column="rule_name"/>
+        <result property="pointValue" column="point_value"/>
+        <result property="dailyLimit" column="daily_limit"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <resultMap id="PointRecordResult" type="com.ruoyi.library.domain.WlPointRecord">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="ruleId" column="rule_id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="bizNo" column="biz_no"/>
+        <result property="changePoints" column="change_points"/>
+        <result property="beforeBalance" column="before_balance"/>
+        <result property="afterBalance" column="after_balance"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <select id="selectEnabledRule" resultMap="PointRuleResult">
+        select id, event_type, rule_name, point_value, daily_limit, status,
+            create_by, create_time, update_by, update_time, remark
+        from wl_point_rule where event_type = #{eventType} and status = '0' and del_flag = '0'
+    </select>
+    <select id="selectRuleById" resultMap="PointRuleResult">
+        select id, event_type, rule_name, point_value, daily_limit, status,
+            create_by, create_time, update_by, update_time, remark
+        from wl_point_rule where id = #{id} and del_flag = '0'
+    </select>
+    <select id="selectRuleList" parameterType="com.ruoyi.library.domain.WlPointRule" resultMap="PointRuleResult">
+        select id, event_type, rule_name, point_value, daily_limit, status,
+            create_by, create_time, update_by, update_time, remark from wl_point_rule
+        <where>
+            del_flag = '0'
+            <if test="eventType != null and eventType != ''">and event_type = #{eventType}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by id asc
+    </select>
+    <update id="updateRule" parameterType="com.ruoyi.library.domain.WlPointRule">
+        update wl_point_rule set point_value = #{pointValue}, daily_limit = #{dailyLimit},
+            status = #{status}, update_by = #{updateBy}, update_time = now(), remark = #{remark}
+        where id = #{id} and event_type = #{eventType} and del_flag = '0'
+    </update>
+    <update id="deductIfEnough">
+        update wl_wx_user set point_balance = point_balance - #{amount}, update_time = now()
+        where id = #{userId} and status = '0' and del_flag = '0' and point_balance &gt;= #{amount}
+    </update>
+    <update id="addPoints">
+        update wl_wx_user set point_balance = point_balance + #{amount}, update_time = now()
+        where id = #{userId} and status = '0' and del_flag = '0'
+    </update>
+    <select id="selectBalance" resultType="long">
+        select point_balance from wl_wx_user where id = #{userId} and status = '0' and del_flag = '0'
+    </select>
+    <select id="countAdRewards" resultType="int">
+        select count(1) from wl_ad_reward_record
+        where user_id = #{userId} and reward_date = #{rewardDate} and del_flag = '0'
+    </select>
+    <insert id="insertAdReward">
+        insert into wl_ad_reward_record(user_id, ad_biz_no, reward_date, awarded_points, point_record_id,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{adBizNo}, #{rewardDate}, #{awardedPoints}, #{pointRecordId},
+            'system', now(), '', now(), '0')
+    </insert>
+    <insert id="insertSignin">
+        insert into wl_signin_record(user_id, signin_date, awarded_points, point_record_id,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{signinDate}, #{awardedPoints}, #{pointRecordId}, 'system', now(), '', now(), '0')
+    </insert>
+    <insert id="insertShare">
+        insert into wl_share_task_record(user_id, share_date, share_scene, awarded_points, point_record_id,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{shareDate}, 'INVITE', #{awardedPoints}, #{pointRecordId},
+            'system', now(), '', now(), '0')
+    </insert>
+    <insert id="claimInvitation">
+        insert ignore into wl_invitation(inviter_user_id, invited_user_id, invite_code, reward_status,
+            invited_time, create_by, create_time, update_by, update_time, del_flag)
+        values(#{inviterUserId}, #{invitedUserId}, #{inviteCode}, 'PENDING',
+            now(), 'system', now(), '', now(), '0')
+    </insert>
+    <update id="completeInvitation">
+        update wl_invitation set reward_status = 'REWARDED', inviter_point_record_id = #{pointRecordId},
+            update_time = now() where invited_user_id = #{invitedUserId}
+            and reward_status = 'PENDING' and del_flag = '0'
+    </update>
+    <select id="selectPointRecords" resultMap="PointRecordResult">
+        select id, user_id, rule_id, event_type, biz_no, change_points,
+            before_balance, after_balance, description, create_time
+        from wl_point_record where user_id = #{userId} and del_flag = '0'
+        order by id desc limit #{offset}, #{limit}
+    </select>
+    <select id="countPointRecords" resultType="long">
+        select count(1) from wl_point_record where user_id = #{userId} and del_flag = '0'
+    </select>
+    <select id="selectPointRecordList" parameterType="com.ruoyi.library.domain.WlPointRecord"
+            resultMap="PointRecordResult">
+        select id, user_id, rule_id, event_type, biz_no, change_points,
+            before_balance, after_balance, description, create_time
+        from wl_point_record
+        <where>
+            del_flag = '0'
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="eventType != null and eventType != ''">and event_type = #{eventType}</if>
+            <if test="bizNo != null and bizNo != ''">and biz_no = #{bizNo}</if>
+        </where>
+        order by id desc
+    </select>
+</mapper>

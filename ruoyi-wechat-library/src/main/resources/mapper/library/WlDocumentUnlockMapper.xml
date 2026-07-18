@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlDocumentUnlockMapper">
+    <resultMap id="UnlockResult" type="com.ruoyi.library.domain.WlDocumentUnlock">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="spentPoints" column="spent_points"/>
+        <result property="pointRecordId" column="point_record_id"/>
+        <result property="unlockTime" column="unlock_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <resultMap id="DocumentSummaryResult" type="com.ruoyi.library.dto.DocumentSummaryDto">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="title" column="title"/>
+        <result property="summary" column="summary"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="uploaderName" column="uploader_name"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="fileFormat" column="file_format"/>
+        <result property="pageCount" column="page_count"/>
+        <result property="pointPrice" column="point_price"/>
+    </resultMap>
+    <sql id="publicDocumentColumns">d.id, d.category_id, c.name as category_name, d.title, d.summary,
+        d.cover_url, d.uploader_name, d.view_count, d.file_format, d.page_count, d.point_price</sql>
+    <sql id="visibleDocumentWhere">d.publish_status = 'PUBLISHED' and d.conversion_status = 'SUCCESS'
+        and d.del_flag = '0' and c.status = '0' and c.del_flag = '0'</sql>
+    <select id="selectUnlock" resultMap="UnlockResult">
+        select id, user_id, document_id, spent_points, point_record_id, unlock_time, create_time
+        from wl_document_unlock where user_id = #{userId} and document_id = #{documentId} and del_flag = '0'
+    </select>
+    <insert id="insertUnlock" parameterType="com.ruoyi.library.domain.WlDocumentUnlock" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_document_unlock(user_id, document_id, spent_points, point_record_id, unlock_time,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{documentId}, #{spentPoints}, #{pointRecordId}, #{unlockTime},
+            #{createBy}, now(), '', now(), '0')
+    </insert>
+    <insert id="saveFavorite">
+        insert into wl_favorite(user_id, document_id, favorite_time, create_by, create_time,
+            update_by, update_time, del_flag)
+        values(#{userId}, #{documentId}, now(), concat('wx:', #{userId}), now(), '', now(), '0')
+        on duplicate key update favorite_time = now(), update_time = now(), del_flag = '0'
+    </insert>
+    <update id="deleteFavorite">
+        update wl_favorite set del_flag = '2', update_time = now()
+        where user_id = #{userId} and document_id = #{documentId} and del_flag = '0'
+    </update>
+    <select id="countFavorite" resultType="int">
+        select count(1) from wl_favorite
+        where user_id = #{userId} and document_id = #{documentId} and del_flag = '0'
+    </select>
+    <select id="selectUnlockedDocuments" resultMap="DocumentSummaryResult">
+        select <include refid="publicDocumentColumns"/>
+        from wl_document_unlock u inner join wl_document d on d.id = u.document_id
+        inner join wl_category c on c.id = d.category_id
+        where u.user_id = #{userId} and u.del_flag = '0' and <include refid="visibleDocumentWhere"/>
+        order by u.unlock_time desc, u.id desc
+    </select>
+    <select id="selectFavoriteDocuments" resultMap="DocumentSummaryResult">
+        select <include refid="publicDocumentColumns"/>
+        from wl_favorite f inner join wl_document d on d.id = f.document_id
+        inner join wl_category c on c.id = d.category_id
+        where f.user_id = #{userId} and f.del_flag = '0' and <include refid="visibleDocumentWhere"/>
+        order by f.favorite_time desc, f.id desc
+    </select>
+    <insert id="insertView">
+        insert into wl_document_view(user_id, document_id, view_type, view_time, client_ip,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{documentId}, #{viewType}, now(), #{clientIp},
+            concat('wx:', #{userId}), now(), '', now(), '0')
+    </insert>
+    <update id="incrementViewCount">
+        update wl_document set view_count = view_count + 1, update_time = now()
+        where id = #{documentId} and publish_status = 'PUBLISHED' and del_flag = '0'
+    </update>
+</mapper>

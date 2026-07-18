@@ -25,7 +25,9 @@ class LibraryMapperXmlContractTest
                 "mapper/library/WlPointRecordMapper.xml",
                 "mapper/library/WlBannerMapper.xml",
                 "mapper/library/WlCategoryMapper.xml",
-                "mapper/library/WlDocumentMapper.xml");
+                "mapper/library/WlDocumentMapper.xml",
+                "mapper/library/WlPointMapper.xml",
+                "mapper/library/WlDocumentUnlockMapper.xml");
         Configuration configuration = new Configuration();
         for (String resource : resources)
         {
@@ -43,6 +45,8 @@ class LibraryMapperXmlContractTest
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlBannerMapper.selectPublicBanners"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlCategoryMapper.selectPublicCategories"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentMapper.selectPublishedDocuments"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlPointMapper.deductIfEnough"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentUnlockMapper.selectUnlock"));
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("keyword", "质量");

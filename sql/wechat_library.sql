@@ -109,6 +109,7 @@ CREATE TABLE `wl_document` (
   `point_price` bigint NOT NULL DEFAULT 0,
   `preview_pages` int NOT NULL DEFAULT 0,
   `original_object_key` varchar(512) NOT NULL,
+  `full_object_key` varchar(512) DEFAULT NULL,
   `preview_object_key` varchar(512) DEFAULT NULL,
   `conversion_status` varchar(16) NOT NULL DEFAULT 'PENDING',
   `publish_status` varchar(16) NOT NULL DEFAULT 'DRAFT',
@@ -193,7 +194,7 @@ CREATE TABLE `wl_document_view` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint DEFAULT NULL COMMENT '匿名访问时为空',
   `document_id` bigint NOT NULL,
-  `view_type` varchar(16) NOT NULL COMMENT '列表、试读或全文',
+  `view_type` varchar(16) NOT NULL COMMENT '试读、全文或原文件发送',
   `view_time` datetime NOT NULL,
   `client_ip` varchar(64) DEFAULT NULL,
   `create_by` varchar(64) NOT NULL DEFAULT '',
@@ -203,7 +204,8 @@ CREATE TABLE `wl_document_view` (
   `del_flag` char(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `idx_document_view_document_time` (`document_id`, `view_time`),
-  KEY `idx_document_view_user_time` (`user_id`, `view_time`)
+  KEY `idx_document_view_user_time` (`user_id`, `view_time`),
+  CONSTRAINT `chk_document_view_type` CHECK (`view_type` IN ('PREVIEW','FULL','ORIGINAL'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档访问记录';
 
 CREATE TABLE `wl_point_rule` (
@@ -522,3 +524,11 @@ CREATE TABLE `wl_vip_refund` (
   CONSTRAINT `chk_vip_refund_reclaimed_points` CHECK (`reclaimed_points` >= 0),
   CONSTRAINT `chk_vip_refund_unrecovered_points` CHECK (`unrecovered_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员全额退款';
+
+INSERT INTO `wl_point_rule` (`event_type`, `rule_name`, `point_value`, `daily_limit`, `status`,
+  `create_by`, `create_time`, `update_by`, `update_time`, `del_flag`, `remark`) VALUES
+  ('SIGN_IN', '每日签到', 5, 1, '0', 'system', NOW(), '', NOW(), '0', '每天最多奖励一次'),
+  ('AD_REWARD', '激励视频广告', 1, 5, '0', 'system', NOW(), '', NOW(), '0', '完整观看后奖励，每天最多五次'),
+  ('SHARE', '分享小程序', 5, 1, '0', 'system', NOW(), '', NOW(), '0', '每天首次分享奖励'),
+  ('INVITE', '邀请新用户', 5, NULL, '0', 'system', NOW(), '', NOW(), '0', '被邀请用户首次完成登录后奖励')
+ON DUPLICATE KEY UPDATE `event_type` = VALUES(`event_type`);

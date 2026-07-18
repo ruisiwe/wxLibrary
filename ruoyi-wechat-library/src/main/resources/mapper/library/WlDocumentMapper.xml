@@ -15,6 +15,7 @@
         <result property="pointPrice" column="point_price"/>
         <result property="previewPages" column="preview_pages"/>
         <result property="originalObjectKey" column="original_object_key"/>
+        <result property="fullObjectKey" column="full_object_key"/>
         <result property="previewObjectKey" column="preview_object_key"/>
         <result property="conversionStatus" column="conversion_status"/>
         <result property="publishStatus" column="publish_status"/>
@@ -42,7 +43,7 @@
     </resultMap>
     <sql id="documentColumns">select id, category_id, title, summary, tags, cover_url, uploader_name,
         file_format, file_size, page_count, point_price, preview_pages, original_object_key,
-        preview_object_key, conversion_status, publish_status, publish_time, view_count, sort_order,
+        full_object_key, preview_object_key, conversion_status, publish_status, publish_time, view_count, sort_order,
         create_by, create_time, update_by, update_time, remark from wl_document</sql>
     <sql id="publicDocumentColumns">d.id, d.category_id, c.name as category_name, d.title, d.summary,
         d.cover_url, d.uploader_name, d.view_count, d.file_format, d.page_count, d.point_price</sql>
@@ -94,11 +95,11 @@
     </select>
     <insert id="insertDocument" parameterType="com.ruoyi.library.domain.WlDocument" useGeneratedKeys="true" keyProperty="id">
         insert into wl_document(category_id, title, summary, tags, cover_url, uploader_name, file_format,
-            file_size, page_count, point_price, preview_pages, original_object_key, preview_object_key,
+            file_size, page_count, point_price, preview_pages, original_object_key, full_object_key, preview_object_key,
             conversion_status, publish_status, publish_time, view_count, sort_order, create_by, create_time,
             update_by, update_time, del_flag, remark)
         values(#{categoryId}, #{title}, #{summary}, #{tags}, #{coverUrl}, #{uploaderName}, #{fileFormat},
-            #{fileSize}, #{pageCount}, #{pointPrice}, #{previewPages}, #{originalObjectKey}, #{previewObjectKey},
+            #{fileSize}, #{pageCount}, #{pointPrice}, #{previewPages}, #{originalObjectKey}, #{fullObjectKey}, #{previewObjectKey},
             #{conversionStatus}, #{publishStatus}, null, #{viewCount}, #{sortOrder}, #{createBy}, now(),
             '', now(), '0', #{remark})
     </insert>
@@ -107,7 +108,8 @@
             tags = #{tags}, cover_url = #{coverUrl}, uploader_name = #{uploaderName}, file_format = #{fileFormat},
             file_size = #{fileSize}, page_count = #{pageCount}, point_price = #{pointPrice},
             preview_pages = #{previewPages}, original_object_key = #{originalObjectKey},
-            preview_object_key = #{previewObjectKey}, sort_order = #{sortOrder}, update_by = #{updateBy},
+            full_object_key = #{fullObjectKey}, preview_object_key = #{previewObjectKey},
+            sort_order = #{sortOrder}, update_by = #{updateBy},
             update_time = now(), remark = #{remark}
         where id = #{id} and publish_status = 'DRAFT' and del_flag = '0'
     </update>

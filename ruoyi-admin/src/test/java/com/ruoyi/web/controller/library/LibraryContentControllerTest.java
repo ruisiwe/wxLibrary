@@ -97,6 +97,10 @@ class LibraryContentControllerTest
         assertPermission(LibraryDocumentController.class, "remove", "library:document:remove");
         assertPermission(LibraryDocumentController.class, "publish", "library:document:publish");
         assertPermission(LibraryDocumentController.class, "unpublish", "library:document:publish");
+        assertPermission(LibraryPointRuleController.class, "list", "library:points:rule");
+        assertPermission(LibraryPointRuleController.class, "detail", "library:points:rule");
+        assertPermission(LibraryPointRuleController.class, "edit", "library:points:rule");
+        assertPermission(LibraryPointRecordController.class, "list", "library:points:record");
     }
 
     private void assertPermission(Class<?> controllerClass, String methodName, String permission)
