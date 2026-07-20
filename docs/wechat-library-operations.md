@@ -31,7 +31,7 @@
 | `library.document-conversion` | `executable`、`temp-directory`、超时和输入/输出大小限制 | Office 转 PDF 与试读文件生成 |
 | `wechat-library.pay` | `app-id`、`mch-id`、`api-v3-key`、商户证书序列号、私钥路径、支付/退款通知地址、退款确认令牌 | 微信支付、通知验签和全额退款 |
 
-小程序发布前还需在 `miniprogram/app.js` 配置目标 HTTPS API 根地址和激励视频广告位编号。不得在该文件写入服务端密钥。
+微信开发者工具应直接导入仓库内的 `miniprogram` 目录。小程序的 `package.json`、`package-lock.json` 和 `project.config.json` 均位于该目录；发布前还需在 `miniprogram/app.js` 配置目标 HTTPS API 根地址和激励视频广告位编号。不得在这些文件中写入服务端密钥。
 
 ## 4. 初始化顺序
 
@@ -69,7 +69,9 @@ $env:Path='E:\JDK8\bin;' + $env:Path
 使用 Node.js 18 以上版本运行小程序测试：
 
 ```powershell
+Set-Location miniprogram
 npm test
+Set-Location ..
 node ruoyi-ui\scripts\verify-library-routes.js
 Set-Location ruoyi-ui
 npm run build:prod

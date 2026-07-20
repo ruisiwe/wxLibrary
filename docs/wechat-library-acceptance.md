@@ -51,7 +51,7 @@
 | --- | --- | --- |
 | Java 全量测试 | PASS | Java 8、IntelliJ 自带 Maven 执行 `clean test`；微信文库模块 126 项、管理端 33 项，共 159 项无失败；头像符号链接能力相关 3 项在当前 Windows 环境按条件跳过 |
 | Java 8 全量打包 | PASS | Java 8 执行 `mvn -DskipTests package`，8 个 Reactor 模块全部成功 |
-| 小程序契约测试 | PASS | Node.js 24 运行 `node --test miniprogram/tests/*.test.js`，22 项全部通过 |
+| 小程序契约测试 | PASS | Node.js 24 在 `miniprogram` 目录运行 `npm test`，导航、登录和配置目录等 24 项全部通过 |
 | 管理端菜单/API 契约 | PASS | `node ruoyi-ui/scripts/verify-library-routes.js` 通过 |
 | 管理端生产构建 | PASS | `npm run build:prod` 编译成功；仅有 RuoYi 既有资源包体积告警，临时 `dist` 与依赖目录联接已删除 |
 | Git 空白/产物/凭据检查 | PASS | `git diff --check` 通过；构建目录和依赖目录均被忽略且未跟踪，敏感扩展名和环境配置规则已纳入 `.gitignore` |

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const app = require('../app.json');
-const packageConfig = require('../../package.json');
+const packageConfig = require('../package.json');
 
 const expectedPages = [
   'pages/index/index',
