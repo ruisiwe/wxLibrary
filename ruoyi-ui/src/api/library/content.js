@@ -1,9 +1,23 @@
 import request from '@/utils/request'
 
+const bannerFormData = (banner, image) => {
+  const formData = new FormData()
+  formData.append('banner', new Blob([JSON.stringify(banner)], { type: 'application/json' }))
+  if (image) formData.append('image', image, 'banner.jpg')
+  return formData
+}
+
 export const listBanners = query => request({ url: '/library/banner/list', method: 'get', params: query })
-export const addBanner = data => request({ url: '/library/banner', method: 'post', data })
-export const updateBanner = data => request({ url: '/library/banner', method: 'put', data })
+export const addBanner = (banner, image) => request({
+  url: '/library/banner', method: 'post', data: bannerFormData(banner, image),
+  headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }
+})
+export const updateBanner = (banner, image) => request({
+  url: '/library/banner', method: 'put', data: bannerFormData(banner, image),
+  headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }
+})
 export const deleteBanner = id => request({ url: `/library/banner/${id}`, method: 'delete' })
+export const getBannerImage = id => request({ url: `/library/banner/${id}/image`, method: 'get' })
 export const listBannerDocumentOptions = query => request({
   url: '/library/banner/document-options', method: 'get', params: query
 })

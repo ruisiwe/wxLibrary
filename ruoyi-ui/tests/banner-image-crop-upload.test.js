@@ -1,0 +1,33 @@
+const assert = require('assert')
+const fs = require('fs')
+const path = require('path')
+const compiler = require('vue-template-compiler')
+
+const root = path.resolve(__dirname, '..')
+const cropperPath = path.join(root, 'src/views/library/content/banner/BannerImageCropper.vue')
+const apiPath = path.join(root, 'src/api/library/content.js')
+
+assert(fs.existsSync(cropperPath), '应提供轮播图固定尺寸裁剪组件')
+
+const cropper = fs.readFileSync(cropperPath, 'utf8')
+const api = fs.readFileSync(apiPath, 'utf8')
+const component = compiler.parseComponent(cropper)
+assert(component.template, '轮播图裁剪组件缺少模板')
+const compiled = compiler.compile(component.template.content)
+assert.deepStrictEqual(compiled.errors, [], `轮播图裁剪组件模板编译失败：${compiled.errors.join('；')}`)
+
+assert(/fixed-number=["']\[31,\s*12\]["']/.test(cropper), '裁剪框比例应固定为31:12')
+assert(/canvas\.width\s*=\s*1240/.test(cropper), '输出画布宽度应为1240像素')
+assert(/canvas\.height\s*=\s*480/.test(cropper), '输出画布高度应为480像素')
+assert(/toBlob\([\s\S]*['"]image\/jpeg['"]/.test(cropper), '裁剪结果应输出JPEG')
+assert(cropper.includes(':auto-upload="false"'), '图片选择不能自动上传')
+assert(cropper.includes('beforeDestroy'), '组件销毁时应释放本地预览地址')
+assert(cropper.includes('URL.revokeObjectURL'), '替换图片时应释放旧Object URL')
+
+assert(/new Blob\([\s\S]*application\/json/.test(api), '轮播图JSON应作为application/json请求部件')
+assert(/formData\.append\(['"]banner['"]/.test(api), 'multipart请求应包含banner部件')
+assert(/formData\.append\(['"]image['"]/.test(api), 'multipart请求应支持image部件')
+assert(api.includes('repeatSubmit: false'), '图片请求应关闭重复提交拦截')
+assert(api.includes('/library/banner/${id}/image'), '应提供轮播图短时预览地址接口')
+
+console.log('轮播图本地裁剪与multipart上传契约测试通过')
