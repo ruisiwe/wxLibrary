@@ -4,9 +4,12 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.domain.WlBanner;
 import com.ruoyi.library.domain.WlCategory;
 import com.ruoyi.library.domain.WlDocument;
+import com.ruoyi.library.dto.DocumentOptionDto;
+import com.ruoyi.library.dto.PageResult;
 import com.ruoyi.library.mapper.WlBannerMapper;
 import com.ruoyi.library.mapper.WlCategoryMapper;
 import com.ruoyi.library.mapper.WlDocumentMapper;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -14,6 +17,8 @@ import org.mockito.ArgumentCaptor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -55,6 +60,38 @@ class DocumentServiceTest
 
         assertEquals("宣传图片只能关联已上架文档", exception.getMessage());
         verify(bannerMapper, never()).insertBanner(banner);
+    }
+
+    @Test
+    void bannerDocumentOptionsNormalizePagingAndEscapeTitleSearch()
+    {
+        DocumentOptionDto option = new DocumentOptionDto();
+        option.setId(8L);
+        option.setTitle("质量管理手册");
+        when(documentMapper.countBannerDocumentOptions("质量\\%\\_")).thenReturn(1L);
+        when(documentMapper.selectBannerDocumentOptions("质量\\%\\_", 0L, 20))
+                .thenReturn(Collections.singletonList(option));
+
+        PageResult<DocumentOptionDto> result = service.listBannerDocumentOptions(" 质量%_ ", 0, 99);
+
+        assertEquals(1, result.getPageNum());
+        assertEquals(20, result.getPageSize());
+        assertEquals(1L, result.getTotal());
+        assertEquals("质量管理手册", result.getItems().get(0).getTitle());
+        verify(documentMapper).countBannerDocumentOptions("质量\\%\\_");
+        verify(documentMapper).selectBannerDocumentOptions("质量\\%\\_", 0L, 20);
+    }
+
+    @Test
+    void bannerDocumentOptionsSkipSelectWhenNoDocumentsMatch()
+    {
+        when(documentMapper.countBannerDocumentOptions(null)).thenReturn(0L);
+
+        PageResult<DocumentOptionDto> result = service.listBannerDocumentOptions(" ", 1, 20);
+
+        assertEquals(0L, result.getTotal());
+        assertEquals(0, result.getItems().size());
+        verify(documentMapper, never()).selectBannerDocumentOptions(any(), anyLong(), anyInt());
     }
 
     @Test

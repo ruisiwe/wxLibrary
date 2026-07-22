@@ -2,8 +2,10 @@ package com.ruoyi.web.controller.library;
 
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.dto.BannerDto;
+import com.ruoyi.library.dto.DocumentOptionDto;
 import com.ruoyi.library.dto.HomeData;
 import com.ruoyi.library.dto.PageResult;
+import com.ruoyi.library.service.DocumentService;
 import com.ruoyi.library.service.HomeQueryService;
 import com.ruoyi.web.controller.library.wx.WxApiExceptionHandler;
 import com.ruoyi.web.controller.library.wx.WxPublicContentController;
@@ -81,12 +83,38 @@ class LibraryContentControllerTest
     }
 
     @Test
+    void bannerDocumentOptionsReturnOnlyLightweightPublishedDocumentFields() throws Exception
+    {
+        DocumentService documentService = mock(DocumentService.class);
+        DocumentOptionDto option = new DocumentOptionDto();
+        option.setId(9L);
+        option.setTitle("质量管理手册");
+        option.setCategoryName("质量管理");
+        option.setFileFormat("PDF");
+        when(documentService.listBannerDocumentOptions("质量", 1, 20))
+                .thenReturn(new PageResult<>(Collections.singletonList(option), 1L, 1, 20));
+        MockMvc bannerMockMvc = MockMvcBuilders
+                .standaloneSetup(new LibraryBannerController(documentService)).build();
+
+        bannerMockMvc.perform(get("/library/banner/document-options")
+                        .param("keyword", "质量").param("pageNum", "1").param("pageSize", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(9L))
+                .andExpect(jsonPath("$.data.items[0].title").value("质量管理手册"))
+                .andExpect(jsonPath("$.data.items[0].categoryName").value("质量管理"))
+                .andExpect(jsonPath("$.data.items[0].fileFormat").value("PDF"))
+                .andExpect(jsonPath("$.data.items[0].originalObjectKey").doesNotExist());
+    }
+
+    @Test
     void managementControllersExposeApprovedPermissions() throws Exception
     {
         assertPermission(LibraryBannerController.class, "list", "library:banner:list");
         assertPermission(LibraryBannerController.class, "add", "library:banner:add");
         assertPermission(LibraryBannerController.class, "edit", "library:banner:edit");
         assertPermission(LibraryBannerController.class, "remove", "library:banner:remove");
+        assertAuthorization(LibraryBannerController.class, "documentOptions",
+                "@ss.hasAnyPermi('library:banner:add,library:banner:edit')");
         assertPermission(LibraryCategoryController.class, "list", "library:category:list");
         assertPermission(LibraryCategoryController.class, "add", "library:category:add");
         assertPermission(LibraryCategoryController.class, "edit", "library:category:edit");
@@ -134,5 +162,20 @@ class LibraryContentControllerTest
         }
         PreAuthorize annotation = matched == null ? null : matched.getAnnotation(PreAuthorize.class);
         assertEquals("@ss.hasPermi('" + permission + "')", annotation == null ? null : annotation.value());
+    }
+
+    private void assertAuthorization(Class<?> controllerClass, String methodName, String expression)
+    {
+        Method matched = null;
+        for (Method method : controllerClass.getDeclaredMethods())
+        {
+            if (method.getName().equals(methodName))
+            {
+                matched = method;
+                break;
+            }
+        }
+        PreAuthorize annotation = matched == null ? null : matched.getAnnotation(PreAuthorize.class);
+        assertEquals(expression, annotation == null ? null : annotation.value());
     }
 }

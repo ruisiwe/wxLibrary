@@ -26,6 +26,7 @@
       <el-form ref="form" :model="form" label-width="120px">
         <el-form-item v-for="field in formFields" :key="field.prop" :label="field.label" :required="field.required">
           <el-input-number v-if="field.type === 'number'" v-model="form[field.prop]" :min="field.min === undefined ? 0 : field.min" :max="field.max" controls-position="right" />
+          <remote-select v-else-if="field.type === 'remote-select'" v-model="form[field.prop]" :field="field" :row="form" @selection-change="onRemoteSelectionChange(field, $event)" />
           <el-select v-else-if="field.type === 'select'" v-model="form[field.prop]" style="width:100%">
             <el-option v-for="option in field.options" :key="option.value" :label="option.label" :value="option.value" />
           </el-select>
@@ -42,8 +43,11 @@
 </template>
 
 <script>
+import RemoteSelect from '@/views/library/common/RemoteSelect'
+
 export default {
   name: 'LibrarySimpleList',
+  components: { RemoteSelect },
   props: {
     title: { type: String, required: true },
     loader: { type: Function, required: true },
@@ -77,7 +81,9 @@ export default {
     },
     submit() {
       const missing = this.formFields.find(field => field.required && (this.form[field.prop] === undefined || this.form[field.prop] === null || String(this.form[field.prop]).trim() === ''))
-      if (missing) return this.$modal.msgError(`请填写${missing.label}`)
+      if (missing) return this.$modal.msgError(missing.requiredMessage || `请填写${missing.label}`)
+      const invalid = this.formFields.find(field => field.validate && !field.validate(this.form))
+      if (invalid) return this.$modal.msgError(invalid.validationMessage || `${invalid.label}不正确`)
       const operation = this.form.id ? this.updater : this.creator
       operation(this.form).then(() => {
         this.$modal.msgSuccess('保存成功')
@@ -89,6 +95,11 @@ export default {
       this.$modal.confirm(`确认删除${this.title}“${row.title || row.name || row.planName || row.id}”吗？`)
         .then(() => this.remover(row.id))
         .then(() => { this.$modal.msgSuccess('删除成功'); this.loadData() })
+    },
+    onRemoteSelectionChange(field, option) {
+      if (!field.selectableProp) return
+      const selectable = option ? !(field.optionDisabled && field.optionDisabled(option)) : null
+      this.$set(this.form, field.selectableProp, selectable)
     }
   }
 }

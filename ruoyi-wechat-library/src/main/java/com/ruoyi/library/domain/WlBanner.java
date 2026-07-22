@@ -11,6 +11,10 @@ public class WlBanner extends BaseEntity
     private String title;
     private String imageUrl;
     private Long documentId;
+    private String documentTitle;
+    private String documentCategoryName;
+    private String documentFileFormat;
+    private Boolean documentSelectable;
     private Integer sortOrder;
     private String status;
     private Date startTime;
@@ -24,6 +28,14 @@ public class WlBanner extends BaseEntity
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public Long getDocumentId() { return documentId; }
     public void setDocumentId(Long documentId) { this.documentId = documentId; }
+    public String getDocumentTitle() { return documentTitle; }
+    public void setDocumentTitle(String documentTitle) { this.documentTitle = documentTitle; }
+    public String getDocumentCategoryName() { return documentCategoryName; }
+    public void setDocumentCategoryName(String documentCategoryName) { this.documentCategoryName = documentCategoryName; }
+    public String getDocumentFileFormat() { return documentFileFormat; }
+    public void setDocumentFileFormat(String documentFileFormat) { this.documentFileFormat = documentFileFormat; }
+    public Boolean getDocumentSelectable() { return documentSelectable; }
+    public void setDocumentSelectable(Boolean documentSelectable) { this.documentSelectable = documentSelectable; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public String getStatus() { return status; }

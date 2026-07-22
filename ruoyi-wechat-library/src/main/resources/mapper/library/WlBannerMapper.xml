@@ -6,6 +6,10 @@
         <result property="title" column="title"/>
         <result property="imageUrl" column="image_url"/>
         <result property="documentId" column="document_id"/>
+        <result property="documentTitle" column="document_title"/>
+        <result property="documentCategoryName" column="document_category_name"/>
+        <result property="documentFileFormat" column="document_file_format"/>
+        <result property="documentSelectable" column="document_selectable"/>
         <result property="sortOrder" column="sort_order"/>
         <result property="status" column="status"/>
         <result property="startTime" column="start_time"/>
@@ -23,6 +27,17 @@
     </resultMap>
     <sql id="bannerColumns">select id, title, image_url, document_id, sort_order, status,
         start_time, end_time, create_by, create_time, update_by, update_time from wl_banner</sql>
+    <sql id="managementBannerColumns">
+        select b.id, b.title, b.image_url, b.document_id, b.sort_order, b.status,
+            b.start_time, b.end_time, b.create_by, b.create_time, b.update_by, b.update_time,
+            d.title as document_title, c.name as document_category_name,
+            d.file_format as document_file_format,
+            case when d.del_flag = '0' and d.publish_status = 'PUBLISHED'
+                and c.del_flag = '0' and c.status = '0' then 1 else 0 end as document_selectable
+        from wl_banner b
+        left join wl_document d on d.id = b.document_id
+        left join wl_category c on c.id = d.category_id
+    </sql>
 
     <select id="selectPublicBanners" resultMap="BannerDtoResult">
         select b.id, b.title, b.image_url, b.document_id
@@ -36,17 +51,17 @@
         order by b.sort_order asc, b.id asc
     </select>
     <select id="selectBannerById" resultMap="WlBannerResult">
-        <include refid="bannerColumns"/> where id = #{id} and del_flag = '0'
+        <include refid="managementBannerColumns"/> where b.id = #{id} and b.del_flag = '0'
     </select>
     <select id="selectBannerList" parameterType="com.ruoyi.library.domain.WlBanner" resultMap="WlBannerResult">
-        <include refid="bannerColumns"/>
+        <include refid="managementBannerColumns"/>
         <where>
-            del_flag = '0'
-            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
-            <if test="documentId != null">and document_id = #{documentId}</if>
-            <if test="status != null and status != ''">and status = #{status}</if>
+            b.del_flag = '0'
+            <if test="title != null and title != ''">and b.title like concat('%', #{title}, '%')</if>
+            <if test="documentId != null">and b.document_id = #{documentId}</if>
+            <if test="status != null and status != ''">and b.status = #{status}</if>
         </where>
-        order by sort_order asc, id asc
+        order by b.sort_order asc, b.id asc
     </select>
     <insert id="insertBanner" parameterType="com.ruoyi.library.domain.WlBanner" useGeneratedKeys="true" keyProperty="id">
         insert into wl_banner(title, image_url, document_id, sort_order, status, start_time, end_time,

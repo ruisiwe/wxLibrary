@@ -4,6 +4,9 @@ export const listBanners = query => request({ url: '/library/banner/list', metho
 export const addBanner = data => request({ url: '/library/banner', method: 'post', data })
 export const updateBanner = data => request({ url: '/library/banner', method: 'put', data })
 export const deleteBanner = id => request({ url: `/library/banner/${id}`, method: 'delete' })
+export const listBannerDocumentOptions = query => request({
+  url: '/library/banner/document-options', method: 'get', params: query
+})
 export const listCategories = query => request({ url: '/library/category/list', method: 'get', params: query })
 export const addCategory = data => request({ url: '/library/category', method: 'post', data })
 export const updateCategory = data => request({ url: '/library/category', method: 'put', data })

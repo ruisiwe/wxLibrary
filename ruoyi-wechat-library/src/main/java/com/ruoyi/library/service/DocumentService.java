@@ -4,9 +4,12 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.domain.WlBanner;
 import com.ruoyi.library.domain.WlCategory;
 import com.ruoyi.library.domain.WlDocument;
+import com.ruoyi.library.dto.DocumentOptionDto;
+import com.ruoyi.library.dto.PageResult;
 import com.ruoyi.library.mapper.WlBannerMapper;
 import com.ruoyi.library.mapper.WlCategoryMapper;
 import com.ruoyi.library.mapper.WlDocumentMapper;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DocumentService
 {
+    private static final int DEFAULT_DOCUMENT_OPTION_PAGE_SIZE = 20;
+    private static final int MAX_DOCUMENT_OPTION_PAGE_SIZE = 20;
+
     private final WlBannerMapper bannerMapper;
     private final WlCategoryMapper categoryMapper;
     private final WlDocumentMapper documentMapper;
@@ -34,6 +40,20 @@ public class DocumentService
         WlBanner banner = bannerMapper.selectBannerById(id);
         if (banner == null) throw new ServiceException("宣传图片不存在");
         return banner;
+    }
+
+    public PageResult<DocumentOptionDto> listBannerDocumentOptions(String keyword, int pageNum, int pageSize)
+    {
+        int safePageNum = pageNum < 1 ? 1 : pageNum;
+        int safePageSize = pageSize < 1 ? DEFAULT_DOCUMENT_OPTION_PAGE_SIZE
+                : Math.min(pageSize, MAX_DOCUMENT_OPTION_PAGE_SIZE);
+        long offset = ((long) safePageNum - 1L) * safePageSize;
+        String escapedKeyword = escapeLike(keyword);
+        long total = documentMapper.countBannerDocumentOptions(escapedKeyword);
+        List<DocumentOptionDto> items = total == 0L
+                ? Collections.<DocumentOptionDto>emptyList()
+                : documentMapper.selectBannerDocumentOptions(escapedKeyword, offset, safePageSize);
+        return new PageResult<>(items, total, safePageNum, safePageSize);
     }
 
     public int addBanner(WlBanner banner, String operator)
@@ -293,5 +313,11 @@ public class DocumentService
     private String defaultText(String value, String fallback)
     {
         return value == null || value.trim().isEmpty() ? fallback : value.trim();
+    }
+
+    private String escapeLike(String keyword)
+    {
+        if (keyword == null || keyword.trim().isEmpty()) return null;
+        return keyword.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }

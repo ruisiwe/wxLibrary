@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 后台首页宣传图片管理接口。 */
@@ -35,6 +36,16 @@ public class LibraryBannerController extends BaseController
         startPage();
         List<WlBanner> list = documentService.listBanners(query);
         return getDataTable(list);
+    }
+
+    /** 搜索宣传图片可关联的已发布文档。 */
+    @PreAuthorize("@ss.hasAnyPermi('library:banner:add,library:banner:edit')")
+    @GetMapping("/document-options")
+    public AjaxResult documentOptions(@RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "20") int pageSize)
+    {
+        return success(documentService.listBannerDocumentOptions(keyword, pageNum, pageSize));
     }
 
     /** 查询首页宣传图片详情。 */

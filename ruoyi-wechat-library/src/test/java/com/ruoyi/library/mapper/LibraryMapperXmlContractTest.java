@@ -1,5 +1,6 @@
 package com.ruoyi.library.mapper;
 
+import com.ruoyi.library.domain.WlBanner;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,6 +55,8 @@ class LibraryMapperXmlContractTest
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlBannerMapper.selectPublicBanners"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlCategoryMapper.selectPublicCategories"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentMapper.selectPublishedDocuments"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentMapper.countBannerDocumentOptions"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentMapper.selectBannerDocumentOptions"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentConversionMapper.markConverting"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlPointMapper.deductIfEnough"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlDocumentUnlockMapper.selectUnlock"));
@@ -75,5 +78,26 @@ class LibraryMapperXmlContractTest
         assertFalse(publicSql.contains("object_key"));
         assertTrue(publicSql.contains("d.tags like"));
         assertTrue(publicSql.contains("order by d.sort_order asc, d.id desc"));
+
+        Map<String, Object> optionParameters = new HashMap<>();
+        optionParameters.put("keyword", "质量");
+        optionParameters.put("offset", 0L);
+        optionParameters.put("limit", 20);
+        String optionSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlDocumentMapper.selectBannerDocumentOptions")
+                .getBoundSql(optionParameters).getSql().toLowerCase();
+        assertFalse(optionSql.contains("object_key"));
+        assertTrue(optionSql.contains("d.publish_status = 'published'"));
+        assertTrue(optionSql.contains("c.status = '0'"));
+        assertTrue(optionSql.contains("d.title like"));
+        assertTrue(optionSql.contains("order by d.publish_time desc, d.id desc"));
+
+        String managementBannerSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlBannerMapper.selectBannerList")
+                .getBoundSql(new WlBanner()).getSql().toLowerCase();
+        assertTrue(managementBannerSql.contains("document_title"));
+        assertTrue(managementBannerSql.contains("document_category_name"));
+        assertTrue(managementBannerSql.contains("document_file_format"));
+        assertTrue(managementBannerSql.contains("document_selectable"));
     }
 }
