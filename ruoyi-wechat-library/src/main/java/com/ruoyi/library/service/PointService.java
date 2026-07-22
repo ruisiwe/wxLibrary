@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ public class PointService
     private final WlWxUserMapper userMapper;
     private final Clock clock;
 
+    @Autowired
     public PointService(WlPointMapper pointMapper, WlPointRecordMapper recordMapper,
             WlWxUserMapper userMapper)
     {

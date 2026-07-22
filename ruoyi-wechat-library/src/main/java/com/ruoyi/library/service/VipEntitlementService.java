@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class VipEntitlementService
     private final PointService pointService;
     private final Clock clock;
 
+    @Autowired
     public VipEntitlementService(WlVipEntitlementMapper entitlementMapper, WlWxUserMapper userMapper,
             PointService pointService)
     {
