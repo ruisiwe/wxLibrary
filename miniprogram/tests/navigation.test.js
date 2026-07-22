@@ -8,13 +8,13 @@ const packageConfig = require('../package.json');
 
 const expectedPages = [
   'pages/index/index',
-  'pages/courses/courses',
+  'pages/vip/vip',
   'pages/profile/profile'
 ];
 
 const expectedTabs = [
   { pagePath: 'pages/index/index', text: '首页' },
-  { pagePath: 'pages/courses/courses', text: '视频课程' },
+  { pagePath: 'pages/vip/vip', text: 'VIP' },
   { pagePath: 'pages/profile/profile', text: '我的' }
 ];
 
@@ -46,7 +46,7 @@ function createComponentInstance(definition, value = '/pages/index/index') {
   };
 }
 
-test('底部导航固定为首页、视频课程、我的', () => {
+test('底部导航固定为首页、VIP、我的', () => {
   assert.deepEqual(app.pages.slice(0, 3), expectedPages);
   assert.equal(app.tabBar.custom, true);
   assert.deepEqual(app.tabBar.list, expectedTabs);
@@ -76,7 +76,7 @@ test('切换成功后才更新导航高亮', () => {
     request = options;
   });
   const instance = createComponentInstance(definition);
-  const target = '/pages/courses/courses';
+  const target = '/pages/vip/vip';
 
   definition.methods.onChange.call(instance, { detail: { value: target } });
 

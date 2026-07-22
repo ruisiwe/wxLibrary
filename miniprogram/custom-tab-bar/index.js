@@ -3,7 +3,7 @@ Component({
     value: '/pages/index/index',
     list: [
       { value: '/pages/index/index', text: '首页', icon: 'home' },
-      { value: '/pages/courses/courses', text: '视频课程', icon: 'play-circle' },
+      { value: '/pages/vip/vip', text: 'VIP', icon: 'user-vip' },
       { value: '/pages/profile/profile', text: '我的', icon: 'user' }
     ]
   },

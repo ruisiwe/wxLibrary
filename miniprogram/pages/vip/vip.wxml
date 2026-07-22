@@ -1,1 +1,29 @@
-<view class="page"><view class="current"><view>当前会员</view><view class="expiry">{{profile.vipActive ? '有效期至 '+profile.vipExpireTime : '尚未开通'}}</view></view><view wx:if="{{paymentState}}" class="payment">{{paymentState}}</view><view class="plans"><view wx:for="{{plans}}" wx:key="id" class="plan"><view><view class="plan__name">{{item.planName}}</view><view class="plan__meta">{{item.validDays}} 天 · 赠送 {{item.giftPoints || 0}} 积分</view></view><view class="plan__right"><view>¥{{item.priceCent / 100}}</view><button size="mini" data-id="{{item.id}}" bindtap="buy">购买/续费</button></view></view></view><state-view loading="{{loading}}" error="{{error}}" bindretry="load"/></view>
+<view class="page">
+  <view wx:if="{{!loggedIn}}" class="login">
+    <view>登录后查看会员、积分和任务</view>
+    <button bindtap="goLogin">前往登录</button>
+  </view>
+  <view wx:if="{{loggedIn && profile}}">
+    <view class="member-card">
+      <view class="member-card__label">当前会员</view>
+      <view class="member-card__status">{{profile.vipActive ? 'VIP 会员' : '普通用户'}}</view>
+      <view class="member-card__expiry">{{profile.vipActive ? '有效期至 '+profile.vipExpireTime : '开通 VIP 获得会员权益'}}</view>
+      <button size="mini" bindtap="openPlans">{{profile.vipActive ? '续费' : '立即开通'}}</button>
+    </view>
+    <view class="points-card" bindtap="openPoints">
+      <view><text>当前积分</text><text class="points-card__number">{{balance}}</text></view>
+      <text class="points-card__link">积分明细 ›</text>
+    </view>
+    <view class="tasks">
+      <view class="heading">积分任务</view>
+      <button bindtap="signIn">每日签到</button>
+      <button bindtap="watchAd">激励视频（{{adCount}}/{{adLimit}}）</button>
+      <button open-type="share" bindtap="invite">分享邀请</button>
+      <view wx:for="{{rules}}" wx:key="id" class="rule">
+        <text>{{item.ruleName || item.ruleCode}}</text>
+        <text>+{{item.rewardPoints || item.pointValue}}</text>
+      </view>
+    </view>
+  </view>
+  <state-view loading="{{loading}}" error="{{error}}" bindretry="load"/>
+</view>
