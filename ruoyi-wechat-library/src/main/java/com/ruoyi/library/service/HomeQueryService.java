@@ -1,6 +1,7 @@
 package com.ruoyi.library.service;
 
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.library.dto.BannerDto;
 import com.ruoyi.library.dto.CategoryDto;
 import com.ruoyi.library.dto.DocumentSummaryDto;
 import com.ruoyi.library.dto.HomeData;
@@ -23,6 +24,7 @@ public class HomeQueryService
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 50;
     private static final Duration COVER_URL_TTL = Duration.ofMinutes(30);
+    private static final Duration BANNER_URL_TTL = Duration.ofMinutes(30);
 
     private final WlBannerMapper bannerMapper;
     private final WlCategoryMapper categoryMapper;
@@ -46,7 +48,9 @@ public class HomeQueryService
         List<DocumentSummaryDto> documents = documentMapper.selectPublishedDocuments(
                 null, null, offset, safePageSize);
         signCovers(documents);
-        return new HomeData(bannerMapper.selectPublicBanners(new Date()),
+        List<BannerDto> banners = bannerMapper.selectPublicBanners(new Date());
+        signBanners(banners);
+        return new HomeData(banners,
                 categoryMapper.selectPublicCategories(), documents);
     }
 
@@ -84,6 +88,32 @@ public class HomeQueryService
     {
         if (documents == null) return;
         for (DocumentSummaryDto document : documents) signCover(document);
+    }
+
+    private void signBanners(List<BannerDto> banners)
+    {
+        if (banners == null) return;
+        for (BannerDto banner : banners) signBanner(banner);
+    }
+
+    private void signBanner(BannerDto banner)
+    {
+        if (banner == null || banner.getImageUrl() == null
+                || banner.getImageUrl().trim().isEmpty()) return;
+        String imageUrl = banner.getImageUrl().trim();
+        if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) return;
+        try
+        {
+            PrivateFileUrlSigner signer = signerProvider.getIfAvailable();
+            if (signer == null) throw new ServiceException("轮播图图片服务暂不可用，请稍后重试");
+            URL url = signer.signGetUrl(imageUrl, BANNER_URL_TTL, null);
+            if (url == null) throw new ServiceException("轮播图图片服务暂不可用，请稍后重试");
+            banner.setImageUrl(url.toString());
+        }
+        catch (RuntimeException exception)
+        {
+            throw new ServiceException("轮播图图片服务暂不可用，请稍后重试");
+        }
     }
 
     private void signCover(DocumentSummaryDto document)

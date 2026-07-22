@@ -36,6 +36,7 @@ class HomeQueryServiceTest
     private WlDocumentMapper documentMapper;
     private HomeQueryService service;
     private PrivateFileUrlSigner signer;
+    private ObjectProvider<PrivateFileUrlSigner> signerProvider;
 
     @BeforeEach
     void setUp()
@@ -45,8 +46,9 @@ class HomeQueryServiceTest
         documentMapper = mock(WlDocumentMapper.class);
         signer = mock(PrivateFileUrlSigner.class);
         @SuppressWarnings("unchecked") ObjectProvider<PrivateFileUrlSigner> provider = mock(ObjectProvider.class);
-        when(provider.getIfAvailable()).thenReturn(signer);
-        service = new HomeQueryService(bannerMapper, categoryMapper, documentMapper, provider);
+        signerProvider = provider;
+        when(signerProvider.getIfAvailable()).thenReturn(signer);
+        service = new HomeQueryService(bannerMapper, categoryMapper, documentMapper, signerProvider);
     }
 
     @Test
@@ -128,6 +130,51 @@ class HomeQueryServiceTest
 
         assertEquals("https://legacy.example/cover.jpg", service.getDocument(11L).getCoverUrl());
         verify(signer, org.mockito.Mockito.never()).signGetUrl(any(), any(), any());
+    }
+
+    @Test
+    void homeSignsPrivateBannerKeysWithoutChangingLegacyUrls() throws Exception
+    {
+        BannerDto privateBanner = banner("banners/a/image.jpg");
+        BannerDto legacyBanner = banner("https://legacy.example/banner.jpg");
+        when(bannerMapper.selectPublicBanners(any(Date.class)))
+                .thenReturn(Arrays.asList(privateBanner, legacyBanner));
+        when(documentMapper.selectPublishedDocuments(null, null, 0, 10))
+                .thenReturn(Collections.emptyList());
+        when(signer.signGetUrl("banners/a/image.jpg", Duration.ofMinutes(30), null))
+                .thenReturn(new URL("https://temporary.example/banner.jpg"));
+
+        HomeData result = service.getHome(1, 10);
+
+        assertEquals("https://temporary.example/banner.jpg",
+                result.getBanners().get(0).getImageUrl());
+        assertEquals("https://legacy.example/banner.jpg",
+                result.getBanners().get(1).getImageUrl());
+        verify(signer).signGetUrl("banners/a/image.jpg", Duration.ofMinutes(30), null);
+    }
+
+    @Test
+    void missingBannerSignerUsesSafeChineseMessage()
+    {
+        when(bannerMapper.selectPublicBanners(any(Date.class)))
+                .thenReturn(Collections.singletonList(banner("banners/a/image.jpg")));
+        when(documentMapper.selectPublishedDocuments(null, null, 0, 10))
+                .thenReturn(Collections.emptyList());
+        when(signerProvider.getIfAvailable()).thenReturn(null);
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.getHome(1, 10));
+
+        assertEquals("轮播图图片服务暂不可用，请稍后重试", exception.getMessage());
+    }
+
+    private BannerDto banner(String imageUrl)
+    {
+        BannerDto banner = new BannerDto();
+        banner.setId(1L);
+        banner.setDocumentId(11L);
+        banner.setImageUrl(imageUrl);
+        return banner;
     }
 
     private DocumentSummaryDto document(Long id, String title)
