@@ -6,6 +6,7 @@ import com.ruoyi.library.dto.DocumentOptionDto;
 import com.ruoyi.library.dto.HomeData;
 import com.ruoyi.library.dto.PageResult;
 import com.ruoyi.library.service.DocumentService;
+import com.ruoyi.library.service.BannerManagementService;
 import com.ruoyi.library.service.HomeQueryService;
 import com.ruoyi.web.controller.library.wx.WxApiExceptionHandler;
 import com.ruoyi.web.controller.library.wx.WxPublicContentController;
@@ -94,7 +95,8 @@ class LibraryContentControllerTest
         when(documentService.listBannerDocumentOptions("质量", 1, 20))
                 .thenReturn(new PageResult<>(Collections.singletonList(option), 1L, 1, 20));
         MockMvc bannerMockMvc = MockMvcBuilders
-                .standaloneSetup(new LibraryBannerController(documentService)).build();
+                .standaloneSetup(new LibraryBannerController(
+                        documentService, mock(BannerManagementService.class))).build();
 
         bannerMockMvc.perform(get("/library/banner/document-options")
                         .param("keyword", "质量").param("pageNum", "1").param("pageSize", "20"))
@@ -115,6 +117,8 @@ class LibraryContentControllerTest
         assertPermission(LibraryBannerController.class, "remove", "library:banner:remove");
         assertAuthorization(LibraryBannerController.class, "documentOptions",
                 "@ss.hasAnyPermi('library:banner:add,library:banner:edit')");
+        assertAuthorization(LibraryBannerController.class, "image",
+                "@ss.hasAnyPermi('library:banner:list,library:banner:edit')");
         assertPermission(LibraryCategoryController.class, "list", "library:category:list");
         assertPermission(LibraryCategoryController.class, "add", "library:category:add");
         assertPermission(LibraryCategoryController.class, "edit", "library:category:edit");
