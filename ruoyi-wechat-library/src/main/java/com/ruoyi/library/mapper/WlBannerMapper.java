@@ -14,5 +14,10 @@ public interface WlBannerMapper
     List<WlBanner> selectBannerList(WlBanner query);
     int insertBanner(WlBanner banner);
     int updateBanner(WlBanner banner);
+    int updateBannerWithExpectedImage(@Param("banner") WlBanner banner,
+            @Param("expectedImageUrl") String expectedImageUrl);
+    int deleteBannerWithExpectedImage(@Param("id") Long id,
+            @Param("expectedImageUrl") String expectedImageUrl,
+            @Param("operator") String operator);
     int deleteBanners(@Param("ids") Long[] ids, @Param("operator") String operator);
 }

@@ -79,6 +79,19 @@
           and exists (select 1 from wl_document d where d.id = #{documentId}
             and d.publish_status = 'PUBLISHED' and d.del_flag = '0')
     </update>
+    <update id="updateBannerWithExpectedImage">
+        update wl_banner set title = #{banner.title}, image_url = #{banner.imageUrl},
+            document_id = #{banner.documentId}, sort_order = #{banner.sortOrder},
+            status = #{banner.status}, start_time = #{banner.startTime}, end_time = #{banner.endTime},
+            update_by = #{banner.updateBy}, update_time = now()
+        where id = #{banner.id} and del_flag = '0' and image_url = #{expectedImageUrl}
+          and exists (select 1 from wl_document d where d.id = #{banner.documentId}
+            and d.publish_status = 'PUBLISHED' and d.del_flag = '0')
+    </update>
+    <update id="deleteBannerWithExpectedImage">
+        update wl_banner set del_flag = '2', update_by = #{operator}, update_time = now()
+        where id = #{id} and del_flag = '0' and image_url = #{expectedImageUrl}
+    </update>
     <update id="deleteBanners">
         update wl_banner set del_flag = '2', update_by = #{operator}, update_time = now()
         where del_flag = '0' and id in

@@ -80,6 +80,31 @@ public class DocumentService
         return rows;
     }
 
+    /** 使用原图片对象键作为并发条件修改轮播图。 */
+    public int updateBanner(WlBanner banner, String expectedImageUrl, String operator)
+    {
+        requireId(banner == null ? null : banner.getId(), "轮播图编号不能为空");
+        requireText(expectedImageUrl, "原轮播图图片不能为空");
+        validateBanner(banner);
+        banner.setStatus(normalizeStatus(banner.getStatus()));
+        banner.setSortOrder(defaultZero(banner.getSortOrder()));
+        banner.setUpdateBy(operator);
+        int rows = bannerMapper.updateBannerWithExpectedImage(banner, expectedImageUrl);
+        if (rows != 1) throw new ServiceException("轮播图已发生变化，请刷新后重试");
+        return rows;
+    }
+
+    /** 使用原图片对象键作为并发条件删除单条轮播图。 */
+    public int removeBanner(Long id, String expectedImageUrl, String operator)
+    {
+        requireId(id, "轮播图编号不能为空");
+        requireText(expectedImageUrl, "原轮播图图片不能为空");
+        requireText(operator, "操作人不能为空");
+        int rows = bannerMapper.deleteBannerWithExpectedImage(id, expectedImageUrl, operator);
+        if (rows != 1) throw new ServiceException("轮播图已发生变化，请刷新后重试");
+        return rows;
+    }
+
     public int removeBanners(Long[] ids, String operator)
     {
         requireIds(ids);

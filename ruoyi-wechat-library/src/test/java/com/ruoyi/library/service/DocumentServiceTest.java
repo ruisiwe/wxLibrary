@@ -95,6 +95,35 @@ class DocumentServiceTest
     }
 
     @Test
+    void bannerUpdateRequiresExpectedImageKey()
+    {
+        WlDocument published = validDocument();
+        published.setPublishStatus("PUBLISHED");
+        when(documentMapper.selectDocumentById(8L)).thenReturn(published);
+        WlBanner changed = validBanner(4L, "banners/new/image.jpg");
+        when(bannerMapper.updateBannerWithExpectedImage(changed, "banners/old/image.jpg"))
+                .thenReturn(0);
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.updateBanner(changed, "banners/old/image.jpg", "admin"));
+
+        assertEquals("轮播图已发生变化，请刷新后重试", exception.getMessage());
+        verify(bannerMapper).updateBannerWithExpectedImage(changed, "banners/old/image.jpg");
+    }
+
+    @Test
+    void bannerDeleteRequiresExpectedImageKey()
+    {
+        when(bannerMapper.deleteBannerWithExpectedImage(4L, "banners/old/image.jpg", "admin"))
+                .thenReturn(0);
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.removeBanner(4L, "banners/old/image.jpg", "admin"));
+
+        assertEquals("轮播图已发生变化，请刷新后重试", exception.getMessage());
+    }
+
+    @Test
     void newDocumentDoesNotTrustClientStorageFieldsAndEnforcesPreviewBoundary()
     {
         WlDocument document = validDocument();
@@ -235,5 +264,17 @@ class DocumentServiceTest
         document.setConversionStatus("SUCCESS");
         document.setPublishStatus("DRAFT");
         return document;
+    }
+
+    private WlBanner validBanner(Long id, String imageUrl)
+    {
+        WlBanner banner = new WlBanner();
+        banner.setId(id);
+        banner.setTitle("首页推荐");
+        banner.setImageUrl(imageUrl);
+        banner.setDocumentId(8L);
+        banner.setStatus("0");
+        banner.setSortOrder(0);
+        return banner;
     }
 }
