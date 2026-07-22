@@ -17,7 +17,7 @@ const sql = fs.readFileSync(sqlPath, 'utf8')
 
 ;[
   'content/banner/index.vue', 'content/category/index.vue', 'content/document/index.vue',
-  'content/conversion/index.vue', 'content/course/index.vue', 'content/video/index.vue',
+  'content/course/index.vue', 'content/video/index.vue',
   'user/index.vue', 'user/detail.vue', 'points/rule/index.vue', 'points/record/index.vue',
   'vip/plan/index.vue', 'vip/order/index.vue', 'vip/entitlement/index.vue',
   'vip/refund/index.vue', 'access/document/index.vue', 'access/courseCode/index.vue',

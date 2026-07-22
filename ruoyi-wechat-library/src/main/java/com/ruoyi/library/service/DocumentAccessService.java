@@ -8,6 +8,9 @@ import com.ruoyi.library.domain.WlWxUser;
 import com.ruoyi.library.dto.DocumentSummaryDto;
 import com.ruoyi.library.dto.DocumentUnlockResult;
 import com.ruoyi.library.dto.FileAuthorization;
+import com.ruoyi.library.dto.FileDisclaimerDto;
+import com.ruoyi.library.dto.OriginalFileRequest;
+import com.ruoyi.library.agreement.WxAgreementService;
 import com.ruoyi.library.mapper.WlDocumentMapper;
 import com.ruoyi.library.mapper.WlDocumentUnlockMapper;
 import com.ruoyi.library.mapper.WlWxUserMapper;
@@ -31,16 +34,18 @@ public class DocumentAccessService
     private final WlDocumentMapper documentMapper;
     private final WlDocumentUnlockMapper unlockMapper;
     private final ObjectProvider<PrivateFileUrlSigner> signerProvider;
+    private final WxAgreementService agreementService;
 
     public DocumentAccessService(PointService pointService, WlWxUserMapper userMapper,
             WlDocumentMapper documentMapper, WlDocumentUnlockMapper unlockMapper,
-            ObjectProvider<PrivateFileUrlSigner> signerProvider)
+            ObjectProvider<PrivateFileUrlSigner> signerProvider, WxAgreementService agreementService)
     {
         this.pointService = pointService;
         this.userMapper = userMapper;
         this.documentMapper = documentMapper;
         this.unlockMapper = unlockMapper;
         this.signerProvider = signerProvider;
+        this.agreementService = agreementService;
     }
 
     @Transactional
@@ -80,22 +85,19 @@ public class DocumentAccessService
         return authorization;
     }
 
-    public FileAuthorization authorizeFullDocument(Long userId, Long documentId, String clientIp)
+    public FileDisclaimerDto fileDisclaimer(Long userId)
     {
         requireEnabledUser(userMapper.selectById(userId));
-        WlDocument document = requirePublishedDocument(documentId);
-        requireUnlock(userId, documentId);
-        requireObjectKey(document.getFullObjectKey(), "文档暂未生成完整阅读文件");
-        FileAuthorization authorization = sign(document.getFullObjectKey(), null);
-        recordView(userId, documentId, "FULL", clientIp, true);
-        return authorization;
+        return agreementService.fileDisclaimer(userId);
     }
 
-    public FileAuthorization authorizeOriginalFile(Long userId, Long documentId, String clientIp)
+    public FileAuthorization authorizeOriginalFile(Long userId, Long documentId,
+            OriginalFileRequest request, String clientIp)
     {
         requireEnabledUser(userMapper.selectById(userId));
         WlDocument document = requirePublishedDocument(documentId);
         requireUnlock(userId, documentId);
+        agreementService.validateFileDisclaimer(userId, request, clientIp);
         requireObjectKey(document.getOriginalObjectKey(), "文档原文件暂不可用");
         String fileName = safeFileName(document.getTitle(), document.getFileFormat());
         FileAuthorization authorization = sign(document.getOriginalObjectKey(), fileName);

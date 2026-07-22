@@ -125,10 +125,6 @@ class LibraryContentControllerTest
         assertPermission(LibraryDocumentController.class, "remove", "library:document:remove");
         assertPermission(LibraryDocumentController.class, "publish", "library:document:publish");
         assertPermission(LibraryDocumentController.class, "unpublish", "library:document:publish");
-        assertPermission(LibraryDocumentFileController.class, "list", "library:document:convert");
-        assertPermission(LibraryDocumentFileController.class, "upload", "library:document:upload");
-        assertPermission(LibraryDocumentFileController.class, "execute", "library:document:convert");
-        assertPermission(LibraryDocumentFileController.class, "retry", "library:document:convert");
         assertPermission(LibraryPointRuleController.class, "list", "library:points:rule");
         assertPermission(LibraryPointRuleController.class, "detail", "library:points:rule");
         assertPermission(LibraryPointRuleController.class, "edit", "library:points:rule");

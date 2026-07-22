@@ -148,6 +148,29 @@ public class DocumentService
         return documentMapper.insertDocument(document);
     }
 
+    /** 保存已由上传会话处理完成的文档和私有对象键。 */
+    public int addProcessedDocument(WlDocument document, String operator)
+    {
+        validateDocumentMetadata(document);
+        WlCategory category = categoryMapper.selectCategoryById(document.getCategoryId());
+        if (category == null || !"0".equals(category.getStatus()))
+            throw new ServiceException("请选择已启用的文档分类");
+        requireText(document.getOriginalObjectKey(), "原文件对象键不能为空");
+        requireText(document.getPreviewObjectKey(), "试看文件对象键不能为空");
+        requireText(document.getCoverUrl(), "缩略图对象键不能为空");
+        if (document.getPreviewPages() <= 0 || document.getPreviewPages() >= document.getPageCount())
+            throw new ServiceException("试看页数必须大于0且小于文档总页数");
+        normalizeDocument(document);
+        document.setUploaderName(operator);
+        document.setPublishStatus("DRAFT");
+        document.setConversionStatus("SUCCESS");
+        document.setViewCount(0L);
+        document.setCreateBy(operator);
+        int rows = documentMapper.insertDocument(document);
+        if (rows != 1) throw new ServiceException("文档保存失败，请重试");
+        return rows;
+    }
+
     public int updateDocument(WlDocument document, String operator)
     {
         requireId(document == null ? null : document.getId(), "文档编号不能为空");
@@ -159,6 +182,18 @@ public class DocumentService
         normalizeDocument(document);
         document.setUpdateBy(operator);
         return documentMapper.updateDocument(document);
+    }
+
+    /** 使用旧对象键作为并发条件替换文档缩略图。 */
+    public int updateDocumentCover(Long id, String oldCoverUrl, String newCoverUrl, String operator)
+    {
+        requireId(id, "文档编号不能为空");
+        requireText(oldCoverUrl, "原缩略图对象键不能为空");
+        requireText(newCoverUrl, "新缩略图对象键不能为空");
+        requireText(operator, "操作人不能为空");
+        int rows = documentMapper.updateDocumentCover(id, oldCoverUrl, newCoverUrl, operator);
+        if (rows != 1) throw new ServiceException("文档缩略图已变化，请刷新后重试");
+        return rows;
     }
 
     @Transactional
@@ -269,6 +304,7 @@ public class DocumentService
     /** 普通元数据修改禁止覆盖上传和转换流程管理的私有对象键。 */
     private void preserveServerManagedFileFields(WlDocument document, WlDocument existing)
     {
+        document.setCoverUrl(existing.getCoverUrl());
         document.setUploaderName(existing.getUploaderName());
         document.setFileFormat(existing.getFileFormat());
         document.setFileSize(existing.getFileSize());

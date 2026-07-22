@@ -9,6 +9,7 @@
     "build:prod": "vue-cli-service build",
     "build:stage": "vue-cli-service build --mode staging",
     "test:banner-select": "node tests/banner-document-select.test.js",
+    "test:document-upload": "node tests/document-upload-flow.test.js",
     "preview": "node build/index.js --preview"
   },
   "keywords": [

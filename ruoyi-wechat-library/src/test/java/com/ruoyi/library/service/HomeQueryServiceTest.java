@@ -9,12 +9,16 @@ import com.ruoyi.library.dto.PageResult;
 import com.ruoyi.library.mapper.WlBannerMapper;
 import com.ruoyi.library.mapper.WlCategoryMapper;
 import com.ruoyi.library.mapper.WlDocumentMapper;
+import com.ruoyi.library.storage.PrivateFileUrlSigner;
+import java.net.URL;
+import java.time.Duration;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,6 +35,7 @@ class HomeQueryServiceTest
     private WlCategoryMapper categoryMapper;
     private WlDocumentMapper documentMapper;
     private HomeQueryService service;
+    private PrivateFileUrlSigner signer;
 
     @BeforeEach
     void setUp()
@@ -38,7 +43,10 @@ class HomeQueryServiceTest
         bannerMapper = mock(WlBannerMapper.class);
         categoryMapper = mock(WlCategoryMapper.class);
         documentMapper = mock(WlDocumentMapper.class);
-        service = new HomeQueryService(bannerMapper, categoryMapper, documentMapper);
+        signer = mock(PrivateFileUrlSigner.class);
+        @SuppressWarnings("unchecked") ObjectProvider<PrivateFileUrlSigner> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(signer);
+        service = new HomeQueryService(bannerMapper, categoryMapper, documentMapper, provider);
     }
 
     @Test
@@ -95,6 +103,31 @@ class HomeQueryServiceTest
                 () -> service.getDocument(99L));
 
         assertEquals("文档不存在或已下架", exception.getMessage());
+    }
+
+    @Test
+    void privateThumbnailObjectKeyIsReturnedAsShortLivedUrl() throws Exception
+    {
+        DocumentSummaryDto document = document(11L, "质量管理手册");
+        document.setCoverUrl("documents/session/thumbnail/v1.jpg");
+        when(documentMapper.selectPublishedDocumentById(11L)).thenReturn(document);
+        when(signer.signGetUrl(eq("documents/session/thumbnail/v1.jpg"), any(Duration.class), eq(null)))
+                .thenReturn(new URL("https://temporary.example/cover"));
+
+        DocumentSummaryDto result = service.getDocument(11L);
+
+        assertEquals("https://temporary.example/cover", result.getCoverUrl());
+    }
+
+    @Test
+    void existingHttpsThumbnailDoesNotUseCosSigner()
+    {
+        DocumentSummaryDto document = document(11L, "质量管理手册");
+        document.setCoverUrl("https://legacy.example/cover.jpg");
+        when(documentMapper.selectPublishedDocumentById(11L)).thenReturn(document);
+
+        assertEquals("https://legacy.example/cover.jpg", service.getDocument(11L).getCoverUrl());
+        verify(signer, org.mockito.Mockito.never()).signGetUrl(any(), any(), any());
     }
 
     private DocumentSummaryDto document(Long id, String title)

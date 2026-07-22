@@ -50,7 +50,8 @@
     </update>
     <update id="disablePublishedByType">
         update wl_agreement set status = '2', update_by = #{operator}, update_time = now()
-        where agreement_type = #{agreementType} and id != #{excludeId} and status = '1' and del_flag = '0'
+        where agreement_type = #{agreementType} and id != #{excludeId} and status = '1'
+          and effective_time &lt;= now() and del_flag = '0'
     </update>
     <update id="publishAgreement">
         update wl_agreement set status = '1', update_by = #{operator}, update_time = now()

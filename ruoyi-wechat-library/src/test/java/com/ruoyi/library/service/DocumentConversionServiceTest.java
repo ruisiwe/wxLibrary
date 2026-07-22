@@ -63,7 +63,7 @@ class DocumentConversionServiceTest
         assertTrue(service.supports("slides.pptx"));
         assertTrue(service.supports("notes.txt"));
         assertTrue(service.supports("sheet.xls"));
-        assertFalse(service.supports("sheet.xlsx"));
+        assertTrue(service.supports("sheet.xlsx"));
         assertFalse(service.supports("macro.xlsm"));
         assertFalse(service.supports("report.docx.exe"));
     }
@@ -152,6 +152,22 @@ class DocumentConversionServiceTest
 
         assertEquals("文档转换失败状态保存失败，请重试", assertThrows(ServiceException.class,
                 () -> service.processTask(9L)).getMessage());
+    }
+
+    @Test
+    void processedDocumentPublishesWithoutFullPdfObject()
+    {
+        WlDocument document = document("PDF", "SUCCESS");
+        document.setOriginalObjectKey("documents/session/original/v1.pdf");
+        document.setPreviewObjectKey("documents/session/preview/v1.pdf");
+        document.setCoverUrl("documents/session/thumbnail/v1.jpg");
+        document.setFullObjectKey(null);
+        when(documentMapper.selectDocumentById(77L)).thenReturn(document);
+        when(documentService.publishDocument(77L, "admin")).thenReturn(1);
+
+        assertEquals(1, service.publishDocument(77L, "admin"));
+
+        verify(documentService).publishDocument(77L, "admin");
     }
 
     private WlDocument document(String format, String conversionStatus)

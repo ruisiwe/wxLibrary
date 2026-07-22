@@ -137,6 +137,10 @@
             update_time = now(), remark = #{remark}
         where id = #{id} and publish_status = 'DRAFT' and del_flag = '0'
     </update>
+    <update id="updateDocumentCover">
+        update wl_document set cover_url = #{newCoverUrl}, update_by = #{operator}, update_time = now()
+        where id = #{id} and cover_url = #{oldCoverUrl} and del_flag = '0'
+    </update>
     <update id="updatePublishStatus">
         update wl_document set publish_status = #{publishStatus},
             publish_time = case when #{publishStatus} = 'PUBLISHED' then now() else null end,

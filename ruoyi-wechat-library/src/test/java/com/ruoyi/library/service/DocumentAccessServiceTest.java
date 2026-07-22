@@ -7,6 +7,9 @@ import com.ruoyi.library.domain.WlPointRecord;
 import com.ruoyi.library.domain.WlWxUser;
 import com.ruoyi.library.dto.DocumentUnlockResult;
 import com.ruoyi.library.dto.FileAuthorization;
+import com.ruoyi.library.dto.FileDisclaimerDto;
+import com.ruoyi.library.dto.OriginalFileRequest;
+import com.ruoyi.library.agreement.WxAgreementService;
 import com.ruoyi.library.mapper.WlDocumentMapper;
 import com.ruoyi.library.mapper.WlDocumentUnlockMapper;
 import com.ruoyi.library.mapper.WlWxUserMapper;
@@ -34,6 +37,7 @@ class DocumentAccessServiceTest
     private WlDocumentMapper documentMapper;
     private WlDocumentUnlockMapper unlockMapper;
     private PrivateFileUrlSigner urlSigner;
+    private WxAgreementService agreementService;
     private DocumentAccessService service;
 
     @SuppressWarnings("unchecked")
@@ -45,9 +49,11 @@ class DocumentAccessServiceTest
         documentMapper = mock(WlDocumentMapper.class);
         unlockMapper = mock(WlDocumentUnlockMapper.class);
         urlSigner = mock(PrivateFileUrlSigner.class);
+        agreementService = mock(WxAgreementService.class);
         ObjectProvider<PrivateFileUrlSigner> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(urlSigner);
-        service = new DocumentAccessService(pointService, userMapper, documentMapper, unlockMapper, provider);
+        service = new DocumentAccessService(pointService, userMapper, documentMapper, unlockMapper,
+                provider, agreementService);
     }
 
     @Test
@@ -146,16 +152,15 @@ class DocumentAccessServiceTest
     }
 
     @Test
-    void fullAndOriginalFilesRequireUnlock() throws Exception
+    void originalFileRequiresUnlockBeforeDisclaimerAuthorization() throws Exception
     {
         when(documentMapper.selectDocumentById(22L)).thenReturn(document());
         when(userMapper.selectById(11L)).thenReturn(user(11L, 5L));
         when(unlockMapper.selectUnlock(11L, 22L)).thenReturn(null);
 
         assertEquals("请先兑换文档", assertThrows(ServiceException.class,
-                () -> service.authorizeFullDocument(11L, 22L, "127.0.0.1")).getMessage());
-        assertEquals("请先兑换文档", assertThrows(ServiceException.class,
-                () -> service.authorizeOriginalFile(11L, 22L, "127.0.0.1")).getMessage());
+                () -> service.authorizeOriginalFile(11L, 22L, originalRequest(), "127.0.0.1")).getMessage());
+        verify(agreementService, never()).validateFileDisclaimer(any(), any(), any());
         verify(urlSigner, never()).signGetUrl(any(), any(), any());
     }
 
@@ -170,11 +175,24 @@ class DocumentAccessServiceTest
         when(urlSigner.signGetUrl(eq("documents/original.docx"), any(Duration.class),
                 eq("质量管理手册.docx"))).thenReturn(url);
 
-        FileAuthorization result = service.authorizeOriginalFile(11L, 22L, "127.0.0.1");
+        FileAuthorization result = service.authorizeOriginalFile(11L, 22L, originalRequest(), "127.0.0.1");
 
         assertEquals("质量管理手册.docx", result.getFileName());
         assertEquals(url.toString(), result.getUrl());
+        verify(agreementService).validateFileDisclaimer(eq(11L), any(OriginalFileRequest.class), eq("127.0.0.1"));
         verify(unlockMapper).insertView(11L, 22L, "ORIGINAL", "127.0.0.1");
+    }
+
+    @Test
+    void fileDisclaimerRequiresEnabledUser()
+    {
+        WlWxUser disabled = user(11L, 5L);
+        disabled.setStatus("1");
+        when(userMapper.selectById(11L)).thenReturn(disabled);
+
+        assertEquals("当前账号已停用，请联系管理员", assertThrows(ServiceException.class,
+                () -> service.fileDisclaimer(11L)).getMessage());
+        verify(agreementService, never()).fileDisclaimer(any());
     }
 
     private WlDocument document()
@@ -222,5 +240,14 @@ class DocumentAccessServiceTest
         record.setAfterBalance(after);
         record.setChangePoints(after - before);
         return record;
+    }
+
+    private OriginalFileRequest originalRequest()
+    {
+        OriginalFileRequest request = new OriginalFileRequest();
+        request.setAgreementId(9L);
+        request.setAgreementVersion("f1");
+        request.setConfirmed(true);
+        return request;
     }
 }

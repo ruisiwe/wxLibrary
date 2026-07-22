@@ -8,7 +8,6 @@ insert into sys_menu values('2004','访问记录','2000','4','access',null,'',''
 insert into sys_menu values('2010','轮播图','2001','1','banner','library/content/banner/index','','',1,0,'C','0','0','library:banner:list','picture','admin',sysdate(),'',null,'轮播图管理');
 insert into sys_menu values('2011','分类','2001','2','category','library/content/category/index','','',1,0,'C','0','0','library:category:list','tree-table','admin',sysdate(),'',null,'分类管理');
 insert into sys_menu values('2012','文档','2001','3','document','library/content/document/index','','',1,0,'C','0','0','library:document:list','documentation','admin',sysdate(),'',null,'文档管理');
-insert into sys_menu values('2013','文档转换','2001','4','conversion','library/content/conversion/index','','',1,0,'C','0','0','library:document:convert','build','admin',sysdate(),'',null,'转换任务');
 insert into sys_menu values('2014','课程','2001','5','course','library/content/course/index','','',1,0,'C','0','0','library:course:list','video-camera','admin',sysdate(),'',null,'课程管理');
 insert into sys_menu values('2015','课程视频','2001','6','video','library/content/video/index','','',1,0,'C','0','0','library:course:list','video-play','admin',sysdate(),'',null,'课程视频');
 insert into sys_menu values('2020','微信用户','2002','1','user','library/user/index','','',1,0,'C','0','0','library:wxUser:list','user','admin',sysdate(),'',null,'微信用户');

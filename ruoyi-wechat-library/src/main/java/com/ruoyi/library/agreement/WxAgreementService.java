@@ -8,6 +8,8 @@ import com.ruoyi.library.domain.WlAgreement;
 import com.ruoyi.library.domain.WlUserAgreement;
 import com.ruoyi.library.mapper.WlAgreementMapper;
 import com.ruoyi.library.mapper.WlUserAgreementMapper;
+import com.ruoyi.library.dto.FileDisclaimerDto;
+import com.ruoyi.library.dto.OriginalFileRequest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ public class WxAgreementService
 {
     public static final String TYPE_PRIVACY = "PRIVACY";
     public static final String TYPE_STATEMENT = "STATEMENT";
+    public static final String TYPE_FILE_DISCLAIMER = "FILE_DISCLAIMER";
     public static final String STATUS_DRAFT = "0";
     public static final String STATUS_PUBLISHED = "1";
 
@@ -71,6 +74,35 @@ public class WxAgreementService
         return userAgreementMapper.countAcceptedAgreementIds(userId, privacy.getId(), statement.getId()) == 2;
     }
 
+    /** 查询当前文件发送免责声明及当前用户是否已免提示。 */
+    public FileDisclaimerDto fileDisclaimer(Long userId)
+    {
+        if (userId == null || userId <= 0) throw new ServiceException("微信用户身份无效");
+        WlAgreement agreement = requiredFileDisclaimer();
+        FileDisclaimerDto result = new FileDisclaimerDto();
+        result.setAgreementId(agreement.getId());
+        result.setAgreementVersion(agreement.getVersion());
+        result.setTitle(agreement.getTitle());
+        result.setContent(agreement.getContent());
+        result.setReminderSuppressed(userAgreementMapper.selectByUserAndAgreement(
+                userId, agreement.getId()) != null);
+        return result;
+    }
+
+    /** 校验本次确认；仅勾选以后不再提示时持久化当前版本。 */
+    @Transactional
+    public void validateFileDisclaimer(Long userId, OriginalFileRequest request, String acceptedIp)
+    {
+        if (userId == null || userId <= 0) throw new ServiceException("微信用户身份无效");
+        WlAgreement current = requiredFileDisclaimer();
+        if (userAgreementMapper.selectByUserAndAgreement(userId, current.getId()) != null) return;
+        if (request == null || !current.getId().equals(request.getAgreementId())
+                || !current.getVersion().equals(trim(request.getAgreementVersion())))
+            throw new ServiceException("文件发送免责声明已更新，请重新确认");
+        if (!request.isConfirmed()) throw new ServiceException("请确认文件发送免责声明");
+        if (request.isReminderSuppressed()) acceptOne(userId, current, acceptedIp);
+    }
+
     public List<WlAgreement> list(WlAgreement query) { return agreementMapper.selectAgreementList(query); }
     public WlAgreement detail(Long id) { return agreementMapper.selectAgreementById(id); }
 
@@ -97,17 +129,12 @@ public class WxAgreementService
     {
         WlAgreement draft = agreementMapper.selectAgreementByIdForUpdate(id);
         if (draft == null) throw new ServiceException("协议不存在");
-        if (STATUS_PUBLISHED.equals(draft.getStatus()))
-        {
-            WlAgreement current = agreementMapper.selectCurrentByType(draft.getAgreementType());
-            if (current != null && id.equals(current.getId())) return;
-            throw new ServiceException("该协议已被后续版本替代，不能重复发布");
-        }
+        if (STATUS_PUBLISHED.equals(draft.getStatus())) return;
         if (!STATUS_DRAFT.equals(draft.getStatus()))
             throw new ServiceException("该协议已被后续版本替代，不能重复发布");
         if (draft.getEffectiveTime() == null) throw new ServiceException("协议生效时间不能为空");
-        if (draft.getEffectiveTime().after(new Date())) throw new ServiceException("协议生效时间不能晚于当前时间");
-        agreementMapper.disablePublishedByType(draft.getAgreementType(), id, operator);
+        if (!draft.getEffectiveTime().after(new Date()))
+            agreementMapper.disablePublishedByType(draft.getAgreementType(), id, operator);
         if (agreementMapper.publishAgreement(id, operator) != 1) throw new ServiceException("协议发布失败");
     }
 
@@ -132,10 +159,18 @@ public class WxAgreementService
         return agreement;
     }
 
+    private WlAgreement requiredFileDisclaimer()
+    {
+        WlAgreement agreement = agreementMapper.selectCurrentByType(TYPE_FILE_DISCLAIMER);
+        if (agreement == null) throw new ServiceException("文件发送免责声明暂未发布，请联系客服");
+        return agreement;
+    }
+
     private void validateAgreement(WlAgreement agreement)
     {
         if (agreement == null || (!TYPE_PRIVACY.equals(agreement.getAgreementType())
-                && !TYPE_STATEMENT.equals(agreement.getAgreementType())))
+                && !TYPE_STATEMENT.equals(agreement.getAgreementType())
+                && !TYPE_FILE_DISCLAIMER.equals(agreement.getAgreementType())))
             throw new ServiceException("协议类型不正确");
         if (isBlank(agreement.getVersion()) || isBlank(agreement.getTitle()) || isBlank(agreement.getContent()))
             throw new ServiceException("协议版本、标题和内容不能为空");

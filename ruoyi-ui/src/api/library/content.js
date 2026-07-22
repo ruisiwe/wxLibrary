@@ -17,12 +17,24 @@ export const updateDocument = data => request({ url: '/library/document', method
 export const deleteDocument = id => request({ url: `/library/document/${id}`, method: 'delete' })
 export const publishDocument = id => request({ url: `/library/document/${id}/publish`, method: 'put' })
 export const unpublishDocument = id => request({ url: `/library/document/${id}/unpublish`, method: 'put' })
-export const listConversions = query => request({ url: '/library/document-file/list', method: 'get', params: query })
-export const uploadDocumentFile = (documentId, data) => request({
-  url: `/library/document-file/document/${documentId}/upload`,
-  method: 'post',
-  data,
-  headers: { 'Content-Type': 'multipart/form-data' }
+export const prepareDocumentUpload = data => request({
+  url: '/library/document-upload/prepare', method: 'post', data,
+  headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }, timeout: 180000
 })
-export const executeConversion = id => request({ url: `/library/document-file/${id}/execute`, method: 'post' })
-export const retryConversion = id => request({ url: `/library/document-file/${id}/retry`, method: 'post' })
+export const getDocumentUploadThumbnail = sessionId => request({
+  url: `/library/document-upload/session/${sessionId}/thumbnail`, method: 'get', responseType: 'blob'
+})
+export const replaceDocumentUploadThumbnail = (sessionId, data) => request({
+  url: `/library/document-upload/session/${sessionId}/thumbnail`, method: 'put', data,
+  headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }, timeout: 30000
+})
+export const replaceSavedDocumentThumbnail = (documentId, data) => request({
+  url: `/library/document-upload/document/${documentId}/thumbnail`, method: 'put', data,
+  headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }, timeout: 30000
+})
+export const commitDocumentUpload = (sessionId, data) => request({
+  url: `/library/document-upload/session/${sessionId}/commit`, method: 'post', data, timeout: 180000
+})
+export const cancelDocumentUpload = sessionId => request({
+  url: `/library/document-upload/session/${sessionId}`, method: 'delete'
+})

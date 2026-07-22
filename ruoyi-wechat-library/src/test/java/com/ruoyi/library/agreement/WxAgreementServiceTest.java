@@ -3,6 +3,8 @@ package com.ruoyi.library.agreement;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.domain.WlAgreement;
 import com.ruoyi.library.domain.WlUserAgreement;
+import com.ruoyi.library.dto.FileDisclaimerDto;
+import com.ruoyi.library.dto.OriginalFileRequest;
 import com.ruoyi.library.mapper.WlAgreementMapper;
 import com.ruoyi.library.mapper.WlUserAgreementMapper;
 import java.util.Date;
@@ -86,19 +88,18 @@ class WxAgreementServiceTest
     }
 
     @Test
-    void futureAgreementCannotBePublished()
+    void futureAgreementCanBePublishedWithoutDisablingCurrentVersion()
     {
         WlAgreement draft = agreement(3L, "PRIVACY", "p2");
         draft.setStatus(WxAgreementService.STATUS_DRAFT);
         draft.setEffectiveTime(new Date(System.currentTimeMillis() + 60000));
         when(agreementMapper.selectAgreementByIdForUpdate(3L)).thenReturn(draft);
+        when(agreementMapper.publishAgreement(3L, "admin")).thenReturn(1);
 
-        ServiceException exception = assertThrows(ServiceException.class,
-                () -> service.publish(3L, "admin"));
+        service.publish(3L, "admin");
 
-        assertEquals("协议生效时间不能晚于当前时间", exception.getMessage());
         verify(agreementMapper, never()).disablePublishedByType(any(), any(), any());
-        verify(agreementMapper, never()).publishAgreement(any(), any());
+        verify(agreementMapper).publishAgreement(3L, "admin");
     }
 
     @Test
@@ -138,6 +139,42 @@ class WxAgreementServiceTest
                 () -> service.updateDraft(published));
         assertEquals("仅草稿协议允许编辑", exception.getMessage());
         verify(agreementMapper, never()).updateDraft(any(WlAgreement.class));
+    }
+
+    @Test
+    void fileDisclaimerReportsSuppressionAndRemembersOnlyWhenRequested()
+    {
+        WlAgreement disclaimer = agreement(9L, "FILE_DISCLAIMER", "f1");
+        disclaimer.setTitle("文件发送免责声明");
+        when(agreementMapper.selectCurrentByType("FILE_DISCLAIMER")).thenReturn(disclaimer);
+
+        FileDisclaimerDto first = service.fileDisclaimer(8L);
+        assertEquals(false, first.isReminderSuppressed());
+
+        OriginalFileRequest request = new OriginalFileRequest();
+        request.setAgreementId(9L);
+        request.setAgreementVersion("f1");
+        request.setConfirmed(true);
+        request.setReminderSuppressed(true);
+        service.validateFileDisclaimer(8L, request, "127.0.0.1");
+
+        verify(userAgreementMapper).insertUserAgreement(org.mockito.ArgumentMatchers.argThat(
+                item -> item.getUserId().equals(8L) && item.getAgreementId().equals(9L)
+                        && "FILE_DISCLAIMER".equals(item.getAgreementType())));
+    }
+
+    @Test
+    void originalFileRejectsStaleDisclaimerVersion()
+    {
+        when(agreementMapper.selectCurrentByType("FILE_DISCLAIMER"))
+                .thenReturn(agreement(9L, "FILE_DISCLAIMER", "f2"));
+        OriginalFileRequest request = new OriginalFileRequest();
+        request.setAgreementId(8L);
+        request.setAgreementVersion("f1");
+        request.setConfirmed(true);
+
+        assertEquals("文件发送免责声明已更新，请重新确认", assertThrows(ServiceException.class,
+                () -> service.validateFileDisclaimer(8L, request, "127.0.0.1")).getMessage());
     }
 
     private WlAgreement agreement(Long id, String type, String version)

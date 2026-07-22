@@ -21,6 +21,8 @@ public interface WlDocumentMapper
     int countDocumentsByCategoryIds(@Param("categoryIds") Long[] categoryIds);
     int insertDocument(WlDocument document);
     int updateDocument(WlDocument document);
+    int updateDocumentCover(@Param("id") Long id, @Param("oldCoverUrl") String oldCoverUrl,
+            @Param("newCoverUrl") String newCoverUrl, @Param("operator") String operator);
     int updatePublishStatus(@Param("id") Long id, @Param("publishStatus") String publishStatus,
             @Param("operator") String operator);
     int updateConversionPending(@Param("id") Long id, @Param("originalObjectKey") String originalObjectKey,

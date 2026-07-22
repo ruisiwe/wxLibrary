@@ -2,7 +2,7 @@ const { request } = require('./request');
 
 function resolveDocumentAction({ loggedIn, unlocked }) {
   if (!loggedIn) return 'LOGIN';
-  return unlocked ? 'FULL' : 'PREVIEW';
+  return 'PREVIEW';
 }
 
 function canPreview({ loggedIn }) {
@@ -18,12 +18,12 @@ const categories = () => request({ url: '/wx/public/categories', protected: fals
 const list = params => request({ url: '/wx/public/documents', data: params, protected: false });
 const detail = id => request({ url: `/wx/public/documents/${id}`, protected: false });
 const preview = id => request({ url: `/wx/documents/${id}/preview` });
-const full = id => request({ url: `/wx/documents/${id}/full` });
 const unlock = (id, requestId) => request({ url: `/wx/documents/${id}/unlock`, method: 'POST', data: { requestId } });
-const original = id => request({ url: `/wx/documents/${id}/original`, method: 'POST' });
+const fileDisclaimer = () => request({ url: '/wx/documents/file-disclaimer' });
+const original = (id, data) => request({ url: `/wx/documents/${id}/original`, method: 'POST', data });
 const favorite = id => request({ url: `/wx/documents/${id}/favorite`, method: 'POST' });
 const unfavorite = id => request({ url: `/wx/documents/${id}/favorite`, method: 'DELETE' });
 const unlocked = () => request({ url: '/wx/documents/unlocked' });
 const favorites = () => request({ url: '/wx/documents/favorites' });
 
-module.exports = { resolveDocumentAction, canPreview, buildShareOptions, home, categories, list, detail, preview, full, unlock, original, favorite, unfavorite, unlocked, favorites };
+module.exports = { resolveDocumentAction, canPreview, buildShareOptions, home, categories, list, detail, preview, unlock, fileDisclaimer, original, favorite, unfavorite, unlocked, favorites };

@@ -156,7 +156,7 @@ public class RestrictedProcessDocumentConverter implements DocumentConverter
     {
         if (value == null) throw new ServiceException("文档格式不能为空");
         String extension = value.trim().toUpperCase(Locale.ROOT);
-        if (!Arrays.asList("PDF", "DOC", "DOCX", "PPT", "PPTX", "TXT", "XLS").contains(extension))
+        if (!Arrays.asList("PDF", "DOC", "DOCX", "PPT", "PPTX", "TXT", "XLS", "XLSX").contains(extension))
             throw new ServiceException("文档格式不支持");
         return extension;
     }

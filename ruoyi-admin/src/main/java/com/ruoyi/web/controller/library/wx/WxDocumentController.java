@@ -6,6 +6,8 @@ import com.ruoyi.library.dto.DocumentSummaryDto;
 import com.ruoyi.library.dto.DocumentUnlockRequest;
 import com.ruoyi.library.dto.DocumentUnlockResult;
 import com.ruoyi.library.dto.FileAuthorization;
+import com.ruoyi.library.dto.FileDisclaimerDto;
+import com.ruoyi.library.dto.OriginalFileRequest;
 import com.ruoyi.library.service.DocumentAccessService;
 import java.util.Collections;
 import java.util.List;
@@ -48,20 +50,20 @@ public class WxDocumentController
                 WxUserContext.get(), id, request.getRemoteAddr()));
     }
 
-    /** 获取已兑换文档完整 PDF 的短时访问地址。 */
-    @GetMapping("/{id}/full")
-    public WxApiResponse<FileAuthorization> full(@PathVariable Long id, HttpServletRequest request)
+    /** 查询当前文件发送免责声明及本版本免提示状态。 */
+    @GetMapping("/file-disclaimer")
+    public WxApiResponse<FileDisclaimerDto> fileDisclaimer()
     {
-        return WxApiResponse.success(documentAccessService.authorizeFullDocument(
-                WxUserContext.get(), id, request.getRemoteAddr()));
+        return WxApiResponse.success(documentAccessService.fileDisclaimer(WxUserContext.get()));
     }
 
-    /** 获取原文件短时下载地址，接收人由微信分享面板选择。 */
+    /** 确认当前免责声明后获取原文件短时地址，接收人由微信面板选择。 */
     @PostMapping("/{id}/original")
-    public WxApiResponse<FileAuthorization> original(@PathVariable Long id, HttpServletRequest request)
+    public WxApiResponse<FileAuthorization> original(@PathVariable Long id,
+            @RequestBody OriginalFileRequest originalRequest, HttpServletRequest request)
     {
         return WxApiResponse.success(documentAccessService.authorizeOriginalFile(
-                WxUserContext.get(), id, request.getRemoteAddr()));
+                WxUserContext.get(), id, originalRequest, request.getRemoteAddr()));
     }
 
     /** 收藏已上架文档。 */

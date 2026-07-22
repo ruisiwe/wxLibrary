@@ -40,7 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentConversionService
 {
     private static final Set<String> FORMATS = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList("PDF", "DOC", "DOCX", "PPT", "PPTX", "TXT", "XLS")));
+            Arrays.asList("PDF", "DOC", "DOCX", "PPT", "PPTX", "TXT", "XLS", "XLSX")));
     private static final Map<String, Set<String>> CONTENT_TYPES = contentTypes();
     private static final byte[] OLE_MAGIC = {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0,
             (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};
@@ -233,15 +233,16 @@ public class DocumentConversionService
 
     public WlDocumentConversion getTask(Long id) { return requireTask(id); }
 
-    /** 仅允许完整、试读私有对象均已生成且页数边界正确的文档上架。 */
+    /** 仅允许原文件、试看文件和缩略图均已生成且页数边界正确的文档上架。 */
     public int publishDocument(Long documentId, String operator)
     {
         WlDocument document = documentMapper.selectDocumentById(documentId);
         if (document == null) throw new ServiceException("文档不存在");
         if (!"SUCCESS".equals(document.getConversionStatus()))
             throw new ServiceException("文档转换成功后才能上架");
-        requireText(document.getFullObjectKey(), "完整阅读文件尚未生成");
+        requireText(document.getOriginalObjectKey(), "原文件尚未上传");
         requireText(document.getPreviewObjectKey(), "试读文件尚未生成");
+        requireText(document.getCoverUrl(), "缩略图尚未生成");
         if (document.getPageCount() == null || document.getPreviewPages() == null
                 || document.getPreviewPages() <= 0 || document.getPreviewPages() >= document.getPageCount())
             throw new ServiceException("试读页数必须大于0且小于文档总页数");
@@ -274,7 +275,8 @@ public class DocumentConversionService
                 && header[2] == 'D' && header[3] == 'F' && header[4] == '-';
         if (Arrays.asList("DOC", "PPT", "XLS").contains(extension))
             return read == 8 && Arrays.equals(header, OLE_MAGIC);
-        if ("DOCX".equals(extension) || "PPTX".equals(extension)) return matchesOpenXml(input, extension);
+        if ("DOCX".equals(extension) || "PPTX".equals(extension) || "XLSX".equals(extension))
+            return matchesOpenXml(input, extension);
         if ("TXT".equals(extension)) return matchesUtf8Text(input);
         return false;
     }
@@ -293,6 +295,7 @@ public class DocumentConversionService
                 if ("[Content_Types].xml".equals(name)) contentTypes = true;
                 if ("DOCX".equals(extension) && "word/document.xml".equals(name)) documentEntry = true;
                 if ("PPTX".equals(extension) && "ppt/presentation.xml".equals(name)) documentEntry = true;
+                if ("XLSX".equals(extension) && "xl/workbook.xml".equals(name)) documentEntry = true;
                 if (contentTypes && documentEntry) return true;
             }
         }
@@ -403,6 +406,8 @@ public class DocumentConversionService
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation"));
         values.put("TXT", Collections.singleton("text/plain"));
         values.put("XLS", Collections.singleton("application/vnd.ms-excel"));
+        values.put("XLSX", Collections.singleton(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         return Collections.unmodifiableMap(values);
     }
 }

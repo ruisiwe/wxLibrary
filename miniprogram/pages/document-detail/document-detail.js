@@ -4,7 +4,11 @@ const session = require('../../store/session');
 const { request } = require('../../services/request');
 
 Page({
-  data: { id: '', document: null, unlocked: false, favorite: false, loading: true, error: '', loginVisible: false, agreements: [], pendingAction: '' },
+  data: {
+    id: '', document: null, unlocked: false, favorite: false, loading: true, error: '',
+    loginVisible: false, agreements: [], pendingAction: '', disclaimerVisible: false,
+    fileDisclaimer: null, suppressReminder: false, sendingOriginal: false
+  },
   onLoad(options) { this.setData({ id: options.id }); this.load(); },
   load() {
     this.setData({ loading: true, error: '' });
@@ -15,8 +19,7 @@ Page({
         const matches = items => (items || []).some(item => String(item.id || item.documentId) === String(this.data.id));
         this.setData({ unlocked: matches(unlocked), favorite: matches(favorites) });
       }).catch(() => {});
-    })
-      .catch(error => this.setData({ loading: false, error: error.message }));
+    }).catch(error => this.setData({ loading: false, error: error.message }));
   },
   requireLogin(action) {
     if (session.getToken()) return true;
@@ -44,11 +47,7 @@ Page({
   },
   preview() {
     if (!this.requireLogin('preview')) return;
-    wx.navigateTo({ url: `/pages/document-reader/document-reader?id=${this.data.id}&mode=preview` });
-  },
-  openFull() {
-    if (!this.requireLogin('openFull')) return;
-    wx.navigateTo({ url: `/pages/document-reader/document-reader?id=${this.data.id}&mode=full` });
+    wx.navigateTo({ url: `/pages/document-reader/document-reader?id=${this.data.id}` });
   },
   unlock() {
     if (!this.requireLogin('unlock')) return;
@@ -70,9 +69,52 @@ Page({
   },
   shareOriginal() {
     if (!this.requireLogin('shareOriginal')) return;
-    documents.original(this.data.id).then(file => new Promise((resolve, reject) => {
-      wx.downloadFile({ url: file.url, success: result => result.statusCode === 200 ? resolve(result.tempFilePath) : reject(new Error('原文件下载失败')), fail: reject });
-    })).then(filePath => wx.shareFileMessage(documents.buildShareOptions(filePath)))
-      .catch(error => wx.showToast({ title: error.message || '分享失败，请重试', icon: 'none' }));
+    documents.fileDisclaimer().then(disclaimer => {
+      if (disclaimer.reminderSuppressed) return this.sendOriginal(disclaimer, false, true);
+      this.setData({ fileDisclaimer: disclaimer, disclaimerVisible: true, suppressReminder: false });
+    }).catch(error => wx.showToast({ title: error.message || '免责声明加载失败，请重试', icon: 'none' }));
+  },
+  onSuppressReminderChange(event) {
+    this.setData({ suppressReminder: (event.detail.value || []).includes('suppress') });
+  },
+  cancelDisclaimer() {
+    this.setData({ disclaimerVisible: false, fileDisclaimer: null, suppressReminder: false });
+  },
+  confirmDisclaimer() {
+    const disclaimer = this.data.fileDisclaimer;
+    if (!disclaimer || this.data.sendingOriginal) return;
+    this.setData({ disclaimerVisible: false });
+    this.sendOriginal(disclaimer, true, this.data.suppressReminder);
+  },
+  sendOriginal(disclaimer, confirmed, reminderSuppressed) {
+    this.setData({ sendingOriginal: true });
+    return documents.original(this.data.id, {
+      agreementId: disclaimer.agreementId,
+      agreementVersion: disclaimer.agreementVersion,
+      confirmed,
+      reminderSuppressed
+    }).then(file => this.showLocalOpenNotice().then(() => file))
+      .then(file => new Promise((resolve, reject) => {
+        wx.downloadFile({
+          url: file.url,
+          success: result => result.statusCode === 200
+            ? resolve(result.tempFilePath) : reject(new Error('原文件下载失败')),
+          fail: reject
+        });
+      }))
+      .then(filePath => wx.shareFileMessage(documents.buildShareOptions(filePath)))
+      .catch(error => wx.showToast({ title: error.message || '发送失败，请重试', icon: 'none' }))
+      .finally(() => this.setData({
+        sendingOriginal: false, fileDisclaimer: null, suppressReminder: false
+      }));
+  },
+  showLocalOpenNotice() {
+    return new Promise(resolve => wx.showModal({
+      title: '文件使用提示',
+      content: '请将原文件发送到本地后打开',
+      showCancel: false,
+      success: resolve,
+      fail: resolve
+    }));
   }
 });
