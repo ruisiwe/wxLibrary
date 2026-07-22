@@ -5,11 +5,13 @@ const compiler = require('vue-template-compiler')
 
 const root = path.resolve(__dirname, '..')
 const cropperPath = path.join(root, 'src/views/library/content/banner/BannerImageCropper.vue')
+const pagePath = path.join(root, 'src/views/library/content/banner/index.vue')
 const apiPath = path.join(root, 'src/api/library/content.js')
 
 assert(fs.existsSync(cropperPath), '应提供轮播图固定尺寸裁剪组件')
 
 const cropper = fs.readFileSync(cropperPath, 'utf8')
+const page = fs.readFileSync(pagePath, 'utf8')
 const api = fs.readFileSync(apiPath, 'utf8')
 const component = compiler.parseComponent(cropper)
 assert(component.template, '轮播图裁剪组件缺少模板')
@@ -29,5 +31,17 @@ assert(/formData\.append\(['"]banner['"]/.test(api), 'multipart请求应包含ba
 assert(/formData\.append\(['"]image['"]/.test(api), 'multipart请求应支持image部件')
 assert(api.includes('repeatSubmit: false'), '图片请求应关闭重复提交拦截')
 assert(api.includes('/library/banner/${id}/image'), '应提供轮播图短时预览地址接口')
+
+const pageComponent = compiler.parseComponent(page)
+const pageCompiled = compiler.compile(pageComponent.template.content)
+assert.deepStrictEqual(pageCompiled.errors, [], `轮播图管理页模板编译失败：${pageCompiled.errors.join('；')}`)
+assert(page.includes("import BannerImageCropper from './BannerImageCropper'"), '管理页应使用固定尺寸裁剪组件')
+assert(page.includes('getBannerImage'), '修改轮播图时应读取短时预览地址')
+assert(page.includes('previewRequestSequence'), '管理页应丢弃过期的轮播图预览请求')
+assert(page.includes('bannerBlob'), '管理页应保存待提交的裁剪图片Blob')
+assert(/addBanner\([^,]+,\s*this\.bannerBlob\)/.test(page), '新增应同时提交表单和裁剪图片')
+assert(/updateBanner\([^,]+,\s*this\.bannerBlob\)/.test(page), '修改应允许提交可选的新裁剪图片')
+assert(page.includes("if (!this.form.id && !this.bannerBlob)"), '新增轮播图必须先完成图片裁剪')
+assert(!page.includes('图片地址'), '管理页不应再提供图片地址文本输入')
 
 console.log('轮播图本地裁剪与multipart上传契约测试通过')

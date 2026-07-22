@@ -40,10 +40,12 @@ assert(simpleList.includes('field.validate'), '通用表单应执行字段级有
 assert(simpleList.includes('missing.requiredMessage'), '通用表单应支持选择类字段的必填提示')
 
 const banner = read(bannerPath)
-assert(banner.includes("prop:'documentTitle'"), '宣传图片列表应显示关联文档标题')
-assert(banner.includes("type:'remote-select'"), '宣传图片表单应使用远程搜索选择')
+assert(banner.includes("import RemoteSelect from '@/views/library/common/RemoteSelect'"), '宣传图片页应直接使用远程搜索组件')
+assert(banner.includes('<remote-select'), '宣传图片表单应使用远程搜索选择')
+assert(banner.includes('documentTitle'), '宣传图片列表应显示关联文档标题')
 assert(banner.includes('documentSelectable'), '宣传图片编辑应校验原关联文档是否仍可用')
-assert(banner.includes("requiredMessage: '请选择关联文档'"), '未选择关联文档时应使用选择提示')
+assert(banner.includes('请选择关联文档'), '未选择关联文档时应使用选择提示')
+assert(banner.includes('searchDocumentOptions'), '宣传图片页应调用分页文档搜索')
 
 const api = read(apiPath)
 assert(api.includes('/library/banner/document-options'), '前端应调用宣传图片文档选项接口')
