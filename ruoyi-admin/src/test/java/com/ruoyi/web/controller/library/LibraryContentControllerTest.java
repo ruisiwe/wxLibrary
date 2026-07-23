@@ -84,7 +84,7 @@ class LibraryContentControllerTest
     }
 
     @Test
-    void bannerDocumentOptionsReturnOnlyLightweightPublishedDocumentFields() throws Exception
+    void bannerDocumentOptionsReturnLightweightAvailabilityFields() throws Exception
     {
         DocumentService documentService = mock(DocumentService.class);
         DocumentOptionDto option = new DocumentOptionDto();
@@ -92,6 +92,8 @@ class LibraryContentControllerTest
         option.setTitle("质量管理手册");
         option.setCategoryName("质量管理");
         option.setFileFormat("PDF");
+        option.setDocumentSelectable(false);
+        option.setAvailabilityStatus("DRAFT");
         when(documentService.listBannerDocumentOptions("质量", 1, 20))
                 .thenReturn(new PageResult<>(Collections.singletonList(option), 1L, 1, 20));
         MockMvc bannerMockMvc = MockMvcBuilders
@@ -105,6 +107,8 @@ class LibraryContentControllerTest
                 .andExpect(jsonPath("$.data.items[0].title").value("质量管理手册"))
                 .andExpect(jsonPath("$.data.items[0].categoryName").value("质量管理"))
                 .andExpect(jsonPath("$.data.items[0].fileFormat").value("PDF"))
+                .andExpect(jsonPath("$.data.items[0].documentSelectable").value(false))
+                .andExpect(jsonPath("$.data.items[0].availabilityStatus").value("DRAFT"))
                 .andExpect(jsonPath("$.data.items[0].originalObjectKey").doesNotExist());
     }
 

@@ -226,7 +226,7 @@ export default {
         optionDisabled: option => option.documentSelectable === false,
         initialOption: row => this.initialDocumentOption(row),
         invalidMessage: '原关联文档已下架，请重新选择',
-        emptyText: '未找到可关联的已发布文档',
+        emptyText: '未找到匹配的文档',
         loadErrorText: '关联文档搜索失败，请稍后重试'
       }
     }
@@ -276,11 +276,27 @@ export default {
     searchDocumentOptions(keyword) {
       return listBannerDocumentOptions({ keyword, pageNum: 1, pageSize: 20 }).then(response => {
         const data = response.data || {}
-        return (data.items || []).map(item => ({ ...item, documentSelectable: true }))
+        return data.items || []
       })
     },
     documentOptionLabel(option) {
-      return [option.title, option.categoryName, option.fileFormat].filter(Boolean).join(' / ')
+      return [
+        option.title,
+        option.categoryName,
+        option.fileFormat,
+        this.documentAvailabilityText(option)
+      ].filter(Boolean).join(' / ')
+    },
+    documentAvailabilityText(option) {
+      const labels = {
+        AVAILABLE: '已发布',
+        DRAFT: '草稿，暂不可关联',
+        CATEGORY_DISABLED: '分类已停用',
+        CATEGORY_UNAVAILABLE: '分类不可用',
+        UNAVAILABLE: '不可关联'
+      }
+      if (option && labels[option.availabilityStatus]) return labels[option.availabilityStatus]
+      return option && option.documentSelectable !== false ? '已发布' : '不可关联'
     },
     initialDocumentOption(row) {
       if (!row || !row.documentId) return null
@@ -289,7 +305,8 @@ export default {
         title: row.documentTitle || '原关联文档',
         categoryName: row.documentCategoryName,
         fileFormat: row.documentFileFormat,
-        documentSelectable: row.documentSelectable !== false
+        documentSelectable: row.documentSelectable !== false,
+        availabilityStatus: row.documentSelectable === false ? 'UNAVAILABLE' : 'AVAILABLE'
       }
     },
     onDocumentSelection(option) {

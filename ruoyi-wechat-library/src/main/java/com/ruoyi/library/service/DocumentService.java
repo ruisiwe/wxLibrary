@@ -63,7 +63,7 @@ public class DocumentService
         banner.setSortOrder(defaultZero(banner.getSortOrder()));
         banner.setCreateBy(operator);
         int rows = bannerMapper.insertBanner(banner);
-        if (rows != 1) throw new ServiceException("宣传图片只能关联已上架文档");
+        if (rows != 1) throw new ServiceException("宣传图片只能关联已发布且分类启用的文档");
         return rows;
     }
 
@@ -247,7 +247,10 @@ public class DocumentService
             throw new ServiceException("展示结束时间必须晚于开始时间");
         WlDocument document = documentMapper.selectDocumentById(banner.getDocumentId());
         if (document == null || !"PUBLISHED".equals(document.getPublishStatus()))
-            throw new ServiceException("宣传图片只能关联已上架文档");
+            throw new ServiceException("宣传图片只能关联已发布且分类启用的文档");
+        WlCategory category = categoryMapper.selectCategoryById(document.getCategoryId());
+        if (category == null || !"0".equals(category.getStatus()))
+            throw new ServiceException("宣传图片只能关联已发布且分类启用的文档");
     }
 
     private void validateCategory(WlCategory category, Long excludeId)

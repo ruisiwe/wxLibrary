@@ -89,10 +89,22 @@ class LibraryMapperXmlContractTest
                 .getMappedStatement("com.ruoyi.library.mapper.WlDocumentMapper.selectBannerDocumentOptions")
                 .getBoundSql(optionParameters).getSql().toLowerCase();
         assertFalse(optionSql.contains("object_key"));
-        assertTrue(optionSql.contains("d.publish_status = 'published'"));
-        assertTrue(optionSql.contains("c.status = '0'"));
+        assertTrue(optionSql.contains("left join wl_category"));
+        assertTrue(optionSql.contains("as document_selectable"));
+        assertTrue(optionSql.contains("as availability_status"));
+        assertFalse(optionSql.contains("where d.del_flag = '0' and d.publish_status = 'published'"));
         assertTrue(optionSql.contains("d.title like"));
-        assertTrue(optionSql.contains("order by d.publish_time desc, d.id desc"));
+        assertTrue(optionSql.contains("c.name like"));
+        assertTrue(optionSql.contains("d.file_format like"));
+        assertTrue(optionSql.contains("order by document_selectable desc"));
+
+        String optionCountSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlDocumentMapper.countBannerDocumentOptions")
+                .getBoundSql(optionParameters).getSql().toLowerCase();
+        assertTrue(optionCountSql.contains("left join wl_category"));
+        assertFalse(optionCountSql.contains("d.publish_status = 'published'"));
+        assertTrue(optionCountSql.contains("c.name like"));
+        assertTrue(optionCountSql.contains("d.file_format like"));
 
         String managementBannerSql = configuration
                 .getMappedStatement("com.ruoyi.library.mapper.WlBannerMapper.selectBannerList")
@@ -112,12 +124,21 @@ class LibraryMapperXmlContractTest
         mutationParameters.put("expectedImageUrl", "banners/old/image.jpg");
         mutationParameters.put("id", 4L);
         mutationParameters.put("operator", "admin");
+        String insertSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlBannerMapper.insertBanner")
+                .getBoundSql(banner).getSql().toLowerCase();
+        assertTrue(insertSql.contains("inner join wl_category"));
+        assertTrue(insertSql.contains("c.del_flag = '0'"));
+        assertTrue(insertSql.contains("c.status = '0'"));
         String updateSql = configuration
                 .getMappedStatement("com.ruoyi.library.mapper.WlBannerMapper.updateBannerWithExpectedImage")
                 .getBoundSql(mutationParameters).getSql().toLowerCase();
         assertTrue(updateSql.contains("image_url = ?"));
         assertTrue(updateSql.contains("and image_url = ?"));
         assertTrue(updateSql.contains("d.publish_status = 'published'"));
+        assertTrue(updateSql.contains("inner join wl_category"));
+        assertTrue(updateSql.contains("c.del_flag = '0'"));
+        assertTrue(updateSql.contains("c.status = '0'"));
         String deleteSql = configuration
                 .getMappedStatement("com.ruoyi.library.mapper.WlBannerMapper.deleteBannerWithExpectedImage")
                 .getBoundSql(mutationParameters).getSql().toLowerCase();

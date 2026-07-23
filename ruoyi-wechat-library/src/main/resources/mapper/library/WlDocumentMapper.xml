@@ -46,6 +46,8 @@
         <result property="title" column="title"/>
         <result property="categoryName" column="category_name"/>
         <result property="fileFormat" column="file_format"/>
+        <result property="documentSelectable" column="document_selectable"/>
+        <result property="availabilityStatus" column="availability_status"/>
     </resultMap>
     <sql id="documentColumns">select id, category_id, title, summary, tags, cover_url, uploader_name,
         file_format, file_size, page_count, point_price, preview_pages, original_object_key,
@@ -82,22 +84,30 @@
     </select>
     <select id="countBannerDocumentOptions" resultType="long">
         select count(1)
-        from wl_document d inner join wl_category c on c.id = d.category_id
-        where d.del_flag = '0' and d.publish_status = 'PUBLISHED'
-          and c.del_flag = '0' and c.status = '0'
+        from wl_document d left join wl_category c on c.id = d.category_id
+        where d.del_flag = '0'
         <if test="keyword != null and keyword != ''">
-            and d.title like concat('%', #{keyword}, '%') escape '\\'
+            and (d.title like concat('%', #{keyword}, '%') escape '\\'
+                or c.name like concat('%', #{keyword}, '%') escape '\\'
+                or d.file_format like concat('%', #{keyword}, '%') escape '\\')
         </if>
     </select>
     <select id="selectBannerDocumentOptions" resultMap="DocumentOptionResult">
-        select d.id, d.title, c.name as category_name, d.file_format
-        from wl_document d inner join wl_category c on c.id = d.category_id
-        where d.del_flag = '0' and d.publish_status = 'PUBLISHED'
-          and c.del_flag = '0' and c.status = '0'
+        select d.id, d.title, c.name as category_name, d.file_format,
+            case when d.publish_status = 'PUBLISHED' and c.id is not null
+                and c.del_flag = '0' and c.status = '0' then 1 else 0 end as document_selectable,
+            case when c.id is null or c.del_flag != '0' then 'CATEGORY_UNAVAILABLE'
+                when c.status != '0' then 'CATEGORY_DISABLED'
+                when d.publish_status != 'PUBLISHED' then 'DRAFT'
+                else 'AVAILABLE' end as availability_status
+        from wl_document d left join wl_category c on c.id = d.category_id
+        where d.del_flag = '0'
         <if test="keyword != null and keyword != ''">
-            and d.title like concat('%', #{keyword}, '%') escape '\\'
+            and (d.title like concat('%', #{keyword}, '%') escape '\\'
+                or c.name like concat('%', #{keyword}, '%') escape '\\'
+                or d.file_format like concat('%', #{keyword}, '%') escape '\\')
         </if>
-        order by d.publish_time desc, d.id desc
+        order by document_selectable desc, d.publish_time desc, d.id desc
         limit #{offset}, #{limit}
     </select>
     <select id="selectDocumentById" resultMap="WlDocumentResult">

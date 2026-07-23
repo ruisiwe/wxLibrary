@@ -8,8 +8,20 @@
       <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
       <el-table-column prop="categoryId" label="分类编号" />
       <el-table-column prop="pointPrice" label="所需积分" />
-      <el-table-column prop="conversionStatus" label="处理状态" />
-      <el-table-column prop="publishStatus" label="发布状态" />
+      <el-table-column prop="conversionStatus" label="处理状态" width="110" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="conversionStatusType(scope.row.conversionStatus)" size="mini">
+            {{ conversionStatusText(scope.row.conversionStatus) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="publishStatus" label="发布状态" width="100" align="center">
+        <template slot-scope="scope">
+          <el-tag :type="publishStatusType(scope.row.publishStatus)" size="mini">
+            {{ publishStatusText(scope.row.publishStatus) }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="250" fixed="right">
         <template slot-scope="scope">
           <el-button v-hasPermi="['library:document:edit']" type="text" @click="open(scope.row)">修改</el-button>
@@ -145,6 +157,23 @@ export default {
   created() { this.load() },
   beforeDestroy() { this.revokeThumbnailUrl() },
   methods: {
+    conversionStatusText(status) {
+      return {
+        PENDING: '待处理',
+        CONVERTING: '处理中',
+        SUCCESS: '处理成功',
+        FAILED: '处理失败'
+      }[status] || '未知状态'
+    },
+    conversionStatusType(status) {
+      return { PENDING: 'info', CONVERTING: 'warning', SUCCESS: 'success', FAILED: 'danger' }[status] || 'info'
+    },
+    publishStatusText(status) {
+      return { DRAFT: '草稿', PUBLISHED: '已发布' }[status] || '未知状态'
+    },
+    publishStatusType(status) {
+      return status === 'PUBLISHED' ? 'success' : 'info'
+    },
     load() {
       this.loading = true
       listDocuments(this.query).then(res => {

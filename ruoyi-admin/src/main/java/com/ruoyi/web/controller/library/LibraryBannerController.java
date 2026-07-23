@@ -47,7 +47,7 @@ public class LibraryBannerController extends BaseController
         return getDataTable(list);
     }
 
-    /** 搜索宣传图片可关联的已发布文档。 */
+    /** 搜索宣传图片关联文档，并标明当前是否可关联。 */
     @PreAuthorize("@ss.hasAnyPermi('library:banner:add,library:banner:edit')")
     @GetMapping("/document-options")
     public AjaxResult documentOptions(@RequestParam(required = false) String keyword,

@@ -58,7 +58,26 @@ class DocumentServiceTest
         ServiceException exception = assertThrows(ServiceException.class,
                 () -> service.addBanner(banner, "admin"));
 
-        assertEquals("宣传图片只能关联已上架文档", exception.getMessage());
+        assertEquals("宣传图片只能关联已发布且分类启用的文档", exception.getMessage());
+        verify(bannerMapper, never()).insertBanner(banner);
+    }
+
+    @Test
+    void bannerWriteRejectsPublishedDocumentWhoseCategoryIsDisabled()
+    {
+        WlDocument published = validDocument();
+        published.setPublishStatus("PUBLISHED");
+        when(documentMapper.selectDocumentById(8L)).thenReturn(published);
+        WlCategory disabled = new WlCategory();
+        disabled.setId(3L);
+        disabled.setStatus("1");
+        when(categoryMapper.selectCategoryById(3L)).thenReturn(disabled);
+        WlBanner banner = validBanner(null, "banners/home.jpg");
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.addBanner(banner, "admin"));
+
+        assertEquals("宣传图片只能关联已发布且分类启用的文档", exception.getMessage());
         verify(bannerMapper, never()).insertBanner(banner);
     }
 
