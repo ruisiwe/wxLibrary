@@ -305,6 +305,7 @@ public class DocumentService
         document.setFileFormat(null);
         document.setFileSize(0L);
         document.setPageCount(0);
+        document.setCoverUrl(null);
         document.setOriginalObjectKey(null);
         document.setFullObjectKey(null);
         document.setPreviewObjectKey(null);

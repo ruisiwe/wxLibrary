@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.library;
 
 import com.ruoyi.library.dto.DocumentUploadCommitResult;
 import com.ruoyi.library.dto.DocumentUploadPrepareResult;
+import com.ruoyi.library.dto.DocumentThumbnailResult;
 import com.ruoyi.library.service.DocumentUploadService;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -116,8 +117,27 @@ class LibraryDocumentUploadControllerTest
     }
 
     @Test
+    void savedDocumentThumbnailProvidesAuthenticatedReadEndpoint() throws Exception
+    {
+        DocumentThumbnailResult result = new DocumentThumbnailResult();
+        result.setDocumentId(91L);
+        result.setThumbnailUrl("https://example.test/saved-cover");
+        when(service.savedThumbnail(91L, "admin")).thenReturn(result);
+
+        mockMvc.perform(get("/library/document-upload/document/{documentId}/thumbnail", 91L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.documentId").value(91L))
+                .andExpect(jsonPath("$.data.thumbnailUrl").value(result.getThumbnailUrl()));
+
+        verify(service).savedThumbnail(91L, "admin");
+    }
+
+    @Test
     void endpointsDeclareChineseManagementPermissions() throws Exception
     {
+        assertEquals("@ss.hasPermi('library:document:edit')",
+                LibraryDocumentUploadController.class.getMethod("savedThumbnail", Long.class)
+                        .getAnnotation(PreAuthorize.class).value());
         assertEquals("@ss.hasPermi('library:document:add') and @ss.hasPermi('library:document:upload')",
                 LibraryDocumentUploadController.class.getMethod("prepare", org.springframework.web.multipart.MultipartFile.class)
                         .getAnnotation(PreAuthorize.class).value());

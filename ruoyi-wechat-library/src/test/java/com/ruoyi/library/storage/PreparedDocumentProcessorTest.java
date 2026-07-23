@@ -4,6 +4,7 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.config.DocumentConversionProperties;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.imageio.ImageIO;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -18,6 +19,15 @@ class PreparedDocumentProcessorTest
 {
     @TempDir
     Path tempDir;
+
+    @Test
+    void scannedPdfImageDecodersAreAvailable()
+    {
+        assertTrue(ImageIO.getImageReadersByFormatName("JPEG2000").hasNext(),
+                "应支持 PDF 内嵌 JPEG2000/JPX 扫描页");
+        assertTrue(ImageIO.getImageReadersByFormatName("JBIG2").hasNext(),
+                "应支持 PDF 内嵌 JBIG2 扫描页");
+    }
 
     @Test
     void twoPagePdfCreatesOnePagePreviewAndJpegThumbnail() throws Exception

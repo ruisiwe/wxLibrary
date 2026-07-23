@@ -186,6 +186,28 @@ public class DocumentUploadService
         finally { deleteFileQuietly(candidate); }
     }
 
+    /** 获取已保存文档私有缩略图的短时访问地址。 */
+    public DocumentThumbnailResult savedThumbnail(Long documentId, String owner)
+    {
+        requireOwner(owner);
+        if (documentId == null || documentId <= 0) throw new ServiceException("文档编号不能为空");
+        WlDocument document = documentService.getDocument(documentId);
+        String coverKey = document.getCoverUrl();
+        DocumentThumbnailResult result = new DocumentThumbnailResult();
+        result.setDocumentId(documentId);
+        if (coverKey == null || coverKey.trim().isEmpty()) return result;
+        String normalizedCoverKey = coverKey.trim();
+        if (isExternalUrl(normalizedCoverKey))
+        {
+            result.setThumbnailUrl(normalizedCoverKey);
+            return result;
+        }
+        requireDocumentThumbnailKey(documentId, normalizedCoverKey);
+        result.setThumbnailUrl(storage.signGetUrl(
+                normalizedCoverKey, THUMBNAIL_URL_TTL, null).toString());
+        return result;
+    }
+
     /** 替换已保存文档的私有缩略图，并在数据库提交后清理旧对象。 */
     public DocumentThumbnailResult replaceSavedThumbnail(Long documentId, MultipartFile file, String owner)
     {
@@ -195,6 +217,7 @@ public class DocumentUploadService
         String oldCoverKey = document.getCoverUrl();
         if (oldCoverKey == null || oldCoverKey.trim().isEmpty())
             throw new ServiceException("文档原缩略图不存在");
+        if (!isExternalUrl(oldCoverKey)) requireDocumentThumbnailKey(documentId, oldCoverKey.trim());
         Path directory = createSessionDirectory(UUID.randomUUID().toString().replace("-", ""));
         Path thumbnail = directory.resolve("thumbnail.jpg");
         String newCoverKey = "documents/" + documentId + "/thumbnail/v"
@@ -771,6 +794,17 @@ public class DocumentUploadService
         if (value == null) return false;
         String normalized = value.trim().toLowerCase(Locale.ROOT);
         return normalized.startsWith("http://") || normalized.startsWith("https://");
+    }
+
+    private void requireDocumentThumbnailKey(Long documentId, String objectKey)
+    {
+        String replacementPrefix = "documents/" + documentId + "/thumbnail/";
+        boolean replacementKey = objectKey.startsWith(replacementPrefix)
+                && objectKey.substring(replacementPrefix.length()).matches("v[a-f0-9]{32}\\.jpg");
+        boolean legacyKey = objectKey.equals(replacementPrefix + "v1.jpg");
+        boolean initialKey = objectKey.matches("documents/[a-f0-9]{32}/thumbnail/v1\\.jpg");
+        if (!replacementKey && !legacyKey && !initialKey)
+            throw new ServiceException("文档缩略图对象键不正确");
     }
 
     private static Map<String, Set<String>> contentTypes()

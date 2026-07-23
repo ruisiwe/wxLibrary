@@ -42,6 +42,9 @@ export const replaceDocumentUploadThumbnail = (sessionId, data) => request({
   url: `/library/document-upload/session/${sessionId}/thumbnail`, method: 'put', data,
   headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }, timeout: 30000
 })
+export const getSavedDocumentThumbnail = documentId => request({
+  url: `/library/document-upload/document/${documentId}/thumbnail`, method: 'get'
+})
 export const replaceSavedDocumentThumbnail = (documentId, data) => request({
   url: `/library/document-upload/document/${documentId}/thumbnail`, method: 'put', data,
   headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }, timeout: 30000

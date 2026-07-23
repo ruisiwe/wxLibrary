@@ -6,6 +6,7 @@ import com.ruoyi.library.domain.WlDocument;
 import com.ruoyi.library.dto.DocumentUploadCommitRequest;
 import com.ruoyi.library.dto.DocumentUploadCommitResult;
 import com.ruoyi.library.dto.DocumentUploadPrepareResult;
+import com.ruoyi.library.dto.DocumentThumbnailResult;
 import com.ruoyi.library.storage.CosPrivateStorageService;
 import com.ruoyi.library.storage.PreparedDocumentProcessor;
 import java.io.ByteArrayOutputStream;
@@ -13,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.nio.file.attribute.FileTime;
@@ -168,6 +170,47 @@ class DocumentUploadServiceTest
         order.verify(documentService).updateDocumentCover(eq(91L), eq("documents/91/thumbnail/v1.jpg"),
                 any(), eq("admin"));
         order.verify(storage).deleteObjectAfterMetadataDeletion("documents/91/thumbnail/v1.jpg");
+    }
+
+    @Test
+    void savedDocumentThumbnailReturnsShortLivedPrivateUrl() throws Exception
+    {
+        WlDocument document = new WlDocument();
+        document.setId(91L);
+        document.setCoverUrl("documents/91/thumbnail/v1.jpg");
+        when(documentService.getDocument(91L)).thenReturn(document);
+        when(storage.signGetUrl("documents/91/thumbnail/v1.jpg", Duration.ofMinutes(10), null))
+                .thenReturn(new java.net.URL("https://example.test/saved-cover"));
+        DocumentThumbnailResult result = service.savedThumbnail(91L, "admin");
+
+        assertEquals(91L, result.getDocumentId());
+        assertEquals("https://example.test/saved-cover", result.getThumbnailUrl());
+        verify(storage).signGetUrl("documents/91/thumbnail/v1.jpg", Duration.ofMinutes(10), null);
+    }
+
+    @Test
+    void savedDocumentThumbnailRejectsNonThumbnailPrivateObjectKey()
+    {
+        WlDocument document = new WlDocument();
+        document.setId(91L);
+        document.setCoverUrl("documents/91/original/v1.pdf");
+        when(documentService.getDocument(91L)).thenReturn(document);
+
+        assertEquals("文档缩略图对象键不正确", assertThrows(ServiceException.class,
+                () -> service.savedThumbnail(91L, "admin")).getMessage());
+    }
+
+    @Test
+    void savedDocumentWithoutThumbnailReturnsEmptyResult()
+    {
+        WlDocument document = new WlDocument();
+        document.setId(91L);
+        when(documentService.getDocument(91L)).thenReturn(document);
+
+        DocumentThumbnailResult result = service.savedThumbnail(91L, "admin");
+
+        assertEquals(91L, result.getDocumentId());
+        assertEquals(null, result.getThumbnailUrl());
     }
 
     @Test

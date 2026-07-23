@@ -21,6 +21,12 @@ assert(view.includes('thumbnailBlobUrl'), '受保护缩略图应通过鉴权请�
 assert(view.includes(':before-close="beforeClose"'), '关闭新增弹窗应取消未提交会话')
 assert(view.includes('replaceThumbnail'), '新增文档弹窗应允许替换缩略图')
 assert(view.includes('replaceSavedThumbnailFile'), '修改文档弹窗应允许替换已保存的缩略图')
+assert(view.includes('loadSavedThumbnail'), '修改文档弹窗应主动读取私有缩略图短时地址')
+assert(view.includes('thumbnailLoading'), '修改文档缩略图加载期间应显示加载状态')
+assert((view.match(/:preview-src-list=/g) || []).length >= 2, '临时和已保存缩略图都应支持点击放大')
+const uploadTags = view.match(/<el-upload[\s\S]*?>/g) || []
+assert(uploadTags.length >= 3, '文档弹窗应保留三处手动文件选择')
+assert(uploadTags.every(tag => tag.includes('action="#"')), '手动上传组件必须提供 action，避免 Vue 必填属性警告')
 assert(view.includes("hasPermiAnd(['library:document:add', 'library:document:upload'])"), '新增入口必须同时校验新增和上传权限')
 assert(!view.includes('label="预览页数"'), '管理端不能手工填写试看页数')
 assert(!view.includes('label="封面地址"'), '管理端不能手工填写封面地址')
@@ -32,5 +38,7 @@ assert(api.includes('/library/document-upload/session/${sessionId}/thumbnail'), 
 assert(api.includes('/library/document-upload/session/${sessionId}/commit'), '前端应调用最终确认接口')
 assert(api.includes("responseType: 'blob'"), '缩略图读取应使用带鉴权的 Blob 请求')
 assert(api.includes('/library/document-upload/document/${documentId}/thumbnail'), '前端应调用已保存文档缩略图替换接口')
+assert(api.includes('getSavedDocumentThumbnail'), '前端应提供已保存文档缩略图读取方法')
+assert(/getSavedDocumentThumbnail[\s\S]*?method: 'get'/.test(api), '已保存文档缩略图应使用 GET 请求读取短时地址')
 
 console.log('后台文档两阶段上传契约测试通过')

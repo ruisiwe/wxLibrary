@@ -148,6 +148,7 @@ class DocumentServiceTest
         WlDocument document = validDocument();
         document.setFileFormat("XLSX");
         document.setOriginalObjectKey("other-tenant/secret.pdf");
+        document.setCoverUrl("documents/other/thumbnail/v1.jpg");
         document.setPreviewPages(1);
         assertEquals("试读页数不能大于文档总页数", assertThrows(ServiceException.class,
                 () -> service.addDocument(document, "admin")).getMessage());
@@ -157,6 +158,7 @@ class DocumentServiceTest
         service.addDocument(document, "admin");
         assertEquals(null, document.getFileFormat());
         assertEquals(null, document.getOriginalObjectKey());
+        assertEquals(null, document.getCoverUrl());
         assertEquals("admin", document.getUploaderName());
     }
 

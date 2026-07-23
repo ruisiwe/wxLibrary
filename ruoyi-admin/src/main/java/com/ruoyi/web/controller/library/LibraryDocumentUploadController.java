@@ -82,6 +82,14 @@ public class LibraryDocumentUploadController extends BaseController
         return success(uploadService.commit(sessionId, request, getUsername()));
     }
 
+    /** 获取已保存文档私有缩略图的短时预览地址。 */
+    @PreAuthorize("@ss.hasPermi('library:document:edit')")
+    @GetMapping("/document/{documentId}/thumbnail")
+    public AjaxResult savedThumbnail(@PathVariable Long documentId)
+    {
+        return success(uploadService.savedThumbnail(documentId, getUsername()));
+    }
+
     /** 替换已保存文档的私有缩略图。 */
     @PreAuthorize("@ss.hasPermi('library:document:edit') and @ss.hasPermi('library:document:upload')")
     @Log(title = "替换已保存文档缩略图", businessType = BusinessType.UPDATE)

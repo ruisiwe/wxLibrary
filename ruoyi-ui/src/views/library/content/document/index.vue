@@ -45,6 +45,7 @@
           <el-form-item label="原文件" required>
             <el-upload
               ref="originalUpload"
+              action="#"
               :auto-upload="false"
               :limit="1"
               :file-list="fileList"
@@ -74,8 +75,15 @@
             <el-descriptions-item label="试看页数">{{ preparedSession.previewPages }}</el-descriptions-item>
           </el-descriptions>
           <div class="thumbnail-row">
-            <el-image v-if="thumbnailBlobUrl" class="thumbnail" :src="thumbnailBlobUrl" fit="contain" />
+            <el-image
+              v-if="thumbnailBlobUrl"
+              class="thumbnail"
+              :src="thumbnailBlobUrl"
+              :preview-src-list="[thumbnailBlobUrl]"
+              fit="contain"
+            />
             <el-upload
+              action="#"
               :show-file-list="false"
               :auto-upload="false"
               accept=".jpg,.jpeg,.png"
@@ -89,11 +97,18 @@
 
       <el-form :model="form" label-width="110px">
         <el-form-item v-if="form.id" label="文档缩略图">
-          <div class="thumbnail-row saved-thumbnail-row">
-            <el-image v-if="savedThumbnailUrl" class="thumbnail" :src="savedThumbnailUrl" fit="contain" />
-            <div v-else class="thumbnail-empty">私有缩略图</div>
+          <div v-loading="thumbnailLoading" class="thumbnail-row saved-thumbnail-row">
+            <el-image
+              v-if="savedThumbnailUrl"
+              class="thumbnail"
+              :src="savedThumbnailUrl"
+              :preview-src-list="[savedThumbnailUrl]"
+              fit="contain"
+            />
+            <div v-else class="thumbnail-empty">{{ thumbnailLoading ? '缩略图加载中' : '暂无缩略图' }}</div>
             <el-upload
               v-if="$auth.hasPermiAnd(['library:document:edit', 'library:document:upload'])"
+              action="#"
               :show-file-list="false"
               :auto-upload="false"
               accept=".jpg,.jpeg,.png"
@@ -102,7 +117,7 @@
               <el-button size="small" :loading="replacingThumbnail">替换缩略图</el-button>
             </el-upload>
           </div>
-          <div class="form-tip">选择新图片后会立即替换已保存文档的缩略图。</div>
+          <div class="form-tip">点击缩略图可放大查看；选择新图片后会立即替换已保存文档的缩略图。</div>
         </el-form-item>
         <el-form-item label="标题" required><el-input v-model="form.title" maxlength="200" /></el-form-item>
         <el-form-item label="分类编号" required><el-input-number v-model="form.categoryId" :min="1" /></el-form-item>
@@ -129,6 +144,7 @@ import {
   prepareDocumentUpload,
   getDocumentUploadThumbnail,
   replaceDocumentUploadThumbnail,
+  getSavedDocumentThumbnail,
   replaceSavedDocumentThumbnail,
   commitDocumentUpload,
   cancelDocumentUpload
@@ -149,13 +165,18 @@ export default {
       preparedSession: null,
       thumbnailBlobUrl: '',
       savedThumbnailUrl: '',
+      thumbnailLoading: false,
+      thumbnailRequestSequence: 0,
       processing: false,
       replacingThumbnail: false,
       saving: false
     }
   },
   created() { this.load() },
-  beforeDestroy() { this.revokeThumbnailUrl() },
+  beforeDestroy() {
+    this.thumbnailRequestSequence += 1
+    this.revokeThumbnailUrl()
+  },
   methods: {
     conversionStatusText(status) {
       return {
@@ -186,8 +207,21 @@ export default {
       this.form = row
         ? { ...row }
         : { title: '', categoryId: null, summary: '', tags: '', pointPrice: 0, sortOrder: 0 }
-      this.savedThumbnailUrl = row && /^https?:\/\//i.test(row.coverUrl || '') ? row.coverUrl : ''
       this.visible = true
+      if (row && row.id) this.loadSavedThumbnail(row.id)
+    },
+    loadSavedThumbnail(documentId) {
+      const sequence = ++this.thumbnailRequestSequence
+      this.thumbnailLoading = true
+      this.savedThumbnailUrl = ''
+      getSavedDocumentThumbnail(documentId).then(res => {
+        if (sequence !== this.thumbnailRequestSequence || !this.visible || this.form.id !== documentId) return
+        this.savedThumbnailUrl = res.data ? res.data.thumbnailUrl : ''
+      }).catch(() => {
+        if (sequence === this.thumbnailRequestSequence) this.savedThumbnailUrl = ''
+      }).finally(() => {
+        if (sequence === this.thumbnailRequestSequence) this.thumbnailLoading = false
+      })
     },
     onOriginalChange(file) {
       const assign = () => {
@@ -290,12 +324,14 @@ export default {
       return cancelDocumentUpload(session.sessionId).catch(() => {})
     },
     resetUploadState() {
+      this.thumbnailRequestSequence += 1
       this.selectedFile = null
       this.fileList = []
       this.preparedSession = null
       this.processing = false
       this.replacingThumbnail = false
       this.savedThumbnailUrl = ''
+      this.thumbnailLoading = false
       this.saving = false
       this.revokeThumbnailUrl()
     },
@@ -319,5 +355,5 @@ export default {
 </script>
 
 <style scoped>
-.danger{color:#f56c6c}.mt12{margin-top:12px}.form-tip{margin-top:8px;color:#909399;font-size:12px}.prepared-card{margin-bottom:20px}.thumbnail-row{display:flex;align-items:flex-end;gap:20px;margin-top:18px}.saved-thumbnail-row{margin-top:0}.thumbnail{width:180px;height:240px;border:1px solid #ebeef5;background:#f5f7fa}.thumbnail-empty{display:flex;align-items:center;justify-content:center;width:180px;height:240px;border:1px solid #ebeef5;background:#f5f7fa;color:#909399}
+.danger{color:#f56c6c}.mt12{margin-top:12px}.form-tip{margin-top:8px;color:#909399;font-size:12px}.prepared-card{margin-bottom:20px}.thumbnail-row{display:flex;align-items:flex-end;gap:20px;margin-top:18px}.saved-thumbnail-row{margin-top:0}.thumbnail{width:180px;height:240px;border:1px solid #ebeef5;background:#f5f7fa;cursor:zoom-in}.thumbnail-empty{display:flex;align-items:center;justify-content:center;width:180px;height:240px;border:1px solid #ebeef5;background:#f5f7fa;color:#909399}
 </style>
