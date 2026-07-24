@@ -1,1 +1,23 @@
-<view class="page"><view wx:if="{{!profile}}" class="login"><view>登录后管理文档、课程与积分</view><button bindtap="login">微信登录</button></view><view wx:else><view class="user"><image src="{{profile.avatarUrl}}"/><view><view class="nickname">{{profile.nickname}}</view><view>{{profile.pointBalance}} 积分 · {{profile.vipActive ? 'VIP 至 '+profile.vipExpireTime : '普通用户'}}</view></view></view><view class="menu"><view data-url="/pages/my-documents/my-documents" bindtap="open">我的文档 <text>›</text></view><view data-url="/pages/favorites/favorites" bindtap="open">我的收藏 <text>›</text></view><view data-url="/pages/my-courses/my-courses" bindtap="open">我的课程 <text>›</text></view><view data-url="/pages/redeem-course/redeem-course" bindtap="open">兑换课程码 <text>›</text></view><view data-url="/pages/agreement/agreement?type=PRIVACY" bindtap="open">用户隐私协议 <text>›</text></view><view data-url="/pages/agreement/agreement?type=STATEMENT" bindtap="open">网站声明 <text>›</text></view><button class="feedback" open-type="feedback">意见反馈</button></view></view><button class="contact" open-type="contact">联系客服</button><login-sheet visible="{{loginVisible}}" agreements="{{agreements}}" profile-required="{{profileRequired}}" bindclose="closeLogin" bindsubmit="submitLogin"/></view>
+<view class="page">
+  <view wx:if="{{!profile}}" class="login">
+    <view wx:if="{{authChecking}}">正在登录...</view>
+    <login-sheet wx:else visible="{{loginVisible}}" embedded="{{true}}" agreements="{{agreements}}" profile-required="{{profileRequired}}" bindclose="closeLogin" bindsubmit="submitLogin" />
+  </view>
+  <view wx:else>
+    <view class="user">
+      <image src="{{profile.avatarUrl}}" />
+      <view>
+        <view class="nickname">{{profile.nickname}}</view>
+        <view>{{profile.pointBalance}} 积分 · {{profile.vipActive ? 'VIP 至 '+profile.vipExpireTime : '普通用户'}}</view>
+      </view>
+    </view>
+    <view class="menu">
+      <view data-url="/pages/my-documents/my-documents" bindtap="open">我的文档 <text>›</text></view>
+      <view data-url="/pages/favorites/favorites" bindtap="open">我的收藏 <text>›</text></view>
+      <view data-url="/pages/redeem-course/redeem-course" bindtap="open">会员兑换 <text>›</text></view>
+      <view data-url="/pages/agreement/agreement?type=PRIVACY" bindtap="open">用户隐私协议 <text>›</text></view>
+      <button class="menu-button" open-type="feedback">意见反馈 <text>›</text></button>
+      <button class="menu-button" open-type="contact">联系客服 <text>›</text></button>
+    </view>
+  </view>
+</view>

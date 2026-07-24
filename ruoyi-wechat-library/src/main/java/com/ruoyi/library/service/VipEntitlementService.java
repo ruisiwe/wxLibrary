@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class VipEntitlementService
 {
-    private static final Set<String> PLAN_SOURCES = new HashSet<>(Arrays.asList("PAYMENT", "MANUAL"));
+    private static final Set<String> PLAN_SOURCES = new HashSet<>(Arrays.asList("PAYMENT", "MANUAL", "VIP_CODE"));
     private final WlVipEntitlementMapper entitlementMapper;
     private final WlWxUserMapper userMapper;
     private final PointService pointService;

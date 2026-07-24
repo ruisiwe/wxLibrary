@@ -122,6 +122,49 @@ class DocumentAccessServiceTest
     }
 
     @Test
+    void vipFreeDocumentUnlocksWithoutChargingActiveVip()
+    {
+        WlDocument document = document();
+        document.setAccessType("VIP_FREE");
+        WlWxUser locked = user(11L, 50L);
+        locked.setVipExpireTime(new java.util.Date(System.currentTimeMillis() + 86400000L));
+        when(userMapper.selectById(11L)).thenReturn(locked);
+        when(userMapper.selectByIdForUpdate(11L)).thenReturn(locked);
+        when(documentMapper.selectDocumentById(22L)).thenReturn(document);
+        when(unlockMapper.selectUnlock(11L, 22L)).thenReturn(null);
+        when(unlockMapper.insertUnlock(any())).thenReturn(1);
+
+        DocumentUnlockResult result = service.unlock(11L, 22L, "request-vip-free");
+
+        assertEquals(0L, result.getSpentPoints());
+        assertEquals(50L, result.getPointBalance());
+        verify(pointService, never()).deductAfterLock(any(), any(), any(), any(), any());
+        verify(unlockMapper).insertUnlock(any(WlDocumentUnlock.class));
+    }
+
+    @Test
+    void vipFreeDocumentStillChargesPointsForNonVip()
+    {
+        WlDocument document = document();
+        document.setAccessType("VIP_FREE");
+        WlWxUser locked = user(11L, 50L);
+        when(userMapper.selectById(11L)).thenReturn(locked);
+        when(userMapper.selectByIdForUpdate(11L)).thenReturn(locked);
+        when(documentMapper.selectDocumentById(22L)).thenReturn(document);
+        when(unlockMapper.selectUnlock(11L, 22L)).thenReturn(null);
+        when(unlockMapper.insertUnlock(any())).thenReturn(1);
+        when(pointService.deductAfterLock(eq(locked), eq(20L), eq("DOCUMENT_UNLOCK"),
+                eq("DOCUMENT_UNLOCK:22:request-non-vip"), any())).thenReturn(pointRecord(31L, 50L, 30L));
+
+        DocumentUnlockResult result = service.unlock(11L, 22L, "request-non-vip");
+
+        assertEquals(20L, result.getSpentPoints());
+        assertEquals(30L, result.getPointBalance());
+        verify(pointService).deductAfterLock(eq(locked), eq(20L), eq("DOCUMENT_UNLOCK"),
+                eq("DOCUMENT_UNLOCK:22:request-non-vip"), any());
+    }
+
+    @Test
     void previewSignsOnlyPreviewObjectKey() throws Exception
     {
         WlDocument document = document();

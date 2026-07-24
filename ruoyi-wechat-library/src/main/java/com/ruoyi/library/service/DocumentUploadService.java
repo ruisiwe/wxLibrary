@@ -361,6 +361,7 @@ public class DocumentUploadService
         document.setSummary(request.getSummary());
         document.setTags(request.getTags());
         document.setPointPrice(request.getPointPrice());
+        document.setAccessType(request.getAccessType());
         document.setSortOrder(request.getSortOrder());
         document.setRemark(request.getRemark());
         document.setFileFormat(session.extension);
@@ -660,6 +661,11 @@ public class DocumentUploadService
         if (request.getCategoryId() == null || request.getCategoryId() <= 0) throw new ServiceException("文档分类不能为空");
         if (request.getTitle() == null || request.getTitle().trim().isEmpty()) throw new ServiceException("文档标题不能为空");
         if (request.getPointPrice() == null || request.getPointPrice() < 0) throw new ServiceException("兑换积分不能小于0");
+        String accessType = request.getAccessType();
+        if (accessType != null && !accessType.trim().isEmpty()
+                && !"POINT".equals(accessType.trim().toUpperCase(Locale.ROOT))
+                && !"VIP_FREE".equals(accessType.trim().toUpperCase(Locale.ROOT)))
+            throw new ServiceException("文档访问方式不正确");
     }
 
     private void requireOwner(String owner)

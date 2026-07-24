@@ -18,6 +18,7 @@ public class WlDocument extends BaseEntity
     private Long fileSize;
     private Integer pageCount;
     private Long pointPrice;
+    private String accessType;
     private Integer previewPages;
     private String originalObjectKey;
     private String fullObjectKey;
@@ -50,6 +51,8 @@ public class WlDocument extends BaseEntity
     public void setPageCount(Integer pageCount) { this.pageCount = pageCount; }
     public Long getPointPrice() { return pointPrice; }
     public void setPointPrice(Long pointPrice) { this.pointPrice = pointPrice; }
+    public String getAccessType() { return accessType; }
+    public void setAccessType(String accessType) { this.accessType = accessType; }
     public Integer getPreviewPages() { return previewPages; }
     public void setPreviewPages(Integer previewPages) { this.previewPages = previewPages; }
     public String getOriginalObjectKey() { return originalObjectKey; }

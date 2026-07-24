@@ -8,6 +8,9 @@
       <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
       <el-table-column prop="categoryId" label="分类编号" />
       <el-table-column prop="pointPrice" label="所需积分" />
+      <el-table-column prop="accessType" label="访问方式" width="110">
+        <template slot-scope="scope">{{ accessTypeText(scope.row.accessType) }}</template>
+      </el-table-column>
       <el-table-column prop="conversionStatus" label="处理状态" width="110" align="center">
         <template slot-scope="scope">
           <el-tag :type="conversionStatusType(scope.row.conversionStatus)" size="mini">
@@ -124,6 +127,12 @@
         <el-form-item label="摘要"><el-input v-model="form.summary" type="textarea" maxlength="1000" /></el-form-item>
         <el-form-item label="标签"><el-input v-model="form.tags" placeholder="多个标签用逗号分隔" /></el-form-item>
         <el-form-item label="所需积分" required><el-input-number v-model="form.pointPrice" :min="0" /></el-form-item>
+        <el-form-item label="访问方式" required>
+          <el-radio-group v-model="form.accessType">
+            <el-radio label="POINT">积分兑换</el-radio>
+            <el-radio label="VIP_FREE">会员免费</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.sortOrder" :min="0" /></el-form-item>
       </el-form>
       <span slot="footer">
@@ -195,6 +204,9 @@ export default {
     publishStatusType(status) {
       return status === 'PUBLISHED' ? 'success' : 'info'
     },
+    accessTypeText(accessType) {
+      return accessType === 'VIP_FREE' ? '会员免费' : '积分兑换'
+    },
     load() {
       this.loading = true
       listDocuments(this.query).then(res => {
@@ -206,7 +218,8 @@ export default {
       this.resetUploadState()
       this.form = row
         ? { ...row }
-        : { title: '', categoryId: null, summary: '', tags: '', pointPrice: 0, sortOrder: 0 }
+        : { title: '', categoryId: null, summary: '', tags: '', pointPrice: 0, accessType: 'POINT', sortOrder: 0 }
+      if (!this.form.accessType) this.form.accessType = 'POINT'
       this.visible = true
       if (row && row.id) this.loadSavedThumbnail(row.id)
     },

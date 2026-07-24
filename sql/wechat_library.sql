@@ -108,6 +108,7 @@ CREATE TABLE `wl_document` (
   `file_size` bigint NOT NULL DEFAULT 0,
   `page_count` int NOT NULL DEFAULT 0,
   `point_price` bigint NOT NULL DEFAULT 0,
+  `access_type` varchar(20) NOT NULL DEFAULT 'POINT' COMMENT '访问方式：POINT积分兑换，VIP_FREE会员免费',
   `preview_pages` int NOT NULL DEFAULT 0,
   `original_object_key` varchar(512) DEFAULT NULL,
   `full_object_key` varchar(512) DEFAULT NULL,
@@ -128,6 +129,7 @@ CREATE TABLE `wl_document` (
   KEY `idx_document_publish_time` (`publish_status`, `publish_time`),
   KEY `idx_document_conversion_status` (`conversion_status`),
   CONSTRAINT `chk_document_point_price` CHECK (`point_price` >= 0),
+  CONSTRAINT `chk_document_access_type` CHECK (`access_type` IN ('POINT','VIP_FREE')),
   CONSTRAINT `chk_document_file_size` CHECK (`file_size` >= 0),
   CONSTRAINT `chk_document_page_count` CHECK (`page_count` >= 0),
   CONSTRAINT `chk_document_preview_pages` CHECK (`preview_pages` >= 0),
@@ -164,7 +166,7 @@ CREATE TABLE `wl_document_unlock` (
   `user_id` bigint NOT NULL,
   `document_id` bigint NOT NULL,
   `spent_points` bigint NOT NULL,
-  `point_record_id` bigint NOT NULL,
+  `point_record_id` bigint DEFAULT NULL,
   `unlock_time` datetime NOT NULL,
   `create_by` varchar(64) NOT NULL DEFAULT '',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -446,6 +448,31 @@ CREATE TABLE `wl_vip_plan` (
   CONSTRAINT `chk_vip_plan_gift_points` CHECK (`gift_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员套餐';
 
+CREATE TABLE `wl_vip_code` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `plan_id` bigint NOT NULL,
+  `code_digest` char(64) NOT NULL COMMENT '会员码SHA-256摘要',
+  `code_mask` varchar(32) NOT NULL COMMENT '会员码掩码',
+  `status` varchar(16) NOT NULL DEFAULT 'UNUSED',
+  `used_user_id` bigint DEFAULT NULL,
+  `used_time` datetime DEFAULT NULL,
+  `expires_time` datetime DEFAULT NULL,
+  `batch_no` varchar(64) NOT NULL,
+  `vip_entitlement_id` bigint DEFAULT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_vip_code_digest` (`code_digest`),
+  KEY `idx_vip_code_plan` (`plan_id`),
+  KEY `idx_vip_code_batch` (`batch_no`),
+  KEY `idx_vip_code_user` (`used_user_id`),
+  CONSTRAINT `chk_vip_code_status` CHECK (`status` IN ('UNUSED','USED','DISABLED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员兑换码';
+
 CREATE TABLE `wl_vip_order` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
@@ -479,7 +506,7 @@ CREATE TABLE `wl_vip_order` (
 CREATE TABLE `wl_vip_entitlement` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
-  `source_type` varchar(16) NOT NULL COMMENT 'PAYMENT、MANUAL或COMPENSATION',
+  `source_type` varchar(16) NOT NULL COMMENT 'PAYMENT、MANUAL、COMPENSATION或VIP_CODE',
   `source_biz_no` varchar(64) NOT NULL,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
@@ -501,7 +528,7 @@ CREATE TABLE `wl_vip_entitlement` (
   UNIQUE KEY `uk_vip_entitlement_source` (`source_type`, `source_biz_no`),
   KEY `idx_vip_entitlement_user_time` (`user_id`, `start_time`, `end_time`),
   KEY `idx_vip_entitlement_status` (`status`),
-  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAYMENT','MANUAL','COMPENSATION')),
+  CONSTRAINT `chk_vip_entitlement_source_type` CHECK (`source_type` IN ('PAYMENT','MANUAL','COMPENSATION','VIP_CODE')),
   CONSTRAINT `chk_vip_entitlement_days` CHECK (`granted_days` > 0),
   CONSTRAINT `chk_vip_entitlement_gift_points` CHECK (`gift_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员权益变更';

@@ -16,8 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** 后台宣传图片、分类和文档管理服务。 */
 @Service
-public class DocumentService
+    public class DocumentService
 {
+    private static final String ACCESS_POINT = "POINT";
+    private static final String ACCESS_VIP_FREE = "VIP_FREE";
     private static final int DEFAULT_DOCUMENT_OPTION_PAGE_SIZE = 20;
     private static final int MAX_DOCUMENT_OPTION_PAGE_SIZE = 20;
 
@@ -279,6 +281,7 @@ public class DocumentService
             throw new ServiceException("文档总页数不能小于0");
         if (document.getPointPrice() == null || document.getPointPrice() < 0)
             throw new ServiceException("兑换积分不能小于0");
+        normalizeAccessType(document);
         if (document.getPreviewPages() == null || document.getPreviewPages() < 0)
             throw new ServiceException("试读页数不能小于0");
         if (document.getPreviewPages() > document.getPageCount())
@@ -294,7 +297,22 @@ public class DocumentService
         document.setTitle(document.getTitle().trim());
         document.setSummary(defaultText(document.getSummary(), ""));
         document.setTags(defaultText(document.getTags(), ""));
+        normalizeAccessType(document);
         document.setSortOrder(defaultZero(document.getSortOrder()));
+    }
+
+    private void normalizeAccessType(WlDocument document)
+    {
+        String accessType = document.getAccessType();
+        if (accessType == null || accessType.trim().isEmpty())
+        {
+            document.setAccessType(ACCESS_POINT);
+            return;
+        }
+        String normalized = accessType.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!ACCESS_POINT.equals(normalized) && !ACCESS_VIP_FREE.equals(normalized))
+            throw new ServiceException("文档访问方式不正确");
+        document.setAccessType(normalized);
     }
 
     /** 新建文档只接收公开元数据，私有文件字段由后续上传流程维护。 */

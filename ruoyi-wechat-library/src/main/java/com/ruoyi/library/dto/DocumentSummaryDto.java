@@ -14,6 +14,8 @@ public class DocumentSummaryDto
     private String fileFormat;
     private Integer pageCount;
     private Long pointPrice;
+    private String accessType;
+    private String accessLabel;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -37,4 +39,8 @@ public class DocumentSummaryDto
     public void setPageCount(Integer pageCount) { this.pageCount = pageCount; }
     public Long getPointPrice() { return pointPrice; }
     public void setPointPrice(Long pointPrice) { this.pointPrice = pointPrice; }
+    public String getAccessType() { return accessType; }
+    public void setAccessType(String accessType) { this.accessType = accessType; }
+    public String getAccessLabel() { return accessLabel; }
+    public void setAccessLabel(String accessLabel) { this.accessLabel = accessLabel; }
 }

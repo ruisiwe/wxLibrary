@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlVipCodeMapper">
+    <resultMap id="VipCodeResult" type="com.ruoyi.library.domain.WlVipCode">
+        <id property="id" column="id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="codeDigest" column="code_digest"/>
+        <result property="codeMask" column="code_mask"/>
+        <result property="status" column="status"/>
+        <result property="usedUserId" column="used_user_id"/>
+        <result property="usedTime" column="used_time"/>
+        <result property="expiresTime" column="expires_time"/>
+        <result property="batchNo" column="batch_no"/>
+        <result property="vipEntitlementId" column="vip_entitlement_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <sql id="columns">select id, plan_id, code_digest, code_mask, status, used_user_id, used_time,
+        expires_time, batch_no, vip_entitlement_id, create_by, create_time, update_by, update_time, remark
+        from wl_vip_code</sql>
+    <select id="selectByDigest" resultMap="VipCodeResult">
+        <include refid="columns"/> where code_digest = #{digest} and del_flag = '0'
+    </select>
+    <select id="selectByDigestForUpdate" resultMap="VipCodeResult">
+        <include refid="columns"/> where code_digest = #{digest} and del_flag = '0' for update
+    </select>
+    <select id="selectList" parameterType="com.ruoyi.library.domain.WlVipCode" resultMap="VipCodeResult">
+        <include refid="columns"/>
+        <where>
+            del_flag = '0'
+            <if test="planId != null">and plan_id = #{planId}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+            <if test="batchNo != null and batchNo != ''">and batch_no = #{batchNo}</if>
+        </where>
+        order by id desc
+    </select>
+    <insert id="insertCode" parameterType="com.ruoyi.library.domain.WlVipCode" useGeneratedKeys="true" keyProperty="id">
+        insert into wl_vip_code(plan_id, code_digest, code_mask, status, expires_time, batch_no,
+            create_by, create_time, update_by, update_time, del_flag, remark)
+        values(#{planId}, #{codeDigest}, #{codeMask}, #{status}, #{expiresTime}, #{batchNo},
+            #{createBy}, now(), '', now(), '0', #{remark})
+    </insert>
+    <update id="markUsed">
+        update wl_vip_code set status = 'USED', used_user_id = #{userId}, used_time = now(),
+            vip_entitlement_id = #{vipEntitlementId}, update_time = now()
+        where id = #{id} and status = 'UNUSED' and del_flag = '0'
+    </update>
+    <update id="disable">
+        update wl_vip_code set status = 'DISABLED', update_by = #{operator}, update_time = now()
+        where id = #{id} and status = 'UNUSED' and del_flag = '0'
+    </update>
+</mapper>

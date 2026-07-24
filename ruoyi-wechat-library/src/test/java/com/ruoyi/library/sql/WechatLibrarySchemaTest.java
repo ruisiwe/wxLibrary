@@ -31,13 +31,13 @@ class WechatLibrarySchemaTest
     }
 
     @Test
-    void createsExactlyAllTwentyFiveCoreTables()
+    void createsExactlyAllTwentySixCoreTables()
     {
         List<String> tables = Arrays.asList("wl_wx_user", "wl_agreement", "wl_user_agreement", "wl_banner",
                 "wl_category", "wl_document", "wl_document_conversion", "wl_document_unlock", "wl_favorite",
                 "wl_document_view", "wl_point_rule", "wl_point_record", "wl_signin_record", "wl_ad_reward_record",
                 "wl_share_task_record", "wl_invitation", "wl_course", "wl_course_video", "wl_course_code",
-                "wl_user_course", "wl_video_progress", "wl_vip_plan", "wl_vip_order", "wl_vip_entitlement",
+                "wl_user_course", "wl_video_progress", "wl_vip_plan", "wl_vip_code", "wl_vip_order", "wl_vip_entitlement",
                 "wl_vip_refund");
         Matcher matcher = Pattern.compile("create\\s+table\\s+`?(wl_[a-z_]+)`?").matcher(sql);
         int count = 0;
@@ -46,7 +46,7 @@ class WechatLibrarySchemaTest
             count++;
             assertTrue(tables.contains(matcher.group(1)), "出现非核心表：" + matcher.group(1));
         }
-        assertEquals(25, count);
+        assertEquals(26, count);
         for (String table : tables)
         {
             assertTrue(sql.contains("create table `" + table + "`"), "缺少表：" + table);
@@ -68,14 +68,16 @@ class WechatLibrarySchemaTest
     {
         assertTrue(sql.contains("unique key `uk_document_unlock_user_document` (`user_id`, `document_id`)"));
         assertTrue(sql.contains("unique key `uk_course_code_digest` (`code_digest`)"));
+        assertTrue(sql.contains("unique key `uk_vip_code_digest` (`code_digest`)"));
         assertFalse(sql.contains("`code_plain`"));
         assertTrue(sql.contains("check (`access_type` in ('vip', 'code'))"));
+        assertTrue(sql.contains("check (`access_type` in ('point','vip_free'))"));
         assertTrue(sql.contains("unique key `uk_point_record_biz_no` (`biz_no`)"));
         assertTrue(sql.contains("unique key `uk_vip_order_merchant_order_no` (`merchant_order_no`)"));
         assertTrue(sql.contains("unique key `uk_vip_refund_order_id` (`order_id`)"));
         assertTrue(sql.contains("`unrecovered_points` bigint not null default 0"));
         assertTrue(sql.contains("`vip_expire_time` datetime default null"));
-        assertTrue(sql.contains("check (`source_type` in ('payment','manual','compensation'))"));
+        assertTrue(sql.contains("check (`source_type` in ('payment','manual','compensation','vip_code'))"));
         assertTrue(sql.contains("`operator_id` bigint default null"));
         assertTrue(sql.contains("`old_expire_time` datetime default null"));
         assertTrue(sql.contains("`new_expire_time` datetime not null"));
@@ -116,7 +118,7 @@ class WechatLibrarySchemaTest
     void allTablesUseRequiredEngineCharsetPrimaryKeyAndAuditColumns()
     {
         String[] definitions = sql.split("create table ");
-        assertEquals(26, definitions.length);
+        assertEquals(27, definitions.length);
         for (int i = 1; i < definitions.length; i++)
         {
             String table = definitions[i].substring(0, definitions[i].indexOf(';'));

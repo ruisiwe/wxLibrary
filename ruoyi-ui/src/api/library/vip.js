@@ -7,5 +7,8 @@ export const listVipOrders = query => request({ url: '/library/vip-order/list', 
 export const listEntitlements = query => request({ url: '/library/vip-operation/list', method: 'get', params: query })
 export const openVip = data => request({ url: '/library/vip-operation/open', method: 'post', data })
 export const compensateVip = data => request({ url: '/library/vip-operation/compensate', method: 'post', data })
+export const listVipCodes = query => request({ url: '/library/vip-code/list', method: 'get', params: query })
+export const generateVipCodes = data => request({ url: '/library/vip-code/generate', method: 'post', data })
+export const disableVipCode = id => request({ url: `/library/vip-code/${id}/disable`, method: 'put' })
 export const listRefunds = query => request({ url: '/library/vip-refund/list', method: 'get', params: query })
 export const requestRefund = data => request({ url: '/library/vip-refund', method: 'post', data })

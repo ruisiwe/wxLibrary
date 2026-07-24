@@ -6,11 +6,14 @@
       <view class="title">{{document.title}}</view>
       <view class="meta">{{document.categoryName}} · {{document.pageCount || 0}} 页 · {{document.fileFormat}}</view>
       <view class="summary">{{document.summary || '暂无简介'}}</view>
-      <view class="price">{{document.pointPrice || 0}} 积分永久兑换</view>
+      <view class="price">
+        <text wx:if="{{vipFreeDocument}}" class="vip-free">会员免费</text>
+        <text>{{document.pointPrice || 0}} 积分永久兑换</text>
+      </view>
     </view>
     <view class="actions">
       <button bindtap="preview">试读</button>
-      <button wx:if="{{!unlocked}}" class="primary" bindtap="unlock">积分兑换</button>
+      <button wx:if="{{!unlocked}}" class="primary" bindtap="unlock">{{vipFreeDocument && vipActive ? '免费下载' : '积分兑换'}}</button>
       <button bindtap="toggleFavorite">{{favorite ? '取消收藏' : '收藏'}}</button>
       <button wx:if="{{unlocked}}" loading="{{sendingOriginal}}" bindtap="shareOriginal">发送原文件</button>
     </view>
@@ -28,5 +31,5 @@
       </view>
     </view>
   </view>
-  <login-sheet visible="{{loginVisible}}" agreements="{{agreements}}" bindclose="closeLogin" bindsubmit="submitLogin"/>
+  <login-sheet visible="{{loginVisible}}" agreements="{{agreements}}" profile-required="{{profileRequired}}" bindclose="closeLogin" bindsubmit="submitLogin"/>
 </view>

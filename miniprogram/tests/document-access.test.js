@@ -51,11 +51,22 @@ test('我的页面无论登录与否都提供微信原生客服入口', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../pages/profile/profile.wxml'), 'utf8');
   assert.match(source, /open-type="contact"/);
   assert.match(source, /联系客服/);
-  assert.match(source, /<button class="contact" open-type="contact">联系客服<\/button><login-sheet/);
+  assert.match(source, /class="menu-button" open-type="contact"/);
+  assert.doesNotMatch(source, /<button class="contact" open-type="contact">联系客服<\/button>/);
 });
 
 test('已登录用户重新进入详情时恢复兑换和收藏状态', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../pages/document-detail/document-detail.js'), 'utf8');
-  assert.match(source, /Promise\.all\(\[documents\.unlocked\(\), documents\.favorites\(\)\]\)/);
-  assert.match(source, /unlocked: matches\(unlocked\), favorite: matches\(favorites\)/);
+  assert.match(source, /Promise\.all\(\[documents\.unlocked\(\), documents\.favorites\(\), vip\.profile\(\)\]\)/);
+  assert.match(source, /unlocked: matches\(unlocked\), favorite: matches\(favorites\), vipActive: Boolean\(profile\.vipActive\)/);
+});
+
+test('会员免费文档显示会员免费标识并保留非会员积分兑换入口', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '../pages/document-detail/document-detail.wxml'), 'utf8');
+  const page = fs.readFileSync(path.resolve(__dirname, '../pages/document-detail/document-detail.js'), 'utf8');
+  assert.match(source, /会员免费/);
+  assert.match(source, /免费下载/);
+  assert.match(source, /积分兑换/);
+  assert.match(page, /isVipFreeDocument/);
+  assert.match(page, /profile\.vipActive/);
 });

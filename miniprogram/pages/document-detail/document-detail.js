@@ -1,45 +1,93 @@
 const documents = require('../../services/document');
 const auth = require('../../services/auth');
+const vip = require('../../services/vip');
 const session = require('../../store/session');
 const { request } = require('../../services/request');
 
 Page({
   data: {
     id: '', document: null, unlocked: false, favorite: false, loading: true, error: '',
-    loginVisible: false, agreements: [], pendingAction: '', disclaimerVisible: false,
+    vipActive: false, vipFreeDocument: false,
+    loginVisible: false, profileRequired: true, agreements: [], pendingAction: '', disclaimerVisible: false,
     fileDisclaimer: null, suppressReminder: false, sendingOriginal: false
   },
   onLoad(options) { this.setData({ id: options.id }); this.load(); },
   load() {
     this.setData({ loading: true, error: '' });
     documents.detail(this.data.id).then(document => {
-      this.setData({ document, loading: false });
+      this.setData({ document, vipFreeDocument: this.isVipFreeDocument(document), loading: false });
       if (!session.getToken()) return;
-      return Promise.all([documents.unlocked(), documents.favorites()]).then(([unlocked, favorites]) => {
+      return Promise.all([documents.unlocked(), documents.favorites(), vip.profile()]).then(([unlocked, favorites, profile]) => {
         const matches = items => (items || []).some(item => String(item.id || item.documentId) === String(this.data.id));
-        this.setData({ unlocked: matches(unlocked), favorite: matches(favorites) });
+        this.setData({ unlocked: matches(unlocked), favorite: matches(favorites), vipActive: Boolean(profile.vipActive) });
       }).catch(() => {});
     }).catch(error => this.setData({ loading: false, error: error.message }));
+  },
+  isVipFreeDocument(document) {
+    return document && document.accessType === 'VIP_FREE';
   },
   requireLogin(action) {
     if (session.getToken()) return true;
     this.setData({ pendingAction: action });
-    request({ url: '/wx/public/agreements/current', protected: false })
-      .then(agreements => this.setData({ agreements, loginVisible: true }))
-      .catch(error => wx.showToast({ title: error.message, icon: 'none' }));
+    this.trySilentLoginForAction(action);
     return false;
   },
-  closeLogin() { this.setData({ loginVisible: false, pendingAction: '' }); },
+  trySilentLoginForAction(action) {
+    auth.silentLogin().then(state => {
+      if (state.user && state.user.agreementRequired) return this.openAgreementForAction();
+      this.setData({ loginVisible: false, pendingAction: '', profileRequired: true });
+      if (action && typeof this[action] === 'function') this[action]();
+    }).catch(error => {
+      if (error.firstLoginRequired) return this.openFirstLoginForAction();
+      this.setData({ loginVisible: false, pendingAction: '', profileRequired: true });
+      wx.showToast({ title: error.message || '登录失败，请稍后重试', icon: 'none' });
+    });
+  },
+  openFirstLoginForAction() {
+    request({ url: '/wx/public/agreements/current', protected: false })
+      .then(agreements => this.setData({ agreements, loginVisible: true, profileRequired: true }))
+      .catch(error => {
+        this.setData({ pendingAction: '', loginVisible: false, profileRequired: true });
+        wx.showToast({ title: error.message, icon: 'none' });
+      });
+  },
+  openAgreementForAction() {
+    request({ url: '/wx/public/agreements/current', protected: false })
+      .then(agreements => this.setData({ agreements, loginVisible: true, profileRequired: false }))
+      .catch(error => {
+        this.setData({ pendingAction: '', loginVisible: false, profileRequired: true });
+        wx.showToast({ title: error.message, icon: 'none' });
+      });
+  },
+  closeLogin(event) {
+    if (!this.data.profileRequired) {
+      session.clear();
+      if (event && event.detail && event.detail.rejected)
+        wx.showToast({ title: '需要同意隐私协议后继续使用', icon: 'none' });
+    }
+    this.setData({ loginVisible: false, pendingAction: '', profileRequired: true });
+  },
   submitLogin(event) {
     const privacy = this.data.agreements.find(item => item.agreementType === 'PRIVACY');
-    const statement = this.data.agreements.find(item => item.agreementType === 'STATEMENT');
+    if (!this.data.profileRequired) {
+      return request({ url: '/wx/agreements/accept', method: 'POST', data: {
+        privacyAccepted: true, privacyVersion: privacy && privacy.version
+      }}).then(() => {
+        const action = this.data.pendingAction;
+        this.setData({ loginVisible: false, pendingAction: '', profileRequired: true });
+        if (action && typeof this[action] === 'function') this[action]();
+      }).catch(error => wx.showToast({ title: error.message, icon: 'none' }));
+    }
     wx.login({
       success: result => auth.firstLogin({
-        code: result.code, nickname: event.detail.nickname, avatarPath: event.detail.avatarPath,
-        privacyVersion: privacy && privacy.version, statementVersion: statement && statement.version
-      }).then(() => {
+        code: result.code, nickname: event.detail.nickname, avatarPath: event.detail.avatarPath
+      }).then(state => {
+        if (state.user && state.user.agreementRequired) {
+          this.setData({ profileRequired: false });
+          return;
+        }
         const action = this.data.pendingAction;
-        this.setData({ loginVisible: false, pendingAction: '' });
+        this.setData({ loginVisible: false, pendingAction: '', profileRequired: true });
         if (action && typeof this[action] === 'function') this[action]();
       }).catch(error => wx.showToast({ title: error.message, icon: 'none' })),
       fail: () => wx.showToast({ title: '微信登录失败，请重试', icon: 'none' })
@@ -52,12 +100,13 @@ Page({
   unlock() {
     if (!this.requireLogin('unlock')) return;
     const pointPrice = this.data.document.pointPrice || 0;
-    wx.showModal({ title: '积分兑换', content: `确认使用 ${pointPrice} 积分永久兑换该文档？`, success: result => {
+    const vipFree = this.data.vipFreeDocument && this.data.vipActive;
+    wx.showModal({ title: vipFree ? '会员免费下载' : '积分兑换', content: vipFree ? '确认免费下载该会员免费文档？' : `确认使用 ${pointPrice} 积分永久兑换该文档？`, success: result => {
       if (!result.confirm) return;
       const requestId = `unlock-${this.data.id}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       documents.unlock(this.data.id, requestId).then(() => {
         this.setData({ unlocked: true });
-        wx.showToast({ title: '兑换成功' });
+        wx.showToast({ title: vipFree ? '已解锁' : '兑换成功' });
       }).catch(error => wx.showToast({ title: error.message, icon: 'none' }));
     }});
   },

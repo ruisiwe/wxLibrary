@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DocumentAccessService
 {
+    private static final String ACCESS_VIP_FREE = "VIP_FREE";
     private static final Duration FILE_URL_TTL = Duration.ofMinutes(5);
 
     private final PointService pointService;
@@ -59,6 +60,18 @@ public class DocumentAccessService
         WlWxUser lockedUser = requireEnabledUser(userMapper.selectByIdForUpdate(userId));
         existing = unlockMapper.selectUnlock(userId, documentId);
         if (existing != null) return existingResult(existing, lockedUser);
+        if (isVipFreeForActiveVip(document, lockedUser))
+        {
+            WlDocumentUnlock unlock = new WlDocumentUnlock();
+            unlock.setUserId(userId);
+            unlock.setDocumentId(documentId);
+            unlock.setSpentPoints(0L);
+            unlock.setPointRecordId(null);
+            unlock.setUnlockTime(new Date());
+            unlock.setCreateBy("wx:" + userId);
+            if (unlockMapper.insertUnlock(unlock) != 1) throw new ServiceException("文档兑换失败，请重试");
+            return new DocumentUnlockResult(documentId, true, 0L, lockedUser.getPointBalance());
+        }
         long price = document.getPointPrice() == null ? 0L : document.getPointPrice();
         WlPointRecord record = pointService.deductAfterLock(lockedUser, price,
                 "DOCUMENT_UNLOCK", pointBizNo(documentId, requestId),
@@ -148,6 +161,13 @@ public class DocumentAccessService
     {
         return new DocumentUnlockResult(existing.getDocumentId(), true,
                 existing.getSpentPoints(), user.getPointBalance());
+    }
+
+    private boolean isVipFreeForActiveVip(WlDocument document, WlWxUser user)
+    {
+        return document != null && ACCESS_VIP_FREE.equals(document.getAccessType())
+                && user != null && user.getVipExpireTime() != null
+                && user.getVipExpireTime().after(new Date());
     }
 
     private WlDocument requirePublishedDocument(Long documentId)

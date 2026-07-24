@@ -8,6 +8,7 @@ public class DocumentUploadCommitRequest
     private String summary;
     private String tags;
     private Long pointPrice;
+    private String accessType;
     private Integer sortOrder;
     private String remark;
 
@@ -21,6 +22,8 @@ public class DocumentUploadCommitRequest
     public void setTags(String tags) { this.tags = tags; }
     public Long getPointPrice() { return pointPrice; }
     public void setPointPrice(Long pointPrice) { this.pointPrice = pointPrice; }
+    public String getAccessType() { return accessType; }
+    public void setAccessType(String accessType) { this.accessType = accessType; }
     public Integer getSortOrder() { return sortOrder; }
     public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public String getRemark() { return remark; }

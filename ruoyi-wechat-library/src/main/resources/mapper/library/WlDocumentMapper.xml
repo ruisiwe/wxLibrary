@@ -13,6 +13,7 @@
         <result property="fileSize" column="file_size"/>
         <result property="pageCount" column="page_count"/>
         <result property="pointPrice" column="point_price"/>
+        <result property="accessType" column="access_type"/>
         <result property="previewPages" column="preview_pages"/>
         <result property="originalObjectKey" column="original_object_key"/>
         <result property="fullObjectKey" column="full_object_key"/>
@@ -40,6 +41,8 @@
         <result property="fileFormat" column="file_format"/>
         <result property="pageCount" column="page_count"/>
         <result property="pointPrice" column="point_price"/>
+        <result property="accessType" column="access_type"/>
+        <result property="accessLabel" column="access_label"/>
     </resultMap>
     <resultMap id="DocumentOptionResult" type="com.ruoyi.library.dto.DocumentOptionDto">
         <id property="id" column="id"/>
@@ -50,11 +53,12 @@
         <result property="availabilityStatus" column="availability_status"/>
     </resultMap>
     <sql id="documentColumns">select id, category_id, title, summary, tags, cover_url, uploader_name,
-        file_format, file_size, page_count, point_price, preview_pages, original_object_key,
+        file_format, file_size, page_count, point_price, access_type, preview_pages, original_object_key,
         full_object_key, preview_object_key, conversion_status, publish_status, publish_time, view_count, sort_order,
         create_by, create_time, update_by, update_time, remark from wl_document</sql>
     <sql id="publicDocumentColumns">d.id, d.category_id, c.name as category_name, d.title, d.summary,
-        d.cover_url, d.uploader_name, d.view_count, d.file_format, d.page_count, d.point_price</sql>
+        d.cover_url, d.uploader_name, d.view_count, d.file_format, d.page_count, d.point_price,
+        d.access_type, case when d.access_type = 'VIP_FREE' then '会员免费' else '积分兑换' end as access_label</sql>
     <sql id="publicDocumentWhere">
         d.del_flag = '0' and d.publish_status = 'PUBLISHED' and c.del_flag = '0' and c.status = '0'
         <if test="categoryId != null">and d.category_id = #{categoryId}</if>
@@ -131,17 +135,17 @@
     </select>
     <insert id="insertDocument" parameterType="com.ruoyi.library.domain.WlDocument" useGeneratedKeys="true" keyProperty="id">
         insert into wl_document(category_id, title, summary, tags, cover_url, uploader_name, file_format,
-            file_size, page_count, point_price, preview_pages, original_object_key, full_object_key, preview_object_key,
+            file_size, page_count, point_price, access_type, preview_pages, original_object_key, full_object_key, preview_object_key,
             conversion_status, publish_status, publish_time, view_count, sort_order, create_by, create_time,
             update_by, update_time, del_flag, remark)
         values(#{categoryId}, #{title}, #{summary}, #{tags}, #{coverUrl}, #{uploaderName}, #{fileFormat},
-            #{fileSize}, #{pageCount}, #{pointPrice}, #{previewPages}, #{originalObjectKey}, #{fullObjectKey}, #{previewObjectKey},
+            #{fileSize}, #{pageCount}, #{pointPrice}, #{accessType}, #{previewPages}, #{originalObjectKey}, #{fullObjectKey}, #{previewObjectKey},
             #{conversionStatus}, #{publishStatus}, null, #{viewCount}, #{sortOrder}, #{createBy}, now(),
             '', now(), '0', #{remark})
     </insert>
     <update id="updateDocument" parameterType="com.ruoyi.library.domain.WlDocument">
         update wl_document set category_id = #{categoryId}, title = #{title}, summary = #{summary},
-            tags = #{tags}, cover_url = #{coverUrl}, point_price = #{pointPrice},
+            tags = #{tags}, cover_url = #{coverUrl}, point_price = #{pointPrice}, access_type = #{accessType},
             preview_pages = #{previewPages},
             sort_order = #{sortOrder}, update_by = #{updateBy},
             update_time = now(), remark = #{remark}
