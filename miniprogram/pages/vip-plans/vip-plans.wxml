@@ -16,5 +16,33 @@
       </view>
     </view>
   </view>
+  <view wx:if="{{pageConfig.benefits.length}}" class="benefits">
+    <view class="section-title">VIP 权益</view>
+    <view
+      wx:for="{{pageConfig.benefits}}"
+      wx:key="*this"
+      class="benefit"
+    >
+      <text class="benefit__mark">✓</text>
+      <text>{{item}}</text>
+    </view>
+  </view>
+  <view wx:if="{{configLoading}}" class="config-state">正在加载 VIP 权益介绍…</view>
+  <view wx:if="{{configError}}" class="config-state config-state--error">
+    <text>{{configError}}</text>
+    <text class="config-retry" bindtap="loadPageConfig">重新加载</text>
+  </view>
+  <view wx:if="{{pageConfig.customerServiceImageUrl}}" class="customer-service">
+    <view class="section-title">开通咨询</view>
+    <image
+      class="customer-service__image"
+      src="{{pageConfig.customerServiceImageUrl}}"
+      mode="widthFix"
+      show-menu-by-longpress
+    />
+    <view class="customer-service__tip">
+      {{pageConfig.customerServiceTip || '开通 VIP 请添加客服微信'}}
+    </view>
+  </view>
   <state-view loading="{{loading}}" error="{{error}}" bindretry="load"/>
 </view>

@@ -11,6 +11,7 @@ function paymentDisplayState(status) {
 }
 
 const plans = () => request({ url: '/wx/vip/plans' });
+const pageConfig = () => request({ url: '/wx/vip/page-config' });
 const createOrder = planId => request({ url: `/wx/vip/orders/${planId}`, method: 'POST' });
 const queryOrder = merchantOrderNo => request({ url: `/wx/vip/orders/status/${merchantOrderNo}` });
 const redeemCode = code => request({ url: '/wx/vip/code/redeem', method: 'POST', data: { code } });
@@ -19,4 +20,13 @@ const profile = () => request({ url: '/wx/profile' }).then(data => ({
   avatarUrl: data.avatarPath ? `${apiBaseUrl()}/wx/public/avatar/${data.avatarPath}` : ''
 }));
 
-module.exports = { afterRequestPaymentSuccess, paymentDisplayState, plans, createOrder, queryOrder, redeemCode, profile };
+module.exports = {
+  afterRequestPaymentSuccess,
+  paymentDisplayState,
+  plans,
+  pageConfig,
+  createOrder,
+  queryOrder,
+  redeemCode,
+  profile
+};

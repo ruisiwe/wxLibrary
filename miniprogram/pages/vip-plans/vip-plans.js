@@ -1,13 +1,46 @@
 const vip = require('../../services/vip');
 
 Page({
-  data: { plans: [], profile: {}, loading: true, error: '', paymentState: '' },
-  onShow() { this.load(); },
+  data: {
+    plans: [],
+    profile: {},
+    loading: true,
+    error: '',
+    paymentState: '',
+    pageConfig: {
+      benefits: [],
+      customerServiceTip: '',
+      customerServiceImageUrl: ''
+    },
+    configLoading: true,
+    configError: ''
+  },
+  onShow() {
+    this.load();
+    this.loadPageConfig();
+  },
   load() {
     this.setData({ loading: true, error: '' });
     Promise.all([vip.plans(), vip.profile()])
       .then(([plans, profile]) => this.setData({ plans: plans || [], profile, loading: false }))
       .catch(error => this.setData({ loading: false, error: error.message || '会员套餐加载失败，请重试' }));
+  },
+  loadPageConfig() {
+    this.setData({ configLoading: true, configError: '' });
+    return vip.pageConfig()
+      .then(pageConfig => this.setData({
+        pageConfig: {
+          benefits: [],
+          customerServiceTip: '',
+          customerServiceImageUrl: '',
+          ...(pageConfig || {})
+        },
+        configLoading: false
+      }))
+      .catch(error => this.setData({
+        configLoading: false,
+        configError: error.message || 'VIP 权益介绍加载失败，请重试'
+      }));
   },
   buy(event) {
     const planId = event.currentTarget.dataset.id;
