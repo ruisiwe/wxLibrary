@@ -7,8 +7,6 @@ public class WxLoginRequest
     private String nickname;
     private boolean privacyAccepted;
     private String privacyVersion;
-    private boolean statementAccepted;
-    private String statementVersion;
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
@@ -18,14 +16,10 @@ public class WxLoginRequest
     public void setPrivacyAccepted(boolean privacyAccepted) { this.privacyAccepted = privacyAccepted; }
     public String getPrivacyVersion() { return privacyVersion; }
     public void setPrivacyVersion(String privacyVersion) { this.privacyVersion = privacyVersion; }
-    public boolean isStatementAccepted() { return statementAccepted; }
-    public void setStatementAccepted(boolean statementAccepted) { this.statementAccepted = statementAccepted; }
-    public String getStatementVersion() { return statementVersion; }
-    public void setStatementVersion(String statementVersion) { this.statementVersion = statementVersion; }
 
     public boolean hasAgreementSubmission()
     {
-        return privacyAccepted || statementAccepted || notBlank(privacyVersion) || notBlank(statementVersion);
+        return privacyAccepted || notBlank(privacyVersion);
     }
 
     private boolean notBlank(String value)

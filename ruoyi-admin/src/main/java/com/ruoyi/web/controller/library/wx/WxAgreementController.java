@@ -22,7 +22,7 @@ public class WxAgreementController
 
     public WxAgreementController(WxAgreementService agreementService) { this.agreementService = agreementService; }
 
-    /** 匿名查询当前生效的用户隐私协议与网站声明。 */
+    /** 匿名查询当前生效的用户隐私协议。 */
     @GetMapping("/public/agreements/current")
     public WxApiResponse<List<WlAgreement>> current()
     {
@@ -33,10 +33,8 @@ public class WxAgreementController
     @PostMapping("/agreements/accept")
     public WxApiResponse<Void> accept(@RequestBody AgreementAcceptRequest request, HttpServletRequest servletRequest)
     {
-        agreementService.validateCurrentAcceptance(request.isPrivacyAccepted(), request.getPrivacyVersion(),
-                request.isStatementAccepted(), request.getStatementVersion());
-        agreementService.acceptCurrent(WxUserContext.get(), request.getPrivacyVersion(),
-                request.getStatementVersion(), servletRequest.getRemoteAddr());
+        agreementService.validateCurrentAcceptance(request.isPrivacyAccepted(), request.getPrivacyVersion());
+        agreementService.acceptCurrent(WxUserContext.get(), request.getPrivacyVersion(), servletRequest.getRemoteAddr());
         return WxApiResponse.success(null);
     }
 }

@@ -16,13 +16,27 @@
     </view>
     <view class="tasks">
       <view class="heading">积分任务</view>
-      <button bindtap="signIn">每日签到</button>
-      <button bindtap="watchAd">激励视频（{{adCount}}/{{adLimit}}）</button>
-      <button open-type="share" bindtap="invite">分享邀请</button>
-      <view wx:for="{{rules}}" wx:key="id" class="rule">
-        <text>{{item.ruleName || item.ruleCode}}</text>
-        <text>+{{item.rewardPoints || item.pointValue}}</text>
-      </view>
+      <block wx:for="{{taskRows}}" wx:key="eventType">
+        <button
+          wx:if="{{item.shareOpen && !item.reachedLimit}}"
+          class="rule"
+          open-type="share"
+          data-event="{{item.eventType}}"
+          bindtap="handleTask"
+        >
+          <text>{{item.title}}（{{item.count}}/{{item.limit}}）</text>
+          <text>{{item.reachedLimit ? '已完成' : '+' + item.points}}</text>
+        </button>
+        <button
+          wx:else
+          class="rule"
+          data-event="{{item.eventType}}"
+          bindtap="handleTask"
+        >
+          <text>{{item.title}}（{{item.count}}/{{item.limit}}）</text>
+          <text>{{item.reachedLimit ? '已完成' : '+' + item.points}}</text>
+        </button>
+      </block>
     </view>
   </view>
   <state-view loading="{{loading}}" error="{{error}}" bindretry="load"/>

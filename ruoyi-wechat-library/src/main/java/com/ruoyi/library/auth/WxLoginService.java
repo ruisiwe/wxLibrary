@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class WxLoginService
 {
     private static final Pattern CONTROL_OR_HTML = Pattern.compile("[<>\\p{Cc}\\p{Cf}]");
+    private static final String DEFAULT_NICKNAME = "微信用户";
     private final WechatCodeClient codeClient;
     private final WlWxUserMapper userMapper;
     private final WxAgreementService agreementService;
@@ -94,10 +95,8 @@ public class WxLoginService
             updateExistingProfile(user, request, avatar, mutation);
             if (request.hasAgreementSubmission())
             {
-                agreementService.validateCurrentAcceptance(request.isPrivacyAccepted(), request.getPrivacyVersion(),
-                        request.isStatementAccepted(), request.getStatementVersion());
-                agreementService.acceptCurrent(user.getId(), request.getPrivacyVersion(),
-                        request.getStatementVersion(), acceptedIp);
+                agreementService.validateCurrentAcceptance(request.isPrivacyAccepted(), request.getPrivacyVersion());
+                agreementService.acceptCurrent(user.getId(), request.getPrivacyVersion(), acceptedIp);
             }
             userMapper.updateLastLoginTime(user.getId());
         }
@@ -109,9 +108,7 @@ public class WxLoginService
             String acceptedIp, AvatarMutation mutation)
     {
         if (avatar == null || avatar.isEmpty()) throw new ServiceException("首次登录必须上传有效头像");
-        String nickname = validateNickname(request.getNickname(), true);
-        agreementService.validateCurrentAcceptance(request.isPrivacyAccepted(), request.getPrivacyVersion(),
-                request.isStatementAccepted(), request.getStatementVersion());
+        String nickname = resolveLoginNickname(request.getNickname());
         String avatarPath = avatarStorageService.store(avatar);
         mutation.newAvatar = avatarPath;
         WlWxUser created = new WlWxUser();
@@ -135,12 +132,9 @@ public class WxLoginService
             ensureEnabled(concurrent);
             userMapper.updateLastLoginTime(concurrent.getId());
             if (request.hasAgreementSubmission())
-                agreementService.acceptCurrent(concurrent.getId(), request.getPrivacyVersion(),
-                        request.getStatementVersion(), acceptedIp);
+                agreementService.acceptCurrent(concurrent.getId(), request.getPrivacyVersion(), acceptedIp);
             return concurrent;
         }
-        agreementService.acceptCurrent(created.getId(), request.getPrivacyVersion(),
-                request.getStatementVersion(), acceptedIp);
         return created;
     }
 
@@ -175,12 +169,18 @@ public class WxLoginService
         String value = nickname == null ? "" : nickname.trim();
         if (value.isEmpty())
         {
-            if (required) throw new ServiceException("首次登录必须填写昵称");
+            if (required) throw new ServiceException("昵称不能为空");
             return value;
         }
         if (value.length() > 64) throw new ServiceException("昵称长度不能超过64个字符");
         if (CONTROL_OR_HTML.matcher(value).find()) throw new ServiceException("昵称不能包含HTML标签或控制字符");
         return value;
+    }
+
+    private String resolveLoginNickname(String nickname)
+    {
+        String value = validateNickname(nickname, false);
+        return value.isEmpty() ? DEFAULT_NICKNAME : value;
     }
 
     private void ensureEnabled(WlWxUser user)

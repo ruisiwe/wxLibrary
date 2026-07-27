@@ -1,6 +1,8 @@
 <view class="grid">
   <view wx:for="{{items}}" wx:key="id" class="grid__item" data-id="{{item.id}}" bindtap="open">
-    <t-icon class="grid__icon" name="{{item.icon || 'file'}}" size="64rpx" />
-    <text>{{item.name}}</text>
+    <view class="grid__icon-shell">
+      <t-icon class="grid__icon" name="{{item.icon || 'file'}}" size="50rpx" />
+    </view>
+    <text class="grid__label">{{item.name}}</text>
   </view>
 </view>

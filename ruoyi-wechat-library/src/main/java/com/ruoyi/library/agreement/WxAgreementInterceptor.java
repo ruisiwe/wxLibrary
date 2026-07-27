@@ -37,7 +37,7 @@ public class WxAgreementInterceptor implements HandlerInterceptor
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
         response.getWriter().write(JSON.toJSONString(WxApiResponse.failure(40901,
-                "请先阅读并同意最新用户隐私协议与网站声明"), JSONWriter.Feature.WriteNulls));
+                "请先阅读并同意最新用户隐私协议"), JSONWriter.Feature.WriteNulls));
         return false;
     }
 }

@@ -8,7 +8,6 @@ public interface WlUserAgreementMapper
 {
     WlUserAgreement selectByUserAndAgreement(@Param("userId") Long userId,
             @Param("agreementId") Long agreementId);
-    int countAcceptedAgreementIds(@Param("userId") Long userId,
-            @Param("privacyId") Long privacyId, @Param("statementId") Long statementId);
+    int countAcceptedAgreementId(@Param("userId") Long userId, @Param("agreementId") Long agreementId);
     int insertUserAgreement(WlUserAgreement agreement);
 }

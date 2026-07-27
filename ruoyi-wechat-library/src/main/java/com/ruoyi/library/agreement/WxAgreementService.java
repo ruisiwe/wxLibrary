@@ -1,6 +1,6 @@
 package com.ruoyi.library.agreement;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import com.ruoyi.common.exception.ServiceException;
@@ -33,45 +33,35 @@ public class WxAgreementService
         this.userAgreementMapper = userAgreementMapper;
     }
 
-    /** 查询当前生效的隐私协议和网站声明。 */
+    /** 查询当前生效的用户隐私协议。 */
     public List<WlAgreement> current()
     {
-        return Arrays.asList(requiredCurrent(TYPE_PRIVACY), requiredCurrent(TYPE_STATEMENT));
+        return Collections.singletonList(requiredCurrent(TYPE_PRIVACY));
     }
 
-    /** 校验客户端提交的协议版本是否为当前版本。 */
-    public void validateCurrentAcceptance(boolean privacyAccepted, String privacyVersion,
-            boolean statementAccepted, String statementVersion)
+    /** 校验客户端提交的隐私协议版本是否为当前版本。 */
+    public void validateCurrentAcceptance(boolean privacyAccepted, String privacyVersion)
     {
         WlAgreement privacy = requiredCurrent(TYPE_PRIVACY);
-        WlAgreement statement = requiredCurrent(TYPE_STATEMENT);
         if (!privacyAccepted) throw new ServiceException("请勾选用户隐私协议");
         if (!privacy.getVersion().equals(trim(privacyVersion)))
             throw new ServiceException("请提交当前用户隐私协议版本");
-        if (!statementAccepted) throw new ServiceException("请勾选网站声明");
-        if (!statement.getVersion().equals(trim(statementVersion)))
-            throw new ServiceException("请提交当前网站声明版本");
     }
 
-    /** 幂等确认当前生效的两份协议。 */
+    /** 幂等确认当前生效的用户隐私协议。 */
     @Transactional
-    public void acceptCurrent(Long userId, String privacyVersion, String statementVersion, String acceptedIp)
+    public void acceptCurrent(Long userId, String privacyVersion, String acceptedIp)
     {
         WlAgreement privacy = requiredCurrent(TYPE_PRIVACY);
-        WlAgreement statement = requiredCurrent(TYPE_STATEMENT);
         if (!privacy.getVersion().equals(trim(privacyVersion)))
             throw new ServiceException("请提交当前用户隐私协议版本");
-        if (!statement.getVersion().equals(trim(statementVersion)))
-            throw new ServiceException("请提交当前网站声明版本");
         acceptOne(userId, privacy, acceptedIp);
-        acceptOne(userId, statement, acceptedIp);
     }
 
     public boolean hasAcceptedAllCurrent(Long userId)
     {
         WlAgreement privacy = requiredCurrent(TYPE_PRIVACY);
-        WlAgreement statement = requiredCurrent(TYPE_STATEMENT);
-        return userAgreementMapper.countAcceptedAgreementIds(userId, privacy.getId(), statement.getId()) == 2;
+        return userAgreementMapper.countAcceptedAgreementId(userId, privacy.getId()) == 1;
     }
 
     /** 查询当前文件发送免责声明及当前用户是否已免提示。 */

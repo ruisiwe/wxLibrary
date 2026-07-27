@@ -1,6 +1,7 @@
 package com.ruoyi.library.domain;
 
 import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /** 用户协议版本。 */
@@ -12,6 +13,7 @@ public class WlAgreement extends BaseEntity
     private String version;
     private String title;
     private String content;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date effectiveTime;
     private String status;
 

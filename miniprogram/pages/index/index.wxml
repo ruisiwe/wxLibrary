@@ -1,4 +1,11 @@
 <view class="home">
+  <view class="home__hero">
+    <text class="home__brand">实验室文库</text>
+  </view>
+  <view class="home__section-title">
+    <text class="home__section-bar"></text>
+    <text>专题推荐</text>
+  </view>
   <promotion-strip items="{{banners}}" />
   <category-grid items="{{categories}}" />
   <view class="documents"><document-row wx:for="{{documents}}" wx:key="id" document="{{item}}" /></view>

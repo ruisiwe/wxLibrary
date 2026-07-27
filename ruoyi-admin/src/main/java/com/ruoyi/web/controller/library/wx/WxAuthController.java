@@ -33,8 +33,6 @@ public class WxAuthController
             @RequestParam(value = "nickname", required = false) String nickname,
             @RequestParam(value = "privacyAccepted", required = false) Boolean privacyAccepted,
             @RequestParam(value = "privacyVersion", required = false) String privacyVersion,
-            @RequestParam(value = "statementAccepted", required = false) Boolean statementAccepted,
-            @RequestParam(value = "statementVersion", required = false) String statementVersion,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar,
             HttpServletRequest servletRequest)
     {
@@ -43,8 +41,6 @@ public class WxAuthController
         if (nickname != null) request.setNickname(nickname);
         if (privacyAccepted != null) request.setPrivacyAccepted(privacyAccepted);
         if (privacyVersion != null) request.setPrivacyVersion(privacyVersion);
-        if (statementAccepted != null) request.setStatementAccepted(statementAccepted);
-        if (statementVersion != null) request.setStatementVersion(statementVersion);
         if (request.getCode() == null || request.getCode().trim().isEmpty())
             throw new ServiceException("请求参数不完整");
         return WxApiResponse.success(loginService.login(request, avatar, servletRequest.getRemoteAddr()));

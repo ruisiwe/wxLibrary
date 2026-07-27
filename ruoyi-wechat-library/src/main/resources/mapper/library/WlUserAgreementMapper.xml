@@ -14,9 +14,9 @@
         select id, user_id, agreement_id, agreement_type, agreement_version, accepted_time, accepted_ip
         from wl_user_agreement where user_id = #{userId} and agreement_id = #{agreementId} and del_flag = '0'
     </select>
-    <select id="countAcceptedAgreementIds" resultType="int">
+    <select id="countAcceptedAgreementId" resultType="int">
         select count(distinct agreement_id) from wl_user_agreement
-        where user_id = #{userId} and agreement_id in (#{privacyId}, #{statementId}) and del_flag = '0'
+        where user_id = #{userId} and agreement_id = #{agreementId} and del_flag = '0'
     </select>
     <insert id="insertUserAgreement" parameterType="com.ruoyi.library.domain.WlUserAgreement" useGeneratedKeys="true" keyProperty="id">
         insert into wl_user_agreement(user_id, agreement_id, agreement_type, agreement_version,

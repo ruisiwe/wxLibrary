@@ -14,7 +14,7 @@
     >
       <el-button size="small" type="primary" icon="el-icon-upload2">选择并裁剪</el-button>
     </el-upload>
-    <div class="banner-image-cropper__hint">输出尺寸：1240×480，比例31:12，仅支持JPG、PNG，最大5MB</div>
+    <div class="banner-image-cropper__hint">输出尺寸：1120×550，仅支持JPG、PNG，最大5MB</div>
 
     <el-dialog
       title="裁剪轮播图"
@@ -31,7 +31,7 @@
           :img="sourceUrl"
           :auto-crop="true"
           :fixed="true"
-          :fixed-number="[31, 12]"
+          :fixed-number="[112, 55]"
           :fixed-box="true"
           :can-move-box="false"
           output-type="jpeg"
@@ -121,8 +121,8 @@ export default {
       const image = new Image()
       image.onload = () => {
         const canvas = document.createElement('canvas')
-        canvas.width = 1240
-        canvas.height = 480
+        canvas.width = 1120
+        canvas.height = 550
         const context = canvas.getContext('2d')
         context.drawImage(image, 0, 0, canvas.width, canvas.height)
         canvas.toBlob(result => {
@@ -171,7 +171,7 @@ export default {
 .banner-image-cropper__preview {
   width: 100%;
   max-width: 620px;
-  aspect-ratio: 31 / 12;
+  aspect-ratio: 112 / 55;
   margin-bottom: 12px;
   overflow: hidden;
   border: 1px dashed #dcdfe6;

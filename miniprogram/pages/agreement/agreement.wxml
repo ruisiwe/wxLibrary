@@ -1,1 +1,8 @@
-<view class="page"><state-view loading="{{loading}}" error="{{error}}" bindretry="load"/><view wx:if="{{agreement}}"><view class="title">{{agreement.title}}</view><view class="version">版本 {{agreement.version}}</view><rich-text nodes="{{agreement.content}}"/></view></view>
+<view class="page">
+  <state-view loading="{{loading}}" error="{{error}}" bindretry="load" />
+  <view wx:if="{{agreement}}">
+    <view class="title">{{agreement.title}}</view>
+    <view class="version">版本 {{agreement.version}}</view>
+    <rich-text nodes="{{agreement.content}}" />
+  </view>
+</view>
