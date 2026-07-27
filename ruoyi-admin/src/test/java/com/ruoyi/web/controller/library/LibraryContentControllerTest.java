@@ -159,6 +159,14 @@ class LibraryContentControllerTest
         assertPermission(LibraryVipPlanController.class, "list", "library:vip:plan");
         assertPermission(LibraryVipPlanController.class, "add", "library:vip:plan");
         assertPermission(LibraryVipPlanController.class, "edit", "library:vip:plan");
+        assertPermission(LibraryVipBenefitController.class, "list", "library:vip:benefit:list");
+        assertPermission(LibraryVipBenefitController.class, "add", "library:vip:benefit:add");
+        assertPermission(LibraryVipBenefitController.class, "edit", "library:vip:benefit:edit");
+        assertPermission(LibraryVipBenefitController.class, "remove", "library:vip:benefit:remove");
+        assertPermission(LibraryVipPageConfigController.class, "detail",
+                "library:vip:page-config:query");
+        assertPermission(LibraryVipPageConfigController.class, "edit",
+                "library:vip:page-config:edit");
         assertPermission(LibraryVipOperationController.class, "list", "library:vip:operation");
         assertPermission(LibraryVipOperationController.class, "open", "library:vip:operation");
         assertPermission(LibraryVipOperationController.class, "compensate", "library:vip:operation");
