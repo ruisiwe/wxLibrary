@@ -1,6 +1,6 @@
 <view class="grid">
   <view wx:for="{{items}}" wx:key="id" class="grid__item" data-id="{{item.id}}" bindtap="open">
-    <image class="grid__icon" src="{{item.iconUrl}}" mode="aspectFit" />
+    <t-icon class="grid__icon" name="{{item.icon || 'file'}}" size="64rpx" />
     <text>{{item.name}}</text>
   </view>
 </view>

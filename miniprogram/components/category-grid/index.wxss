@@ -1,1 +1,3 @@
-.grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,150rpx);gap:16rpx}.grid__item{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border-radius:20rpx;font-size:24rpx}.grid__icon{width:64rpx;height:64rpx;margin-bottom:12rpx}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,150rpx);gap:16rpx}
+.grid__item{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border-radius:20rpx;font-size:24rpx}
+.grid__icon{display:block;width:64rpx;height:64rpx;margin-bottom:12rpx;color:#2457d6}
