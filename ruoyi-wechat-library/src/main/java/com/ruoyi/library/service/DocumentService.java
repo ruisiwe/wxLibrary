@@ -1,9 +1,11 @@
 package com.ruoyi.library.service;
 
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.library.category.CategoryIconCatalog;
 import com.ruoyi.library.domain.WlBanner;
 import com.ruoyi.library.domain.WlCategory;
 import com.ruoyi.library.domain.WlDocument;
+import com.ruoyi.library.dto.CategoryIconOptionDto;
 import com.ruoyi.library.dto.DocumentOptionDto;
 import com.ruoyi.library.dto.PageResult;
 import com.ruoyi.library.mapper.WlBannerMapper;
@@ -95,6 +97,11 @@ import org.springframework.transaction.annotation.Transactional;
     }
 
     public List<WlCategory> listCategories(WlCategory query) { return categoryMapper.selectCategoryList(query); }
+
+    public List<CategoryIconOptionDto> listCategoryIconOptions()
+    {
+        return CategoryIconCatalog.listOptions();
+    }
 
     public WlCategory getCategory(Long id)
     {
@@ -263,6 +270,10 @@ import org.springframework.transaction.annotation.Transactional;
         if ("全部分类".equals(category.getName()))
             throw new ServiceException("全部分类是固定入口，不能作为普通分类保存");
         requireMaxLength(category.getName(), 64, "文档分类名称不能超过64个字符");
+        requireText(category.getIcon(), "请选择分类图标");
+        category.setIcon(category.getIcon().trim());
+        if (!CategoryIconCatalog.isSupported(category.getIcon()))
+            throw new ServiceException("请选择有效的分类图标");
         if (categoryMapper.countCategoryName(category.getName(), excludeId) > 0)
             throw new ServiceException("文档分类名称已存在");
     }

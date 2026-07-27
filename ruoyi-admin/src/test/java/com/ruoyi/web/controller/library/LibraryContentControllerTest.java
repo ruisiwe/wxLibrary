@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.library;
 
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.dto.BannerDto;
+import com.ruoyi.library.dto.CategoryIconOptionDto;
 import com.ruoyi.library.dto.DocumentOptionDto;
 import com.ruoyi.library.dto.HomeData;
 import com.ruoyi.library.dto.PageResult;
@@ -11,6 +12,7 @@ import com.ruoyi.library.service.HomeQueryService;
 import com.ruoyi.web.controller.library.wx.WxApiExceptionHandler;
 import com.ruoyi.web.controller.library.wx.WxPublicContentController;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,6 +115,22 @@ class LibraryContentControllerTest
     }
 
     @Test
+    void categoryIconOptionsReturnNameLabelAndKeywords() throws Exception
+    {
+        DocumentService documentService = mock(DocumentService.class);
+        when(documentService.listCategoryIconOptions()).thenReturn(Arrays.asList(
+                new CategoryIconOptionDto("time", "时间", "时间 时钟 日期")));
+        MockMvc categoryMockMvc = MockMvcBuilders
+                .standaloneSetup(new LibraryCategoryController(documentService)).build();
+
+        categoryMockMvc.perform(get("/library/category/icon-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("time"))
+                .andExpect(jsonPath("$.data[0].label").value("时间"))
+                .andExpect(jsonPath("$.data[0].keywords").value("时间 时钟 日期"));
+    }
+
+    @Test
     void managementControllersExposeApprovedPermissions() throws Exception
     {
         assertPermission(LibraryBannerController.class, "list", "library:banner:list");
@@ -124,6 +142,7 @@ class LibraryContentControllerTest
         assertAuthorization(LibraryBannerController.class, "image",
                 "@ss.hasAnyPermi('library:banner:list,library:banner:edit')");
         assertPermission(LibraryCategoryController.class, "list", "library:category:list");
+        assertPermission(LibraryCategoryController.class, "iconOptions", "library:category:list");
         assertPermission(LibraryCategoryController.class, "add", "library:category:add");
         assertPermission(LibraryCategoryController.class, "edit", "library:category:edit");
         assertPermission(LibraryCategoryController.class, "remove", "library:category:remove");

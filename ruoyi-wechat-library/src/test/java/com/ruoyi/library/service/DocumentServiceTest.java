@@ -208,6 +208,34 @@ class DocumentServiceTest
     }
 
     @Test
+    void categoryRequiresSupportedIcon()
+    {
+        WlCategory missing = new WlCategory();
+        missing.setName("质量管理");
+        assertEquals("请选择分类图标", assertThrows(ServiceException.class,
+                () -> service.addCategory(missing, "admin")).getMessage());
+
+        WlCategory invalid = new WlCategory();
+        invalid.setName("质量管理");
+        invalid.setIcon("unknown-icon");
+        assertEquals("请选择有效的分类图标", assertThrows(ServiceException.class,
+                () -> service.addCategory(invalid, "admin")).getMessage());
+    }
+
+    @Test
+    void categoryTrimsAndStoresSupportedIcon()
+    {
+        WlCategory category = new WlCategory();
+        category.setName("质量管理");
+        category.setIcon(" time ");
+        when(categoryMapper.insertCategory(category)).thenReturn(1);
+
+        assertEquals(1, service.addCategory(category, "admin"));
+        assertEquals("time", category.getIcon());
+        verify(categoryMapper).insertCategory(category);
+    }
+
+    @Test
     void newDocumentNormalizesMetadataAndForcesDraftPendingState()
     {
         WlDocument document = validDocument();

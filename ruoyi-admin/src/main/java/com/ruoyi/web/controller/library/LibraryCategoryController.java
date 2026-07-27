@@ -37,6 +37,14 @@ public class LibraryCategoryController extends BaseController
         return getDataTable(list);
     }
 
+    /** 查询后台可选择的分类图标。 */
+    @PreAuthorize("@ss.hasPermi('library:category:list')")
+    @GetMapping("/icon-options")
+    public AjaxResult iconOptions()
+    {
+        return success(documentService.listCategoryIconOptions());
+    }
+
     /** 查询文档分类详情。 */
     @PreAuthorize("@ss.hasPermi('library:category:list')")
     @GetMapping("/{id}")
