@@ -10,7 +10,16 @@
       </div>
       <el-table v-loading="loading" :data="rows" border stripe>
         <el-table-column v-for="column in columns" :key="column.prop" :prop="column.prop" :label="column.label" :min-width="column.width || 120" show-overflow-tooltip>
-          <template slot-scope="scope">{{ displayValue(scope.row[column.prop], column) }}</template>
+          <template slot-scope="scope">
+            <slot
+              :name="'column-' + column.prop"
+              :row="scope.row"
+              :value="scope.row[column.prop]"
+              :column="column"
+            >
+              {{ displayValue(scope.row[column.prop], column) }}
+            </slot>
+          </template>
         </el-table-column>
         <el-table-column v-if="updater || remover" label="操作" width="150" fixed="right">
           <template slot-scope="scope">
@@ -25,13 +34,15 @@
     <el-dialog :title="form.id ? `修改${title}` : `新增${title}`" :visible.sync="visible" width="620px" append-to-body>
       <el-form ref="form" :model="form" label-width="120px">
         <el-form-item v-for="field in formFields" :key="field.prop" :label="field.label" :required="field.required">
-          <el-input-number v-if="field.type === 'number'" v-model="form[field.prop]" :min="field.min === undefined ? 0 : field.min" :max="field.max" controls-position="right" />
-          <remote-select v-else-if="field.type === 'remote-select'" v-model="form[field.prop]" :field="field" :row="form" @selection-change="onRemoteSelectionChange(field, $event)" />
-          <el-select v-else-if="field.type === 'select'" v-model="form[field.prop]" style="width:100%">
-            <el-option v-for="option in field.options" :key="option.value" :label="option.label" :value="option.value" />
-          </el-select>
-          <el-date-picker v-else-if="field.type === 'datetime'" v-model="form[field.prop]" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" style="width:100%" />
-          <el-input v-else v-model="form[field.prop]" :type="field.type === 'textarea' ? 'textarea' : 'text'" :rows="field.rows || 4" :maxlength="field.maxlength" show-word-limit />
+          <slot :name="'field-' + field.prop" :form="form" :field="field">
+            <el-input-number v-if="field.type === 'number'" v-model="form[field.prop]" :min="field.min === undefined ? 0 : field.min" :max="field.max" controls-position="right" />
+            <remote-select v-else-if="field.type === 'remote-select'" v-model="form[field.prop]" :field="field" :row="form" @selection-change="onRemoteSelectionChange(field, $event)" />
+            <el-select v-else-if="field.type === 'select'" v-model="form[field.prop]" style="width:100%">
+              <el-option v-for="option in field.options" :key="option.value" :label="option.label" :value="option.value" />
+            </el-select>
+            <el-date-picker v-else-if="field.type === 'datetime'" v-model="form[field.prop]" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" style="width:100%" />
+            <el-input v-else v-model="form[field.prop]" :type="field.type === 'textarea' ? 'textarea' : 'text'" :rows="field.rows || 4" :maxlength="field.maxlength" show-word-limit />
+          </slot>
         </el-form-item>
       </el-form>
       <span slot="footer">
