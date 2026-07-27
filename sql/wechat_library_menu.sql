@@ -17,6 +17,7 @@ insert into sys_menu values('2030','会员套餐','2003','1','plan','library/vip
 insert into sys_menu values('2031','支付订单','2003','2','order','library/vip/order/index','','',1,0,'C','0','0','library:vip:order','order','admin',sysdate(),'',null,'支付订单');
 insert into sys_menu values('2032','权益台账','2003','3','entitlement','library/vip/entitlement/index','','',1,0,'C','0','0','library:vip:operation','time-range','admin',sysdate(),'',null,'权益台账');
 insert into sys_menu values('2033','退款','2003','4','refund','library/vip/refund/index','','',1,0,'C','0','0','library:vip:refund','money','admin',sysdate(),'',null,'全额退款');
+insert into sys_menu values('2034','VIP 权益介绍','2003','5','benefit','library/vip/benefit/index','','',1,0,'C','0','0','library:vip:benefit:list','star','admin',sysdate(),'',null,'VIP 权益介绍');
 insert into sys_menu values('2040','文档解锁','2004','1','documentAccess','library/access/document/index','','',1,0,'C','0','0','library:document:unlock','lock','admin',sysdate(),'',null,'文档解锁记录');
 insert into sys_menu values('2041','课程码','2004','2','courseCode','library/access/courseCode/index','','',1,0,'C','0','0','library:course:code','validCode','admin',sysdate(),'',null,'课程码管理');
 insert into sys_menu values('2042','播放进度','2004','3','progress','library/access/progress/index','','',1,0,'C','0','0','library:course:list','chart','admin',sysdate(),'',null,'播放进度');
@@ -42,3 +43,8 @@ insert into sys_menu values('2107','调整积分','2020','4','','','','',1,0,'F'
 insert into sys_menu values('2108','新增协议','2050','1','','','','',1,0,'F','0','0','library:agreement:add','#','admin',sysdate(),'',null,'');
 insert into sys_menu values('2109','修改协议','2050','2','','','','',1,0,'F','0','0','library:agreement:edit','#','admin',sysdate(),'',null,'');
 insert into sys_menu values('2110','发布协议','2050','3','','','','',1,0,'F','0','0','library:agreement:publish','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2111','新增VIP权益','2034','1','','','','',1,0,'F','0','0','library:vip:benefit:add','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2112','修改VIP权益','2034','2','','','','',1,0,'F','0','0','library:vip:benefit:edit','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2113','删除VIP权益','2034','3','','','','',1,0,'F','0','0','library:vip:benefit:remove','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2114','查询VIP客服配置','2034','4','','','','',1,0,'F','0','0','library:vip:page-config:query','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2115','修改VIP客服配置','2034','5','','','','',1,0,'F','0','0','library:vip:page-config:edit','#','admin',sysdate(),'',null,'');

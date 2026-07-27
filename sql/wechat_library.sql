@@ -448,6 +448,36 @@ CREATE TABLE `wl_vip_plan` (
   CONSTRAINT `chk_vip_plan_gift_points` CHECK (`gift_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员套餐';
 
+CREATE TABLE `wl_vip_benefit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `benefit_text` varchar(100) NOT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_vip_benefit_status_sort` (`status`, `sort_order`),
+  CONSTRAINT `chk_vip_benefit_sort` CHECK (`sort_order` >= 0),
+  CONSTRAINT `chk_vip_benefit_status` CHECK (`status` IN ('0','1'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP权益介绍';
+
+CREATE TABLE `wl_vip_page_config` (
+  `id` bigint NOT NULL,
+  `customer_service_image_key` varchar(512) DEFAULT NULL,
+  `customer_service_tip` varchar(100) NOT NULL,
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP页面配置';
+
 CREATE TABLE `wl_vip_code` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `plan_id` bigint NOT NULL,
@@ -567,6 +597,16 @@ CREATE TABLE `wl_vip_refund` (
   CONSTRAINT `chk_vip_refund_reclaimed_points` CHECK (`reclaimed_points` >= 0),
   CONSTRAINT `chk_vip_refund_unrecovered_points` CHECK (`unrecovered_points` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员全额退款';
+
+INSERT INTO `wl_vip_benefit` (`benefit_text`, `sort_order`, `status`,
+  `create_by`, `create_time`, `update_by`, `update_time`, `del_flag`) VALUES
+  ('赠送积分', 10, '0', 'system', NOW(), '', NOW(), '0'),
+  ('VIP 文档免费下载', 20, '0', 'system', NOW(), '', NOW(), '0'),
+  ('VIP 专属课件', 30, '0', 'system', NOW(), '', NOW(), '0');
+
+INSERT INTO `wl_vip_page_config` (`id`, `customer_service_image_key`, `customer_service_tip`,
+  `create_by`, `create_time`, `update_by`, `update_time`, `del_flag`) VALUES
+  (1, NULL, '开通 VIP 请添加客服微信', 'system', NOW(), '', NOW(), '0');
 
 INSERT INTO `wl_point_rule` (`event_type`, `rule_name`, `point_value`, `daily_limit`, `status`,
   `create_by`, `create_time`, `update_by`, `update_time`, `del_flag`, `remark`) VALUES
