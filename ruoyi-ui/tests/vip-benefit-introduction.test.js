@@ -1,6 +1,7 @@
 const assert = require('assert')
 const fs = require('fs')
 const path = require('path')
+const compiler = require('vue-template-compiler')
 
 const menu = fs.readFileSync(
   path.resolve(__dirname, '../../sql/wechat_library_menu.sql'),
@@ -16,4 +17,28 @@ assert(menu.includes("'library:vip:benefit:remove'"), '菜单应包含权益删�
 assert(menu.includes("'library:vip:page-config:query'"), '菜单应包含客服配置查询权限')
 assert(menu.includes("'library:vip:page-config:edit'"), '菜单应包含客服配置修改权限')
 
-console.log('VIP权益介绍菜单契约测试通过')
+const apiPath = path.resolve(__dirname, '../src/api/library/vipBenefit.js')
+const pagePath = path.resolve(__dirname, '../src/views/library/vip/benefit/index.vue')
+assert(fs.existsSync(apiPath), '应新增VIP权益介绍后台API')
+assert(fs.existsSync(pagePath), '应新增VIP权益介绍后台页面')
+
+const api = fs.readFileSync(apiPath, 'utf8')
+const page = fs.readFileSync(pagePath, 'utf8')
+assert(page.includes('VIP 权益介绍'), '页面标题应为“VIP 权益介绍”')
+assert(page.includes('客服微信图片'), '页面应维护客服微信图片')
+assert(page.includes('开通 VIP 请添加客服微信'), '页面应提供默认客服提示语')
+assert(page.includes('权益文字'), '页面应维护权益文字')
+assert(page.includes("v-hasPermi=\"['library:vip:benefit:add']\""), '新增按钮应校验新增权限')
+assert(page.includes("v-hasPermi=\"['library:vip:page-config:edit']\""), '客服保存按钮应校验配置修改权限')
+assert(page.includes('el-upload'), '客服微信图片应使用本地文件上传')
+assert(api.includes("url: '/library/vip-benefit/list'"), 'API应查询权益列表')
+assert(api.includes("url: '/library/vip-page-config'"), 'API应查询客服配置')
+assert(api.includes("formData.append('config'"), '客服配置应以JSON multipart部件提交')
+assert(api.includes("formData.append('image'"), '客服图片应以multipart图片部件提交')
+assert(api.includes('repeatSubmit: false'), '客服图片上传应关闭重复提交拦截')
+
+const component = compiler.parseComponent(page)
+const compiled = compiler.compile(component.template.content)
+assert.deepStrictEqual(compiled.errors, [], `VIP权益介绍页面模板编译失败：${compiled.errors.join('；')}`)
+
+console.log('VIP权益介绍后台页面契约测试通过')
