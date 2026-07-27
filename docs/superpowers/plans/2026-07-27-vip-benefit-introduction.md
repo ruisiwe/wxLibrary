@@ -55,7 +55,7 @@ assertTrue(sql.contains("`customer_service_tip` varchar(100) not null"));
 assertTrue(sql.contains("insert into `wl_vip_page_config`"));
 ```
 
-在前端契约测试中读取菜单脚本并断言：
+在前端契约测试中仅读取菜单脚本并断言：
 
 ```javascript
 assert(menu.includes("'VIP 权益介绍'"))
@@ -73,7 +73,7 @@ $env:JAVA_HOME='E:\JDK8'; & 'C:\Program Files\JetBrains\IntelliJ IDEA 2026.1.2\p
 node ruoyi-ui/tests/vip-benefit-introduction.test.js
 ```
 
-Expected: Java 测试因缺少两张表失败，Node 测试因菜单和页面尚不存在失败。
+Expected: Java 测试因缺少两张表失败，Node 测试因菜单和权限尚不存在失败。
 
 - [ ] **Step 3: 写建表、初始数据和菜单 SQL**
 
