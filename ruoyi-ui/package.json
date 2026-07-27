@@ -10,6 +10,7 @@
     "build:stage": "vue-cli-service build --mode staging",
     "test:banner-select": "node tests/banner-document-select.test.js",
     "test:banner-image": "node tests/banner-image-crop-upload.test.js",
+    "test:category-icon": "node tests/category-icon-picker.test.js",
     "test:document-upload": "node tests/document-upload-flow.test.js",
     "preview": "node build/index.js --preview"
   },
@@ -43,6 +44,7 @@
     "quill": "2.0.2",
     "screenfull": "5.0.2",
     "sortablejs": "1.10.2",
+    "tdesign-icons-vue": "0.4.2",
     "vue": "2.6.12",
     "vue-count-to": "1.0.13",
     "vue-cropper": "0.5.5",
