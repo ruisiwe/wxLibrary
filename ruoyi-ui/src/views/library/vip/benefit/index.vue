@@ -1,7 +1,5 @@
 <template>
   <div class="app-container">
-    <h2 class="page-title">VIP 权益介绍</h2>
-
     <el-card v-loading="configLoading" class="config-card" shadow="never">
       <div slot="header">
         <span>客服微信配置</span>
@@ -64,7 +62,7 @@
         >新增权益</el-button>
       </div>
 
-      <el-table v-loading="benefitLoading" :data="benefits" border stripe>
+      <el-table v-loading="benefitLoading" :data="benefits">
         <el-table-column prop="benefitText" label="权益文字" min-width="260" />
         <el-table-column prop="sortOrder" label="排序" width="100" align="center" />
         <el-table-column prop="status" label="状态" width="100" align="center">
@@ -284,7 +282,6 @@ export default {
 </script>
 
 <style scoped>
-.page-title { margin: 0 0 20px; font-size: 22px; color: #303133; }
 .config-card { margin-bottom: 20px; }
 .card-header { display: flex; align-items: center; justify-content: space-between; }
 .image-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
