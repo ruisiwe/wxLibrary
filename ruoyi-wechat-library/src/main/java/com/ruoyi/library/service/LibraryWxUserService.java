@@ -44,27 +44,26 @@ public class LibraryWxUserService
     @Transactional
     public WlPointRecord adjustPoints(Long userId, PointAdjustmentRequest request, String operator)
     {
-        if (request == null || request.getAmount() == null || request.getAmount() == 0)
+        if (request == null) throw new ServiceException("积分调整请求不能为空");
+        if (userId == null || userId <= 0) throw new ServiceException("微信用户编号不正确");
+        if (request.getAmount() == null || request.getAmount() == 0)
             throw new ServiceException("积分调整数量不能为0");
-        if (request.getBizNo() == null || request.getBizNo().trim().isEmpty())
-            throw new ServiceException("积分调整业务编号不能为空");
-        WlPointRecord existing = pointRecordMapper.selectByBizNo(request.getBizNo().trim());
-        if (existing != null)
-        {
-            if (!userId.equals(existing.getUserId()) || !request.getAmount().equals(existing.getChangePoints()))
-                throw new ServiceException("积分调整业务编号已被其他操作使用");
-            return existing;
-        }
+        if (request.getBatchNo() == null
+                || !request.getBatchNo().matches("[A-Za-z0-9]{20}"))
+            throw new ServiceException("积分调整批次编号不正确");
+        if (request.getDescription() == null || request.getDescription().trim().isEmpty())
+            throw new ServiceException("积分调整原因不能为空");
+        String description = request.getDescription().trim();
+        if (description.length() > 200)
+            throw new ServiceException("积分调整原因不能超过200个字符");
+        String bizNo = "MANUAL_POINT:" + request.getBatchNo() + ":" + userId;
+        WlPointRecord existing = pointRecordMapper.selectByBizNo(bizNo);
+        if (existing != null) return requireMatchingAdjustment(existing, userId, request.getAmount());
         WlWxUser user = userMapper.selectByIdForUpdate(userId);
         if (user == null) throw new ServiceException("微信用户不存在");
         // 用户行锁会串行化同一用户的并发调整，加锁后必须再次检查幂等流水。
-        existing = pointRecordMapper.selectByBizNo(request.getBizNo().trim());
-        if (existing != null)
-        {
-            if (!userId.equals(existing.getUserId()) || !request.getAmount().equals(existing.getChangePoints()))
-                throw new ServiceException("积分调整业务编号已被其他操作使用");
-            return existing;
-        }
+        existing = pointRecordMapper.selectByBizNo(bizNo);
+        if (existing != null) return requireMatchingAdjustment(existing, userId, request.getAmount());
         long before = user.getPointBalance() == null ? 0L : user.getPointBalance();
         long after;
         try { after = Math.addExact(before, request.getAmount()); }
@@ -75,13 +74,23 @@ public class LibraryWxUserService
         WlPointRecord record = new WlPointRecord();
         record.setUserId(userId);
         record.setEventType("MANUAL");
-        record.setBizNo(request.getBizNo().trim());
+        record.setBizNo(bizNo);
         record.setChangePoints(request.getAmount());
         record.setBeforeBalance(before);
         record.setAfterBalance(after);
-        record.setDescription(request.getDescription() == null ? "" : request.getDescription().trim());
+        record.setDescription(description);
         record.setCreateBy(operator);
         pointRecordMapper.insertPointRecord(record);
         return record;
+    }
+
+    private WlPointRecord requireMatchingAdjustment(WlPointRecord existing,
+            Long userId, Long amount)
+    {
+        if (!userId.equals(existing.getUserId())
+                || !amount.equals(existing.getChangePoints())
+                || !"MANUAL".equals(existing.getEventType()))
+            throw new ServiceException("积分调整业务编号已被其他操作使用");
+        return existing;
     }
 }

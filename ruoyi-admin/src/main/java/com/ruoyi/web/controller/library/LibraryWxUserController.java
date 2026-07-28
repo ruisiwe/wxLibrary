@@ -58,7 +58,7 @@ public class LibraryWxUserController extends BaseController
         return toAjax(userService.changeStatus(id, status, getUsername()));
     }
 
-    /** 人工调整积分，业务编号用于幂等控制。 */
+    /** 人工调整积分，操作业务编号由系统生成并用于幂等控制。 */
     @PreAuthorize("@ss.hasPermi('library:wxUser:points')")
     @Log(title = "微信用户积分调整", businessType = BusinessType.UPDATE)
     @PostMapping("/{id}/points")
