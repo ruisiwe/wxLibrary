@@ -1,27 +1,32 @@
 <template>
   <div class="app-container">
-    <el-row :gutter="10">
-      <el-col :span="2">
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
         <el-button
           v-hasPermi="['library:vip:operation']"
           type="primary"
+          plain
+          size="mini"
           @click="show('open')"
         >
           人工开通/续期
         </el-button>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="1.5">
         <el-button
           v-hasPermi="['library:vip:operation']"
           type="warning"
+          plain
+          size="mini"
           @click="show('compensate')"
         >
           会员补偿
         </el-button>
       </el-col>
+      <right-toolbar :search="false" @queryTable="load" />
     </el-row>
 
-    <el-table :data="rows" border class="mt16">
+    <el-table :data="rows">
       <el-table-column prop="userId" label="用户编号" />
       <el-table-column prop="sourceType" label="来源" />
       <el-table-column prop="sourceBizNo" label="业务编号" min-width="220" />

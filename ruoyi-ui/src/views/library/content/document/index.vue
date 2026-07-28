@@ -1,9 +1,19 @@
 <template>
   <div class="app-container">
     <el-row :gutter="10" class="mb8">
-      <el-col :span="2"><el-button v-if="$auth.hasPermiAnd(['library:document:add', 'library:document:upload'])" type="primary" icon="el-icon-plus" @click="open()">新增</el-button></el-col>
+      <el-col :span="1.5">
+        <el-button
+          v-if="$auth.hasPermiAnd(['library:document:add', 'library:document:upload'])"
+          type="primary"
+          plain
+          size="mini"
+          icon="el-icon-plus"
+          @click="open()"
+        >新增</el-button>
+      </el-col>
+      <right-toolbar :search="false" @queryTable="load" />
     </el-row>
-    <el-table v-loading="loading" :data="rows" border stripe>
+    <el-table v-loading="loading" :data="rows">
       <el-table-column prop="id" label="编号" width="80" />
       <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
       <el-table-column prop="categoryId" label="分类编号" />

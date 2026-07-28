@@ -1,6 +1,9 @@
 <template>
   <div class="app-container">
-    <el-table v-loading="loading" :data="rows" border stripe>
+    <el-row :gutter="10" class="mb8">
+      <right-toolbar :search="false" @queryTable="load" />
+    </el-row>
+    <el-table v-loading="loading" :data="rows">
       <el-table-column prop="id" label="编号" width="80" />
       <el-table-column prop="openidMasked" label="OpenID（脱敏）" min-width="160" />
       <el-table-column prop="nickname" label="昵称" />

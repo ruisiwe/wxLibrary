@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form ref="queryForm" :model="query" :inline="true" size="small">
+    <el-form v-show="showSearch" ref="queryForm" :model="query" :inline="true" size="small">
       <el-form-item label="标题" prop="title">
         <el-input
           v-model="query.title"
@@ -43,13 +43,12 @@
           @click="removeSelected"
         >删除</el-button>
       </el-col>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="load" />
     </el-row>
 
     <el-table
       v-loading="loading"
       :data="rows"
-      border
-      stripe
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
@@ -195,6 +194,7 @@ export default {
   data() {
     return {
       loading: false,
+      showSearch: true,
       rows: [],
       total: 0,
       query: { pageNum: 1, pageSize: 10, title: '', status: '' },
