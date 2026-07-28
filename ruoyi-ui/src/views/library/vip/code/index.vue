@@ -1,7 +1,12 @@
 <template>
   <div class="app-container">
-    <el-button v-hasPermi="['library:vip:code']" type="primary" @click="openGenerate">批量生成会员码</el-button>
-    <simple-list class="mt16" title="会员码记录（仅显示掩码）" :loader="listVipCodes" :columns="columns"/>
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button v-hasPermi="['library:vip:code']" type="primary" plain size="mini" @click="openGenerate">批量生成会员码</el-button>
+      </el-col>
+      <right-toolbar :search="false" @queryTable="$refs.vipCodeList.loadData()" />
+    </el-row>
+    <simple-list ref="vipCodeList" plain embedded title="会员码记录（仅显示掩码）" :loader="listVipCodes" :columns="columns"/>
     <el-dialog title="批量生成会员码" :visible.sync="visible" width="640px">
       <el-form label-width="100px">
         <el-form-item label="套餐编号" required><el-input-number v-model="form.planId" :min="1"/></el-form-item>

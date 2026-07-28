@@ -1,5 +1,6 @@
 <template>
   <simple-list
+    plain
     title="文档分类"
     :loader="listCategories"
     :creator="addCategory"

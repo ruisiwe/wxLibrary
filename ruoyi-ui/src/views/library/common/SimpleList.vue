@@ -1,14 +1,32 @@
 <template>
-  <div class="app-container">
-    <el-card shadow="never">
-      <div slot="header" class="toolbar">
+  <div :class="{ 'app-container': !embedded }">
+    <component :is="plain ? 'div' : 'el-card'" shadow="never">
+      <div v-if="!plain" slot="header" class="toolbar">
         <span>{{ title }}</span>
         <div>
           <el-button v-if="creator" v-hasPermi="[permissions.add]" type="primary" size="mini" icon="el-icon-plus" @click="openDialog()">新增</el-button>
           <el-button size="mini" icon="el-icon-refresh" @click="loadData">刷新</el-button>
         </div>
       </div>
-      <el-table v-loading="loading" :data="rows" border stripe>
+      <el-row v-else-if="!embedded" :gutter="10" class="mb8">
+        <el-col v-if="creator" :span="1.5">
+          <el-button
+            v-hasPermi="[permissions.add]"
+            type="primary"
+            plain
+            size="mini"
+            icon="el-icon-plus"
+            @click="openDialog()"
+          >新增</el-button>
+        </el-col>
+        <right-toolbar :search="false" @queryTable="loadData" />
+      </el-row>
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        :border="!plain"
+        :stripe="!plain"
+      >
         <el-table-column v-for="column in columns" :key="column.prop" :prop="column.prop" :label="column.label" :min-width="column.width || 120" show-overflow-tooltip>
           <template slot-scope="scope">
             <slot
@@ -29,7 +47,7 @@
         </el-table-column>
       </el-table>
       <pagination v-show="total > 0" :total="total" :page.sync="query.pageNum" :limit.sync="query.pageSize" @pagination="loadData" />
-    </el-card>
+    </component>
 
     <el-dialog :title="form.id ? `修改${title}` : `新增${title}`" :visible.sync="visible" width="620px" append-to-body>
       <el-form ref="form" :model="form" label-width="120px">
@@ -61,6 +79,8 @@ export default {
   components: { RemoteSelect },
   props: {
     title: { type: String, required: true },
+    plain: { type: Boolean, default: false },
+    embedded: { type: Boolean, default: false },
     loader: { type: Function, required: true },
     columns: { type: Array, required: true },
     creator: Function,

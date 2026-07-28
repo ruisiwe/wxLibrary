@@ -1,4 +1,4 @@
-<template><simple-list title="积分规则" :loader="listPointRules" :updater="updatePointRule" :columns="columns" :form-fields="fields" :permissions="permissions"/></template>
+<template><simple-list plain title="积分规则" :loader="listPointRules" :updater="updatePointRule" :columns="columns" :form-fields="fields" :permissions="permissions"/></template>
 <script>
 import SimpleList from '@/views/library/common/SimpleList'
 import { listPointRules,updatePointRule } from '@/api/library/points'

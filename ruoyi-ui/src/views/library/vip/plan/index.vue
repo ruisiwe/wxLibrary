@@ -1,4 +1,4 @@
-<template><simple-list title="会员套餐" :loader="listVipPlans" :creator="addVipPlan" :updater="updateVipPlan" :remover="deleteVipPlan" :columns="columns" :form-fields="fields" :default-form="defaults" :permissions="permissions"/></template>
+<template><simple-list plain title="会员套餐" :loader="listVipPlans" :creator="addVipPlan" :updater="updateVipPlan" :remover="deleteVipPlan" :columns="columns" :form-fields="fields" :default-form="defaults" :permissions="permissions"/></template>
 <script>
 import SimpleList from '@/views/library/common/SimpleList'
 import { listVipPlans,addVipPlan,updateVipPlan,deleteVipPlan } from '@/api/library/vip'
