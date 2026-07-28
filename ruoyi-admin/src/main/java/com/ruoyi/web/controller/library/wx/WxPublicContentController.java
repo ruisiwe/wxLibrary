@@ -41,7 +41,7 @@ public class WxPublicContentController
         return WxApiResponse.success(homeQueryService.listCategories());
     }
 
-    /** 匿名按关键词和分类分页查询已上架文档。 */
+    /** 匿名按标题、简介、标签、分类和文件格式分页查询已上架文档。 */
     @GetMapping("/documents")
     public WxApiResponse<PageResult<DocumentSummaryDto>> documents(
             @RequestParam(required = false) String keyword,

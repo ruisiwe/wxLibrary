@@ -13,7 +13,7 @@
   {"name":"home","label":"首页","keywords":"首页 主页"},
   {"name":"image","label":"图片","keywords":"图片 图像 相册"},
   {"name":"music","label":"音频","keywords":"音频 音乐 声音"},
-  {"name":"code","label":"代码","keywords":"代码 程序 开发"},
+  {"name":"high-level","label":"等级","keywords":"等级 高级"},
   {"name":"data","label":"数据","keywords":"数据 数据库 资料"},
   {"name":"user","label":"用户","keywords":"用户 人员 个人"},
   {"name":"star","label":"收藏","keywords":"收藏 星标 推荐"},
@@ -22,5 +22,12 @@
   {"name":"upload","label":"上传","keywords":"上传 提交 文件"},
   {"name":"link","label":"链接","keywords":"链接 地址 关联"},
   {"name":"lock-on","label":"权限","keywords":"权限 锁定 私有"},
-  {"name":"tag","label":"标签","keywords":"标签 分类 标记"}
+  {"name":"tag","label":"标签","keywords":"标签 分类 标记"},
+  {"name":"hospital","label":"医院","keywords":"医院 诊所"},
+  {"name":"hospital-1","label":"医院2","keywords":"医院 诊所"},
+  {"name":"member","label":"用户","keywords":"用户"},
+  {"name":"file-pdf","label":"PDF文件","keywords":"PDF文件"},
+  {"name":"file-excel","label":"表格文件","keywords":"表格文件"},
+  {"name":"file-word","label":"word文件","keywords":"word文件"},
+  {"name":"file-powerpoint","label":"PPT文件","keywords":"PPT文件"}
 ]

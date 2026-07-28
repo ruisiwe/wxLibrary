@@ -16,27 +16,30 @@
     </view>
     <view class="tasks">
       <view class="heading">积分任务</view>
-      <block wx:for="{{taskRows}}" wx:key="eventType">
-        <button
-          wx:if="{{item.shareOpen && !item.reachedLimit}}"
-          class="rule"
-          open-type="share"
-          data-event="{{item.eventType}}"
-          bindtap="handleTask"
-        >
-          <text>{{item.title}}（{{item.count}}/{{item.limit}}）</text>
-          <text>{{item.reachedLimit ? '已完成' : '+' + item.points}}</text>
-        </button>
-        <button
-          wx:else
-          class="rule"
-          data-event="{{item.eventType}}"
-          bindtap="handleTask"
-        >
-          <text>{{item.title}}（{{item.count}}/{{item.limit}}）</text>
-          <text>{{item.reachedLimit ? '已完成' : '+' + item.points}}</text>
-        </button>
-      </block>
+      <view class="rule-list">
+        <view class="rule" wx:for="{{taskRows}}" wx:key="eventType">
+          <view class="rule__main">
+            <text class="rule__title">{{item.title}}</text>
+            <text class="rule__progress">今日进度 {{item.count}}/{{item.limit}}</text>
+          </view>
+          <text class="rule__action {{item.reachedLimit ? 'rule__action--done' : ''}}">{{item.reachedLimit ? '已完成' : '+' + item.points}}</text>
+          <button
+            wx:if="{{item.shareOpen && !item.reachedLimit}}"
+            class="rule__trigger"
+            open-type="share"
+            data-event="{{item.eventType}}"
+            bindtap="handleTask"
+            aria-label="{{item.title}}"
+          ></button>
+          <button
+            wx:else
+            class="rule__trigger"
+            data-event="{{item.eventType}}"
+            bindtap="handleTask"
+            aria-label="{{item.title}}"
+          ></button>
+        </view>
+      </view>
     </view>
   </view>
   <state-view loading="{{loading}}" error="{{error}}" bindretry="load"/>

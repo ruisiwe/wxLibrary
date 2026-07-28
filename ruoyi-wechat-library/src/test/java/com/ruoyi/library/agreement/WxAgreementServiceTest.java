@@ -39,37 +39,30 @@ class WxAgreementServiceTest
     }
 
     @Test
-    void firstAcceptanceReportsEachMissingItemInChinese()
+    void firstAcceptanceReportsMissingPrivacyInChinese()
     {
         assertEquals("请勾选用户隐私协议", assertThrows(ServiceException.class,
-                () -> service.validateCurrentAcceptance(false, "p1", true, "s1")).getMessage());
+                () -> service.validateCurrentAcceptance(false, "p1")).getMessage());
         assertEquals("请提交当前用户隐私协议版本", assertThrows(ServiceException.class,
-                () -> service.validateCurrentAcceptance(true, "old", true, "s1")).getMessage());
-        assertEquals("请勾选网站声明", assertThrows(ServiceException.class,
-                () -> service.validateCurrentAcceptance(true, "p1", false, "s1")).getMessage());
-        assertEquals("请提交当前网站声明版本", assertThrows(ServiceException.class,
-                () -> service.validateCurrentAcceptance(true, "p1", true, "old")).getMessage());
+                () -> service.validateCurrentAcceptance(true, "old")).getMessage());
     }
 
     @Test
-    void acceptsBothCurrentVersionsAndIsIdempotent()
+    void acceptsCurrentPrivacyVersionAndIsIdempotent()
     {
-        service.acceptCurrent(8L, "p1", "s1", "127.0.0.1");
+        service.acceptCurrent(8L, "p1", "127.0.0.1");
         verify(userAgreementMapper).insertUserAgreement(org.mockito.ArgumentMatchers.argThat(
                 item -> item.getUserId().equals(8L) && item.getAgreementId().equals(1L)));
-        verify(userAgreementMapper).insertUserAgreement(org.mockito.ArgumentMatchers.argThat(
-                item -> item.getUserId().equals(8L) && item.getAgreementId().equals(2L)));
 
         when(userAgreementMapper.selectByUserAndAgreement(8L, 1L)).thenReturn(new WlUserAgreement());
-        when(userAgreementMapper.selectByUserAndAgreement(8L, 2L)).thenReturn(new WlUserAgreement());
-        service.acceptCurrent(8L, "p1", "s1", "127.0.0.1");
-        verify(userAgreementMapper, org.mockito.Mockito.times(2)).insertUserAgreement(any(WlUserAgreement.class));
+        service.acceptCurrent(8L, "p1", "127.0.0.1");
+        verify(userAgreementMapper).insertUserAgreement(any(WlUserAgreement.class));
     }
 
     @Test
-    void reportsWhetherUserAcceptedBothPublishedVersions()
+    void reportsWhetherUserAcceptedPublishedPrivacyVersion()
     {
-        when(userAgreementMapper.countAcceptedAgreementIds(8L, 1L, 2L)).thenReturn(2);
+        when(userAgreementMapper.countAcceptedAgreementId(8L, 1L)).thenReturn(1);
         assertTrue(service.hasAcceptedAllCurrent(8L));
     }
 

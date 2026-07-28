@@ -71,9 +71,7 @@ class WxControllerIntegrationTest
                         .param("code", "wx-code")
                         .param("nickname", "微信用户")
                         .param("privacyAccepted", "true")
-                        .param("privacyVersion", "p1")
-                        .param("statementAccepted", "true")
-                        .param("statementVersion", "s1"))
+                        .param("privacyVersion", "p1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
@@ -89,8 +87,7 @@ class WxControllerIntegrationTest
     {
         MockMultipartFile requestPart = new MockMultipartFile("request", "", "application/json",
                 ("{\"code\":\"wx-code\",\"nickname\":\"微信用户\","
-                        + "\"privacyAccepted\":true,\"privacyVersion\":\"p1\","
-                        + "\"statementAccepted\":true,\"statementVersion\":\"s1\"}")
+                        + "\"privacyAccepted\":true,\"privacyVersion\":\"p1\"}")
                         .getBytes(StandardCharsets.UTF_8));
         MockMultipartFile avatar = new MockMultipartFile("avatar", "avatar.png", "image/png", new byte[] {1});
         when(loginService.login(any(WxLoginRequest.class), any(MultipartFile.class), any()))
@@ -202,8 +199,7 @@ class WxControllerIntegrationTest
         mockMvc.perform(multipart("/wx/auth/login")
                         .file(new MockMultipartFile("avatar", "a.png", "image/png", new byte[] {1}))
                         .param("code", "code").param("nickname", "用户")
-                        .param("privacyAccepted", "not-boolean").param("privacyVersion", "p1")
-                        .param("statementAccepted", "true").param("statementVersion", "s1"))
+                        .param("privacyAccepted", "not-boolean").param("privacyVersion", "p1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("请求参数格式不正确"));
     }
@@ -225,8 +221,7 @@ class WxControllerIntegrationTest
         mockMvc.perform(multipart("/wx/auth/login")
                         .file(new MockMultipartFile("avatar", "a.png", "image/png", new byte[] {1}))
                         .param("code", "code").param("nickname", "用户")
-                        .param("privacyAccepted", "true").param("privacyVersion", "p1")
-                        .param("statementAccepted", "true").param("statementVersion", "s1"))
+                        .param("privacyAccepted", "true").param("privacyVersion", "p1"))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(jsonPath("$.message").value("上传文件大小超出限制"));
     }

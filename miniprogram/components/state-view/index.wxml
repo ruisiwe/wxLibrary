@@ -1,1 +1,8 @@
-<view wx:if="{{loading}}" class="state">加载中…</view><view wx:elif="{{error}}" class="state"><text>{{error}}</text><button size="mini" bindtap="retry">重试</button></view><view wx:elif="{{empty}}" class="state">{{emptyText}}</view>
+<view wx:if="{{loading || error || empty}}" class="state">
+  <block wx:if="{{loading}}">加载中…</block>
+  <block wx:elif="{{error}}">
+    <text>{{error}}</text>
+    <button size="mini" bindtap="retry">重试</button>
+  </block>
+  <block wx:elif="{{empty}}">{{emptyText}}</block>
+</view>

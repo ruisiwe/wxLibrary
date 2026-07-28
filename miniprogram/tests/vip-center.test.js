@@ -13,14 +13,28 @@ test('VIP 主页面展示会员积分和三类任务但不展示套餐', () => {
   const markup = read('pages/vip/vip.wxml');
 
   assert.match(markup, /当前积分/);
-  assert.match(markup, /每日签到/);
-  assert.match(markup, /激励视频/);
-  assert.match(markup, /分享邀请/);
+  assert.match(logic, /每日签到/);
+  assert.match(logic, /激励视频广告/);
+  assert.match(logic, /分享小程序/);
   assert.match(logic, /points\.balance/);
   assert.match(logic, /points\.rules/);
   assert.match(logic, /points\.signIn/);
   assert.doesNotMatch(logic, /vip\.plans/);
   assert.doesNotMatch(markup, /wx:for="\{\{plans\}\}"/);
+});
+
+test('积分任务进度合并到任务列表并提示每日上限', () => {
+  const logic = read('pages/vip/vip.js');
+  const markup = read('pages/vip/vip.wxml');
+
+  assert.match(markup, /wx:for="\{\{taskRows\}\}"/);
+  assert.match(markup, /\{\{item\.title\}\}（\{\{item\.count\}\}\/\{\{item\.limit\}\}）/);
+  assert.doesNotMatch(markup, /<button bindtap="signIn">每日签到<\/button>/);
+  assert.doesNotMatch(markup, /<button bindtap="watchAd">激励视频/);
+  assert.doesNotMatch(markup, /<button open-type="share" bindtap="invite">分享邀请<\/button>/);
+  assert.match(logic, /taskRows/);
+  assert.match(logic, /今日任务已达上限/);
+  assert.match(logic, /points\.records/);
 });
 
 test('VIP 套餐和支付逻辑位于子页面', () => {

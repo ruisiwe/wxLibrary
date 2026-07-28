@@ -1,1 +1,1 @@
-{"navigationBarTitleText":"文档详情","usingComponents":{"login-sheet":"/components/login-sheet/index","state-view":"/components/state-view/index"}}
+{"navigationBarTitleText":"文档详情","usingComponents":{"login-sheet":"/components/login-sheet/index","state-view":"/components/state-view/index","t-icon":"tdesign-miniprogram/icon/icon"}}

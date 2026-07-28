@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -56,7 +57,7 @@ class WxLoginServiceTest
     }
 
     @Test
-    void firstLoginCreatesIndependentWechatUserAcceptsAgreementsAndIssuesToken()
+    void firstLoginCreatesIndependentWechatUserAndIssuesTokenBeforePrivacyAcceptance()
     {
         WxLoginRequest request = completeRequest();
         MockMultipartFile avatar = avatar();
@@ -66,7 +67,7 @@ class WxLoginServiceTest
             user.setId(18L);
             return 1;
         }).when(userMapper).insertWxUser(any(WlWxUser.class));
-        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(true);
+        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(false);
         when(tokenService.issue(18L)).thenReturn("wx-token");
 
         WxLoginResponse response = loginService.login(request, avatar, "127.0.0.1");
@@ -76,10 +77,10 @@ class WxLoginServiceTest
         assertEquals("openid-secret", captor.getValue().getOpenid());
         assertEquals("测试用户", captor.getValue().getNickname());
         assertEquals("202607/avatar.jpg", captor.getValue().getAvatarPath());
-        verify(agreementService).validateCurrentAcceptance(true, "privacy-v1", true, "statement-v1");
-        verify(agreementService).acceptCurrent(18L, "privacy-v1", "statement-v1", "127.0.0.1");
+        verify(agreementService, never()).validateCurrentAcceptance(anyBoolean(), any());
+        verify(agreementService, never()).acceptCurrent(anyLong(), any(), any());
         assertEquals("wx-token", response.getToken());
-        assertFalse(response.isAgreementRequired());
+        assertTrue(response.isAgreementRequired());
         assertFalse(JSON.toJSONString(response).contains("openid"));
         assertThrows(NoSuchMethodException.class, () -> WxLoginResponse.class.getMethod("getOpenid"));
     }
@@ -128,19 +129,24 @@ class WxLoginServiceTest
     }
 
     @Test
-    void firstLoginRequiresNicknameAndBothCurrentAgreements()
+    void firstLoginUsesDefaultNicknameWhenNicknameIsMissing()
     {
         WxLoginRequest missingNickname = completeRequest();
         missingNickname.setNickname(" ");
-        assertEquals("首次登录必须填写昵称", assertThrows(ServiceException.class,
-                () -> loginService.login(missingNickname, avatar(), null)).getMessage());
+        when(avatarStorageService.store(any())).thenReturn("202607/avatar.jpg");
+        doAnswer(invocation -> {
+            WlWxUser user = invocation.getArgument(0);
+            user.setId(18L);
+            return 1;
+        }).when(userMapper).insertWxUser(any(WlWxUser.class));
+        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(false);
+        when(tokenService.issue(18L)).thenReturn("wx-token");
 
-        WxLoginRequest missingPrivacy = completeRequest();
-        missingPrivacy.setPrivacyAccepted(false);
-        doThrow(new ServiceException("请勾选用户隐私协议")).when(agreementService)
-                .validateCurrentAcceptance(false, "privacy-v1", true, "statement-v1");
-        assertEquals("请勾选用户隐私协议", assertThrows(ServiceException.class,
-                () -> loginService.login(missingPrivacy, avatar(), null)).getMessage());
+        loginService.login(missingNickname, avatar(), null);
+
+        ArgumentCaptor<WlWxUser> captor = ArgumentCaptor.forClass(WlWxUser.class);
+        verify(userMapper).insertWxUser(captor.capture());
+        assertEquals("微信用户", captor.getValue().getNickname());
     }
 
     @Test
@@ -204,7 +210,7 @@ class WxLoginServiceTest
         WxLoginResponse response = loginService.login(codeOnly(), null, null);
 
         assertTrue(response.isAgreementRequired());
-        verify(agreementService, never()).acceptCurrent(anyLong(), any(), any(), any());
+        verify(agreementService, never()).acceptCurrent(anyLong(), any(), any());
     }
 
     @Test
@@ -302,8 +308,6 @@ class WxLoginServiceTest
         request.setNickname("测试用户");
         request.setPrivacyAccepted(true);
         request.setPrivacyVersion("privacy-v1");
-        request.setStatementAccepted(true);
-        request.setStatementVersion("statement-v1");
         return request;
     }
 

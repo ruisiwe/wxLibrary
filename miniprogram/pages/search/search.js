@@ -1,6 +1,10 @@
 const documents = require('../../services/document');
 Page({
   data: { keyword: '', items: [], loading: false, error: '' },
+  onLoad(options) {
+    const keyword = options && options.keyword ? decodeURIComponent(options.keyword) : '';
+    if (keyword) this.setData({ keyword }, () => this.search());
+  },
   input(event) { this.setData({ keyword: event.detail.value }); },
   search() {
     this.setData({ loading: true, error: '' });

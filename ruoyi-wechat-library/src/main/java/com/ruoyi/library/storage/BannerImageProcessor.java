@@ -30,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class BannerImageProcessor
 {
-    public static final int WIDTH = 1120;
+    public static final int WIDTH = 952;
     public static final int HEIGHT = 550;
     public static final long MAX_UPLOAD_BYTES = 5L * 1024L * 1024L;
     public static final long MAX_PIXELS = (long) WIDTH * HEIGHT;
@@ -189,7 +189,7 @@ public class BannerImageProcessor
                 if ((long) width > MAX_PIXELS / (long) height)
                     throw new ServiceException("轮播图像素数量超出安全限制");
                 if (width != WIDTH || height != HEIGHT)
-                    throw new ServiceException("轮播图尺寸必须为1120×550");
+                    throw new ServiceException("轮播图尺寸必须为952×550");
                 BufferedImage decoded = reader.read(0);
                 if (decoded == null || decoded.getWidth() != WIDTH || decoded.getHeight() != HEIGHT)
                     throw new ServiceException("轮播图内容无法识别");

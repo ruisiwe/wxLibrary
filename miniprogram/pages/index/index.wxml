@@ -2,6 +2,20 @@
   <view class="home__hero">
     <text class="home__brand">实验室文库</text>
   </view>
+  <view class="home__search-row">
+    <view class="home__search">
+      <input
+        value="{{searchKeyword}}"
+        placeholder="搜索文档"
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="searchDocuments"
+      />
+      <view class="home__search-icon" bindtap="searchDocuments" aria-role="button" aria-label="搜索">
+        <t-icon name="search" size="30rpx" color="#64748b"/>
+      </view>
+    </view>
+  </view>
   <view class="home__section-title">
     <text class="home__section-bar"></text>
     <text>专题推荐</text>

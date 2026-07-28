@@ -79,7 +79,7 @@ class BannerImageProcessorTest
         ServiceException exception = assertThrows(ServiceException.class, () -> processor.process(
                 file("banner.jpg", "image/jpeg", jpeg(BannerImageProcessor.WIDTH, 479))));
 
-        assertEquals("轮播图尺寸必须为1240×480", exception.getMessage());
+        assertEquals("轮播图尺寸必须为1120×550", exception.getMessage());
         assertContainerHasNoSessions(root.resolve("banner-images"));
     }
 

@@ -39,11 +39,11 @@ class WxAgreementInterceptorTest
         assertEquals(409, response.getStatus());
         JSONObject body = JSON.parseObject(response.getContentAsString());
         assertEquals(40901, body.getIntValue("code"));
-        assertEquals("请先阅读并同意最新用户隐私协议与网站声明", body.getString("message"));
+        assertEquals("请先阅读并同意最新用户隐私协议", body.getString("message"));
     }
 
     @Test
-    void allowsRequestAfterBothCurrentVersionsAreAccepted() throws Exception
+    void allowsRequestAfterCurrentPrivacyVersionIsAccepted() throws Exception
     {
         WxAgreementService service = mock(WxAgreementService.class);
         when(service.hasAcceptedAllCurrent(12L)).thenReturn(true);

@@ -1,21 +1,32 @@
 <view class="page">
   <state-view loading="{{loading}}" error="{{error}}" bindretry="load"/>
   <view wx:if="{{document}}">
-    <image class="cover" src="{{document.coverUrl}}" mode="aspectFill"/>
-    <view class="card">
-      <view class="title">{{document.title}}</view>
-      <view class="meta">{{document.categoryName}} · {{document.pageCount || 0}} 页 · {{document.fileFormat}}</view>
-      <view class="summary">{{document.summary || '暂无简介'}}</view>
-      <view class="price">
-        <text wx:if="{{vipFreeDocument}}" class="vip-free">会员免费</text>
-        <text>{{document.pointPrice || 0}} 积分永久兑换</text>
+    <view class="document-card">
+      <image class="cover" src="{{document.coverUrl}}" mode="aspectFit"/>
+      <view class="card-content">
+        <view class="title">{{document.title}}</view>
+        <view class="meta">{{document.categoryName}} · {{document.pageCount || 0}} 页 · {{document.fileFormat}}</view>
+        <view class="summary">{{document.summary || '暂无简介'}}</view>
+        <view class="price-row">
+          <view class="price">
+            <text wx:if="{{vipFreeDocument}}" class="vip-free">会员免费</text>
+            <text>{{document.pointPrice || 0}} 积分永久兑换</text>
+          </view>
+          <view
+            class="favorite-button"
+            bindtap="toggleFavorite"
+            aria-role="button"
+            aria-label="{{favorite ? '取消收藏' : '收藏'}}"
+          >
+            <t-icon name="{{favorite ? 'heart-filled' : 'heart'}}" size="40rpx" color="#ef4444"/>
+          </view>
+        </view>
+        <view class="actions">
+          <button class="secondary" bindtap="preview">试读</button>
+          <button wx:if="{{!unlocked}}" class="primary" bindtap="unlock">{{vipFreeDocument && vipActive ? '免费下载' : '积分兑换'}}</button>
+          <button wx:if="{{unlocked}}" class="primary" loading="{{sendingOriginal}}" bindtap="shareOriginal">发送原文件</button>
+        </view>
       </view>
-    </view>
-    <view class="actions">
-      <button bindtap="preview">试读</button>
-      <button wx:if="{{!unlocked}}" class="primary" bindtap="unlock">{{vipFreeDocument && vipActive ? '免费下载' : '积分兑换'}}</button>
-      <button bindtap="toggleFavorite">{{favorite ? '取消收藏' : '收藏'}}</button>
-      <button wx:if="{{unlocked}}" loading="{{sendingOriginal}}" bindtap="shareOriginal">发送原文件</button>
     </view>
   </view>
   <view wx:if="{{disclaimerVisible}}" class="disclaimer-mask">

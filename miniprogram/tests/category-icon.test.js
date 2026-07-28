@@ -25,9 +25,20 @@ function readIconCss() {
 test('分类宫格使用接口 icon 字段渲染 TDesign 图标', () => {
   assert.equal(componentJson.usingComponents['t-icon'], 'tdesign-miniprogram/icon/icon')
   assert.match(template, /<t-icon/)
+  assert.match(template, /grid__icon-shell/)
   assert.match(template, /name="\{\{item\.icon \|\| 'file'\}\}"/)
   assert.doesNotMatch(template, /item\.iconUrl/)
   assert.doesNotMatch(template, /<image[^>]+grid__icon/)
+})
+
+test('分类图标按设计草图使用精致图标外壳和网格分割', () => {
+  const style = fs.readFileSync(
+    path.join(root, 'components/category-grid/index.wxss'), 'utf8')
+  assert.match(style, /\.grid__icon-shell/)
+  assert.match(style, /box-shadow/)
+  assert.match(style, /border-right/)
+  assert.match(style, /border-bottom/)
+  assert.match(style, /\.grid__label/)
 })
 
 test('所有后台精选图标都存在于当前小程序 TDesign 版本', () => {

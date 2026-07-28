@@ -1,1 +1,7 @@
-<view class="page"><view class="search"><input placeholder="输入文档标题或关键词" bindinput="input" confirm-type="search" bindconfirm="search"/><button size="mini" bindtap="search">搜索</button></view><document-row wx:for="{{items}}" wx:key="id" document="{{item}}"/><state-view loading="{{loading}}" error="{{error}}" empty="{{!loading && !error && keyword && !items.length}}" bindretry="search"/></view>
+<view class="page">
+  <view class="search"><input value="{{keyword}}" placeholder="输入文档标题或关键词" bindinput="input" confirm-type="search" bindconfirm="search" />
+  <button size="mini" bindtap="search">搜索</button>
+  </view>
+  <document-row wx:for="{{items}}" wx:key="id" document="{{item}}" />
+  <state-view loading="{{loading}}" error="{{error}}" empty="{{!loading && !error && keyword && !items.length}}" bindretry="search" />
+</view>

@@ -1,1 +1,1 @@
-.promotions{width:100%;white-space:nowrap}.promotions__track{display:flex;gap:20rpx}.promotions__image{width:558rpx;height:274rpx;border-radius:24rpx;flex:none;background:#dbeafe}
+.promotions{width:100%;white-space:nowrap}.promotions__track{display:flex;gap:15rpx}.promotions__image{width:283rpx;height:163rpx;border-radius:18rpx;flex:none;background:#dbeafe}

@@ -65,7 +65,9 @@
         <if test="keyword != null and keyword != ''">
             and (d.title like concat('%', #{keyword}, '%') escape '\\'
                 or d.summary like concat('%', #{keyword}, '%') escape '\\'
-                or d.tags like concat('%', #{keyword}, '%') escape '\\')
+                or d.tags like concat('%', #{keyword}, '%') escape '\\'
+                or c.name like concat('%', #{keyword}, '%') escape '\\'
+                or d.file_format like concat('%', #{keyword}, '%') escape '\\')
         </if>
     </sql>
 

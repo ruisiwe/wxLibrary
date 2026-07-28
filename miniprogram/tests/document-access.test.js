@@ -31,6 +31,18 @@ test('首页只渲染宣传、分类、文档三个内容区块', () => {
   assert.doesNotMatch(source, /课程|会员|积分中心/);
 });
 
+test('首页按设计草图展示小程序名称和专题推荐标题', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '../pages/index/index.wxml'), 'utf8');
+  const style = fs.readFileSync(path.resolve(__dirname, '../pages/index/index.wxss'), 'utf8');
+  assert.match(source, /实验室文库/);
+  assert.match(source, /专题推荐/);
+  assert.match(source, /home__brand/);
+  assert.match(source, /home__section-title/);
+  assert.match(style, /\.home__brand/);
+  assert.match(style, /\.home__section-title/);
+  assert.match(style, /\.home__section-bar/);
+});
+
 test('原文件分享调用不包含固定接收人字段', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../pages/document-detail/document-detail.js'), 'utf8');
   assert.match(source, /wx\.shareFileMessage\(documents\.buildShareOptions\(filePath\)\)/);
