@@ -1,7 +1,19 @@
 <template>
   <div class="app-container">
-    <el-button v-hasPermi="['library:agreement:add']" type="primary" icon="el-icon-plus" @click="open()">新增协议版本</el-button>
-    <el-table v-loading="loading" :data="rows" border class="mt16">
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button
+          v-hasPermi="['library:agreement:add']"
+          type="primary"
+          plain
+          size="mini"
+          icon="el-icon-plus"
+          @click="open()"
+        >新增协议版本</el-button>
+      </el-col>
+      <right-toolbar :search="false" @queryTable="load" />
+    </el-row>
+    <el-table v-loading="loading" :data="rows">
       <el-table-column prop="agreementType" label="协议类型"><template slot-scope="s">{{agreementTypeLabel(s.row.agreementType)}}</template></el-table-column>
       <el-table-column prop="version" label="版本"/><el-table-column prop="title" label="标题" min-width="180"/><el-table-column prop="effectiveTime" label="生效时间" min-width="170"/><el-table-column prop="status" label="状态"><template slot-scope="s">{{s.row.status==='0'?'草稿':s.row.status==='1'?'已发布':'已替代'}}</template></el-table-column>
       <el-table-column label="操作" width="160"><template slot-scope="s"><el-button v-if="s.row.status==='0'" v-hasPermi="['library:agreement:edit']" type="text" @click="open(s.row)">修改</el-button><el-button v-if="s.row.status==='0'" v-hasPermi="['library:agreement:publish']" type="text" @click="publish(s.row)">发布</el-button></template></el-table-column>

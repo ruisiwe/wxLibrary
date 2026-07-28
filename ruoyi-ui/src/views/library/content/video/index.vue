@@ -1,7 +1,10 @@
 <template>
   <div class="app-container">
-    <el-form inline><el-form-item label="课程"><el-select v-model="courseId" filterable placeholder="请选择课程" @change="loadVideos"><el-option v-for="course in courses" :key="course.id" :label="course.title" :value="course.id" /></el-select></el-form-item><el-form-item><el-button v-hasPermi="['library:course:edit']" type="primary" :disabled="!courseId" @click="open()">新增视频</el-button></el-form-item></el-form>
-    <el-table v-loading="loading" :data="videos" border stripe>
+    <el-form :inline="true" size="small"><el-form-item label="课程"><el-select v-model="courseId" filterable placeholder="请选择课程" @change="loadVideos"><el-option v-for="course in courses" :key="course.id" :label="course.title" :value="course.id" /></el-select></el-form-item><el-form-item><el-button v-hasPermi="['library:course:edit']" type="primary" plain size="mini" :disabled="!courseId" @click="open()">新增视频</el-button></el-form-item></el-form>
+    <el-row :gutter="10" class="mb8">
+      <right-toolbar :search="false" @queryTable="loadVideos" />
+    </el-row>
+    <el-table v-loading="loading" :data="videos">
       <el-table-column prop="title" label="视频标题" />
       <el-table-column prop="videoObjectKey" label="私有对象键" min-width="220" show-overflow-tooltip />
       <el-table-column prop="durationSeconds" label="时长（秒）" />

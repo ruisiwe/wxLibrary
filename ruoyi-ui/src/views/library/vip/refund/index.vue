@@ -1,2 +1,35 @@
-<template><div class="app-container"><el-table :data="rows" border><el-table-column prop="merchantOrderNo" label="商户订单号" min-width="210"/><el-table-column prop="userId" label="用户编号"/><el-table-column prop="amountCent" label="支付金额（分）"/><el-table-column prop="giftPointsSnapshot" label="应追回积分"/><el-table-column prop="orderStatus" label="订单状态"/><el-table-column label="操作"><template slot-scope="s"><el-button v-if="s.row.orderStatus==='PAID'" v-hasPermi="['library:vip:refund']" type="text" @click="open(s.row)">全额退款</el-button></template></el-table-column></el-table><el-dialog title="确认全额退款" :visible.sync="visible"><el-alert title="退款最终成功后才会撤销支付会员权益；退款受理中不会提前撤销。" type="warning" :closable="false"/><el-descriptions border :column="1" class="mt16"><el-descriptions-item label="退款金额">{{ form.amountCent }} 分</el-descriptions-item><el-descriptions-item label="将撤销权益">是（仅最终成功后）</el-descriptions-item><el-descriptions-item label="预计追回积分">{{ form.expected }}</el-descriptions-item><el-descriptions-item label="当前可用积分">{{ form.available }}</el-descriptions-item><el-descriptions-item label="预计无法追回">{{ Math.max(form.expected-form.available,0) }}</el-descriptions-item></el-descriptions><el-form label-width="120px" class="mt16"><el-form-item label="退款原因" required><el-input v-model="form.reason" type="textarea"/></el-form-item><el-form-item label="二次确认令牌" required><el-input v-model="form.confirmationToken" show-password/></el-form-item></el-form><span slot="footer"><el-button @click="visible=false">取消</el-button><el-button type="danger" @click="submit">确认全额退款</el-button></span></el-dialog></div></template>
+<template>
+  <div class="app-container">
+    <el-row :gutter="10" class="mb8">
+      <right-toolbar :search="false" @queryTable="load" />
+    </el-row>
+    <el-table :data="rows">
+      <el-table-column prop="merchantOrderNo" label="商户订单号" min-width="210"/>
+      <el-table-column prop="userId" label="用户编号"/>
+      <el-table-column prop="amountCent" label="支付金额（分）"/>
+      <el-table-column prop="giftPointsSnapshot" label="应追回积分"/>
+      <el-table-column prop="orderStatus" label="订单状态"/>
+      <el-table-column label="操作">
+        <template slot-scope="s">
+          <el-button v-if="s.row.orderStatus==='PAID'" v-hasPermi="['library:vip:refund']" type="text" @click="open(s.row)">全额退款</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-dialog title="确认全额退款" :visible.sync="visible">
+      <el-alert title="退款最终成功后才会撤销支付会员权益；退款受理中不会提前撤销。" type="warning" :closable="false"/>
+      <el-descriptions border :column="1" class="mt16">
+        <el-descriptions-item label="退款金额">{{ form.amountCent }} 分</el-descriptions-item>
+        <el-descriptions-item label="将撤销权益">是（仅最终成功后）</el-descriptions-item>
+        <el-descriptions-item label="预计追回积分">{{ form.expected }}</el-descriptions-item>
+        <el-descriptions-item label="当前可用积分">{{ form.available }}</el-descriptions-item>
+        <el-descriptions-item label="预计无法追回">{{ Math.max(form.expected-form.available,0) }}</el-descriptions-item>
+      </el-descriptions>
+      <el-form label-width="120px" class="mt16">
+        <el-form-item label="退款原因" required><el-input v-model="form.reason" type="textarea"/></el-form-item>
+        <el-form-item label="二次确认令牌" required><el-input v-model="form.confirmationToken" show-password/></el-form-item>
+      </el-form>
+      <span slot="footer"><el-button @click="visible=false">取消</el-button><el-button type="danger" @click="submit">确认全额退款</el-button></span>
+    </el-dialog>
+  </div>
+</template>
 <script>import { listVipOrders,requestRefund } from '@/api/library/vip';import { getUser } from '@/api/library/user';export default{name:'LibraryVipRefund',data(){return{rows:[],visible:false,form:{}}},created(){this.load()},methods:{load(){listVipOrders({pageNum:1,pageSize:100}).then(r=>{this.rows=r.rows||[]})},open(row){this.form={orderId:row.id,amountCent:row.amountCent,expected:row.giftPointsSnapshot||0,available:0,reason:'',confirmationToken:''};getUser(row.userId).then(r=>{this.form.available=(r.data&&r.data.pointBalance)||0});this.visible=true},submit(){if(!this.form.reason||!this.form.confirmationToken)return this.$modal.msgError('退款原因和二次确认令牌不能为空');this.$modal.confirm('该操作将向微信支付发起全额退款，是否继续？').then(()=>requestRefund(this.form)).then(()=>{this.$modal.msgSuccess('退款申请已提交');this.visible=false;this.load()})}}}</script><style scoped>.mt16{margin-top:16px}</style>
