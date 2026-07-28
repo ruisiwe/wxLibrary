@@ -39,8 +39,7 @@ class AvatarStorageServiceTest
     void setUp()
     {
         AvatarStorageProperties properties = new AvatarStorageProperties();
-        properties.setRootDirectory(root.toString());
-        service = new AvatarStorageService(properties);
+        service = service(properties, avatarRoot());
     }
 
     @Test
@@ -54,7 +53,8 @@ class AvatarStorageServiceTest
         assertTrue(png.endsWith(".png"));
         assertTrue(webp.endsWith(".webp"));
         assertFalse(jpeg.contains(root.toString()));
-        Path storedJpeg = root.resolve(jpeg);
+        assertFalse(jpeg.startsWith("avatar/"));
+        Path storedJpeg = avatarRoot().resolve(jpeg);
         assertTrue(Files.exists(storedJpeg));
         assertTrue(Files.isRegularFile(storedJpeg, LinkOption.NOFOLLOW_LINKS));
         assertTrue(Files.isRegularFile(service.resolveForRead(jpeg)));
@@ -87,9 +87,8 @@ class AvatarStorageServiceTest
     void rejectsImagesBeyondConfiguredPixelDimensions() throws Exception
     {
         AvatarStorageProperties properties = new AvatarStorageProperties();
-        properties.setRootDirectory(root.toString());
         properties.setMaxWidth(1);
-        AvatarStorageService limited = new AvatarStorageService(properties);
+        AvatarStorageService limited = service(properties, avatarRoot());
 
         assertEquals("头像图片尺寸超出限制", assertThrows(ServiceException.class,
                 () -> limited.store(file("a.png", "image/png", image("png")))).getMessage());
@@ -99,9 +98,8 @@ class AvatarStorageServiceTest
     void hardLimitCannotBeExpandedByExternalConfiguration()
     {
         AvatarStorageProperties properties = new AvatarStorageProperties();
-        properties.setRootDirectory(root.toString());
         properties.setMaxBytes(10L * 1024 * 1024);
-        AvatarStorageService configuredLarger = new AvatarStorageService(properties);
+        AvatarStorageService configuredLarger = service(properties, avatarRoot());
         byte[] tooLarge = new byte[2 * 1024 * 1024 + 1];
 
         assertEquals("头像文件不能超过2MB", assertThrows(ServiceException.class,
@@ -112,11 +110,10 @@ class AvatarStorageServiceTest
     void imageDimensionHardLimitCannotBeExpandedByExternalConfiguration() throws Exception
     {
         AvatarStorageProperties properties = new AvatarStorageProperties();
-        properties.setRootDirectory(root.toString());
         properties.setMaxWidth(10000);
         properties.setMaxHeight(10000);
         properties.setMaxPixels(100000000L);
-        AvatarStorageService configuredLarger = new AvatarStorageService(properties);
+        AvatarStorageService configuredLarger = service(properties, avatarRoot());
         BufferedImage image = new BufferedImage(2049, 1, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ImageIO.write(image, "png", output);
@@ -139,8 +136,7 @@ class AvatarStorageServiceTest
             assumeTrue(false, "当前环境不允许创建符号链接");
         }
         AvatarStorageProperties properties = new AvatarStorageProperties();
-        properties.setRootDirectory(link.toString());
-        AvatarStorageService linked = new AvatarStorageService(properties);
+        AvatarStorageService linked = service(properties, link);
 
         assertEquals("头像存储目录不合法", assertThrows(ServiceException.class,
                 () -> linked.store(file("a.png", "image/png", image("png")))).getMessage());
@@ -151,7 +147,8 @@ class AvatarStorageServiceTest
     {
         String month = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
         Path target = Files.createDirectory(root.resolve("month-target"));
-        Path link = root.resolve(month);
+        Files.createDirectories(avatarRoot());
+        Path link = avatarRoot().resolve(month);
         try
         {
             Files.createSymbolicLink(link, target);
@@ -168,9 +165,10 @@ class AvatarStorageServiceTest
     @Test
     void rejectsSymbolicLinkAvatarDuringRead() throws Exception
     {
-        Path target = root.resolve("target.png");
+        Files.createDirectories(avatarRoot());
+        Path target = avatarRoot().resolve("target.png");
         Files.write(target, image("png"));
-        Path link = root.resolve("link.png");
+        Path link = avatarRoot().resolve("link.png");
         try
         {
             Files.createSymbolicLink(link, target);
@@ -188,9 +186,8 @@ class AvatarStorageServiceTest
     void rechecksActualTemporaryFileSizeAndRejectsInvalidLimitConfiguration() throws Exception
     {
         AvatarStorageProperties invalid = new AvatarStorageProperties();
-        invalid.setRootDirectory(root.toString());
         invalid.setMaxBytes(0);
-        AvatarStorageService invalidService = new AvatarStorageService(invalid);
+        AvatarStorageService invalidService = service(invalid, avatarRoot());
         assertEquals("头像文件大小配置必须大于0", assertThrows(ServiceException.class,
                 () -> invalidService.store(file("a.jpg", "image/jpeg", new byte[] {1}))).getMessage());
 
@@ -213,6 +210,18 @@ class AvatarStorageServiceTest
     private MockMultipartFile file(String name, String mime, byte[] content)
     {
         return new MockMultipartFile("avatar", name, mime, content);
+    }
+
+    private Path avatarRoot()
+    {
+        return root.resolve("avatar");
+    }
+
+    private AvatarStorageService service(AvatarStorageProperties properties, Path configuredRoot)
+    {
+        WechatProfileStoragePaths paths = mock(WechatProfileStoragePaths.class);
+        when(paths.avatarRoot()).thenReturn(configuredRoot);
+        return new AvatarStorageService(properties, paths);
     }
 
     private byte[] image(String format) throws Exception

@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,7 +21,6 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import com.ruoyi.common.exception.ServiceException;
-import com.ruoyi.library.config.DocumentConversionProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,11 +41,11 @@ public class BannerImageProcessor
     private static final String JPEG_CONTENT_TYPE = "image/jpeg";
     private static final String UNSAFE_PATH_MESSAGE = "轮播图临时路径不安全";
 
-    private final DocumentConversionProperties properties;
+    private final WechatProfileStoragePaths paths;
 
-    public BannerImageProcessor(DocumentConversionProperties properties)
+    public BannerImageProcessor(WechatProfileStoragePaths paths)
     {
-        this.properties = properties;
+        this.paths = paths;
     }
 
     /** 校验上传声明和真实 JPEG 内容，返回待使用的标准化轮播图。 */
@@ -99,11 +97,7 @@ public class BannerImageProcessor
 
     private Path resolveConfiguredRoot() throws IOException
     {
-        String configured = properties.getTempDirectory();
-        Path root = configured == null || configured.trim().isEmpty()
-                ? Paths.get(System.getProperty("java.io.tmpdir"), "wechat-library-conversion")
-                : Paths.get(configured.trim());
-        root = root.toAbsolutePath().normalize();
+        Path root = paths.documentTempRoot();
         requireDirectoryOrCreate(root);
         return root;
     }

@@ -24,11 +24,24 @@ public class RuoYiConfig
     /** 上传路径 */
     private static String profile;
 
+    /** 微信资料本地根路径 */
+    private static String wechatProfile;
+
     /** 获取地址开关 */
     private static boolean addressEnabled;
 
     /** 验证码类型 */
     private static String captchaType;
+
+    public static String getWechatProfile()
+    {
+        return wechatProfile;
+    }
+
+    public void setWechatProfile(String wechatProfile)
+    {
+        RuoYiConfig.wechatProfile = wechatProfile;
+    }
 
     public String getName()
     {

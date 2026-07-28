@@ -226,9 +226,9 @@ class BannerImageProcessorTest
 
     private BannerImageProcessor processor(Path configuredRoot)
     {
-        DocumentConversionProperties properties = new DocumentConversionProperties();
-        properties.setTempDirectory(configuredRoot.toString());
-        return new BannerImageProcessor(properties);
+        WechatProfileStoragePaths paths = mock(WechatProfileStoragePaths.class);
+        when(paths.documentTempRoot()).thenReturn(configuredRoot);
+        return new BannerImageProcessor(paths);
     }
 
     private MockMultipartFile validFile() throws Exception

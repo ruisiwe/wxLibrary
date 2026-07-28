@@ -9,6 +9,7 @@ import com.ruoyi.library.dto.DocumentUploadPrepareResult;
 import com.ruoyi.library.dto.DocumentThumbnailResult;
 import com.ruoyi.library.storage.CosPrivateStorageService;
 import com.ruoyi.library.storage.PreparedDocumentProcessor;
+import com.ruoyi.library.storage.WechatProfileStoragePaths;
 import java.io.ByteArrayOutputStream;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
@@ -56,14 +57,15 @@ class DocumentUploadServiceTest
     void setUp()
     {
         DocumentConversionProperties properties = new DocumentConversionProperties();
-        properties.setTempDirectory(tempDir.toString());
         properties.setMaxInputBytes(10L * 1024L * 1024L);
         properties.setMaxOutputBytes(10L * 1024L * 1024L);
+        WechatProfileStoragePaths paths = mock(WechatProfileStoragePaths.class);
+        when(paths.documentTempRoot()).thenReturn(tempDir.resolve("document-temp"));
         storage = mock(CosPrivateStorageService.class);
         documentService = mock(DocumentService.class);
         service = new DocumentUploadService(new PreparedDocumentProcessor(properties), storage,
-                documentService, properties, Clock.fixed(Instant.parse("2026-07-22T08:00:00Z"),
-                ZoneId.of("Asia/Shanghai")));
+                documentService, properties, paths, Clock.fixed(Instant.parse("2026-07-22T08:00:00Z"),
+                        ZoneId.of("Asia/Shanghai")));
     }
 
     @Test
@@ -238,7 +240,7 @@ class DocumentUploadServiceTest
     @Test
     void startupCleanupRemovesOnlyExpiredOrphanSessionDirectory() throws Exception
     {
-        Path orphan = Files.createDirectories(tempDir.resolve("upload-sessions")
+        Path orphan = Files.createDirectories(tempDir.resolve("document-temp").resolve("upload-sessions")
                 .resolve("wl-upload-0123456789abcdef0123456789abcdef"));
         Files.setLastModifiedTime(orphan, FileTime.from(Instant.parse("2026-07-22T07:00:00Z")));
 

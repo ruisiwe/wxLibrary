@@ -1,11 +1,11 @@
 package com.ruoyi.library.service;
 
 import com.ruoyi.common.exception.ServiceException;
-import com.ruoyi.library.config.DocumentConversionProperties;
 import com.ruoyi.library.domain.WlBanner;
 import com.ruoyi.library.dto.BannerImagePreviewResult;
 import com.ruoyi.library.storage.BannerImageProcessor;
 import com.ruoyi.library.storage.CosPrivateStorageService;
+import com.ruoyi.library.storage.WechatProfileStoragePaths;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -53,12 +53,12 @@ class BannerManagementServiceTest
     @BeforeEach
     void setUp()
     {
-        DocumentConversionProperties properties = new DocumentConversionProperties();
-        properties.setTempDirectory(tempDirectory.toString());
+        WechatProfileStoragePaths paths = mock(WechatProfileStoragePaths.class);
+        when(paths.documentTempRoot()).thenReturn(tempDirectory.resolve("document-temp"));
         storage = mock(CosPrivateStorageService.class);
         documentService = mock(DocumentService.class);
         transactionManager = new RecordingTransactionManager();
-        service = new BannerManagementService(new BannerImageProcessor(properties), storage,
+        service = new BannerManagementService(new BannerImageProcessor(paths), storage,
                 documentService, transactionManager);
         when(storage.putPrivateObject(anyString(), any(InputStream.class), anyLong(), eq("image/jpeg")))
                 .thenAnswer(invocation -> invocation.getArgument(0));

@@ -13,6 +13,8 @@ public interface WlWxUserMapper
     WlWxUser selectById(@Param("id") Long id);
     WlWxUser selectByIdForUpdate(@Param("id") Long id);
     List<WlWxUser> selectWxUserList(WlWxUser user);
+    List<WlWxUser> selectVipOperationCandidates(@Param("keyword") String keyword,
+            @Param("userId") Long userId);
     int insertWxUser(WlWxUser user);
     int updateProfile(WlWxUser user);
     int updateLastLoginTime(@Param("id") Long id);

@@ -50,6 +50,16 @@
         order by id desc
     </select>
 
+    <select id="selectVipOperationCandidates" resultMap="WlWxUserResult">
+        <include refid="selectWxUserColumns"/>
+        where del_flag = '0' and status = '0'
+        <if test="keyword != null and keyword != ''">
+            and (nickname like concat('%', #{keyword}, '%')
+            <if test="userId != null">or id = #{userId}</if>)
+        </if>
+        order by id desc
+    </select>
+
     <insert id="insertWxUser" parameterType="com.ruoyi.library.domain.WlWxUser" useGeneratedKeys="true" keyProperty="id">
         insert into wl_wx_user(openid, unionid, nickname, avatar_url, point_balance, status,
             last_login_time, create_by, create_time, update_by, update_time, del_flag)

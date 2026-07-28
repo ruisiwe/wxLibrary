@@ -24,10 +24,13 @@ import org.springframework.stereotype.Component;
 public class RestrictedProcessDocumentConverter implements DocumentConverter
 {
     private final DocumentConversionProperties properties;
+    private final WechatProfileStoragePaths paths;
 
-    public RestrictedProcessDocumentConverter(DocumentConversionProperties properties)
+    public RestrictedProcessDocumentConverter(DocumentConversionProperties properties,
+            WechatProfileStoragePaths paths)
     {
         this.properties = properties;
+        this.paths = paths;
     }
 
     @Override
@@ -65,10 +68,7 @@ public class RestrictedProcessDocumentConverter implements DocumentConverter
     {
         try
         {
-            Path root = properties.getTempDirectory() == null || properties.getTempDirectory().trim().isEmpty()
-                    ? Paths.get(System.getProperty("java.io.tmpdir"), "wechat-library-conversion")
-                    : Paths.get(properties.getTempDirectory().trim());
-            root = root.toAbsolutePath().normalize();
+            Path root = paths.documentTempRoot();
             Files.createDirectories(root);
             if (Files.isSymbolicLink(root)) throw new ServiceException("文档转换临时目录不安全");
             return Files.createTempDirectory(root, "wl-convert-");

@@ -81,7 +81,6 @@ class PreparedDocumentProcessorTest
     private PreparedDocumentProcessor processor()
     {
         DocumentConversionProperties properties = new DocumentConversionProperties();
-        properties.setTempDirectory(tempDir.toString());
         properties.setMaxInputBytes(10L * 1024L * 1024L);
         properties.setMaxOutputBytes(10L * 1024L * 1024L);
         return new PreparedDocumentProcessor(properties);

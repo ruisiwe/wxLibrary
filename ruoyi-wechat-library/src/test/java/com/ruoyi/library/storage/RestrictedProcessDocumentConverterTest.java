@@ -30,10 +30,10 @@ class RestrictedProcessDocumentConverterTest
             pdf.save(source.toFile());
         }
         DocumentConversionProperties properties = new DocumentConversionProperties();
-        properties.setTempDirectory(tempDir.toString());
         properties.setMaxInputBytes(1024L * 1024L);
         properties.setMaxOutputBytes(1024L * 1024L);
-        RestrictedProcessDocumentConverter converter = new RestrictedProcessDocumentConverter(properties);
+        WechatProfileStoragePaths paths = new WechatProfileStoragePaths(() -> tempDir.toString());
+        RestrictedProcessDocumentConverter converter = new RestrictedProcessDocumentConverter(properties, paths);
 
         Path workDirectory;
         try (DocumentConverter.ConversionArtifacts result = converter.convert(
@@ -46,6 +46,7 @@ class RestrictedProcessDocumentConverterTest
             }
             workDirectory = result.getFullPdf().getParent();
             assertTrue(Files.exists(workDirectory));
+            assertEquals(tempDir.resolve("document-temp"), workDirectory.getParent());
         }
 
         assertFalse(Files.exists(workDirectory));

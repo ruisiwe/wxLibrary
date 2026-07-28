@@ -42,11 +42,10 @@ public class AvatarStorageService
     private final AvatarStorageProperties properties;
     private final Path root;
 
-    public AvatarStorageService(AvatarStorageProperties properties)
+    public AvatarStorageService(AvatarStorageProperties properties, WechatProfileStoragePaths paths)
     {
         this.properties = properties;
-        this.root = isBlank(properties.getRootDirectory()) ? null
-                : Paths.get(properties.getRootDirectory()).toAbsolutePath().normalize();
+        this.root = paths.avatarRoot();
     }
 
     /** 校验并原子保存头像，返回相对路径。 */

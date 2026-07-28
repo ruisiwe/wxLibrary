@@ -5,6 +5,7 @@ export const updateVipPlan = data => request({ url: '/library/vip-plan', method:
 export const deleteVipPlan = id => request({ url: `/library/vip-plan/${id}`, method: 'delete' })
 export const listVipOrders = query => request({ url: '/library/vip-order/list', method: 'get', params: query })
 export const listEntitlements = query => request({ url: '/library/vip-operation/list', method: 'get', params: query })
+export const listVipUserOptions = query => request({ url: '/library/vip-operation/user-options', method: 'get', params: query })
 export const openVip = data => request({ url: '/library/vip-operation/open', method: 'post', data })
 export const compensateVip = data => request({ url: '/library/vip-operation/compensate', method: 'post', data })
 export const listVipCodes = query => request({ url: '/library/vip-code/list', method: 'get', params: query })

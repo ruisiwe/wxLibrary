@@ -9,6 +9,7 @@ import com.ruoyi.library.dto.DocumentUploadPrepareResult;
 import com.ruoyi.library.dto.DocumentThumbnailResult;
 import com.ruoyi.library.storage.CosPrivateStorageService;
 import com.ruoyi.library.storage.PreparedDocumentProcessor;
+import com.ruoyi.library.storage.WechatProfileStoragePaths;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -25,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Clock;
@@ -84,6 +84,7 @@ public class DocumentUploadService
     private final CosPrivateStorageService storage;
     private final DocumentService documentService;
     private final DocumentConversionProperties properties;
+    private final WechatProfileStoragePaths paths;
     private final Clock clock;
     private final TransactionTemplate transactionTemplate;
     private final Map<String, UploadSession> sessions = new ConcurrentHashMap<>();
@@ -91,26 +92,28 @@ public class DocumentUploadService
     @Autowired
     public DocumentUploadService(PreparedDocumentProcessor processor, CosPrivateStorageService storage,
             DocumentService documentService, DocumentConversionProperties properties,
-            PlatformTransactionManager transactionManager)
+            WechatProfileStoragePaths paths, PlatformTransactionManager transactionManager)
     {
-        this(processor, storage, documentService, properties, Clock.systemDefaultZone(),
+        this(processor, storage, documentService, properties, paths, Clock.systemDefaultZone(),
                 new TransactionTemplate(transactionManager));
     }
 
     DocumentUploadService(PreparedDocumentProcessor processor, CosPrivateStorageService storage,
-            DocumentService documentService, DocumentConversionProperties properties, Clock clock)
+            DocumentService documentService, DocumentConversionProperties properties,
+            WechatProfileStoragePaths paths, Clock clock)
     {
-        this(processor, storage, documentService, properties, clock, null);
+        this(processor, storage, documentService, properties, paths, clock, null);
     }
 
     private DocumentUploadService(PreparedDocumentProcessor processor, CosPrivateStorageService storage,
-            DocumentService documentService, DocumentConversionProperties properties, Clock clock,
-            TransactionTemplate transactionTemplate)
+            DocumentService documentService, DocumentConversionProperties properties,
+            WechatProfileStoragePaths paths, Clock clock, TransactionTemplate transactionTemplate)
     {
         this.processor = processor;
         this.storage = storage;
         this.documentService = documentService;
         this.properties = properties;
+        this.paths = paths;
         this.clock = clock;
         this.transactionTemplate = transactionTemplate;
     }
@@ -705,11 +708,7 @@ public class DocumentUploadService
 
     private Path configuredTempRoot()
     {
-        Path configuredRoot = properties.getTempDirectory() == null
-                || properties.getTempDirectory().trim().isEmpty()
-                ? Paths.get(System.getProperty("java.io.tmpdir"), "wechat-library-conversion")
-                : Paths.get(properties.getTempDirectory().trim());
-        return configuredRoot.toAbsolutePath().normalize();
+        return paths.documentTempRoot();
     }
 
     private Path resolveUploadRoot(boolean create) throws IOException

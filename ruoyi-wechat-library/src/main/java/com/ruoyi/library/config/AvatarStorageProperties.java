@@ -3,21 +3,16 @@ package com.ruoyi.library.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/**
- * 本地头像存储配置，根目录必须由部署环境显式提供。
- */
+/** 本地头像文件大小和图片尺寸限制。 */
 @Component
 @ConfigurationProperties(prefix = "wechat.avatar")
 public class AvatarStorageProperties
 {
-    private String rootDirectory;
     private long maxBytes = 2L * 1024 * 1024;
     private int maxWidth = 2048;
     private int maxHeight = 2048;
     private long maxPixels = 4194304L;
 
-    public String getRootDirectory() { return rootDirectory; }
-    public void setRootDirectory(String rootDirectory) { this.rootDirectory = rootDirectory; }
     public long getMaxBytes() { return maxBytes; }
     public void setMaxBytes(long maxBytes) { this.maxBytes = maxBytes; }
     public int getMaxWidth() { return maxWidth; }
