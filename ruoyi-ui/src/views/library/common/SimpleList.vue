@@ -53,7 +53,14 @@
       <el-form ref="form" :model="form" label-width="120px">
         <el-form-item v-for="field in formFields" :key="field.prop" :label="field.label" :required="field.required">
           <slot :name="'field-' + field.prop" :form="form" :field="field">
-            <el-input-number v-if="field.type === 'number'" v-model="form[field.prop]" :min="field.min === undefined ? 0 : field.min" :max="field.max" controls-position="right" />
+            <el-input-number
+              v-if="field.type === 'number'"
+              v-model="form[field.prop]"
+              :min="field.min === undefined ? 0 : field.min"
+              :max="field.max"
+              :precision="field.precision"
+              controls-position="right"
+            />
             <remote-select v-else-if="field.type === 'remote-select'" v-model="form[field.prop]" :field="field" :row="form" @selection-change="onRemoteSelectionChange(field, $event)" />
             <el-select v-else-if="field.type === 'select'" v-model="form[field.prop]" style="width:100%">
               <el-option v-for="option in field.options" :key="option.value" :label="option.label" :value="option.value" />
