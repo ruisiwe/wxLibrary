@@ -3,7 +3,9 @@ Component({
   methods: {
     open(event) {
       const item = event.currentTarget.dataset.item;
-      if (item && item.linkPath) wx.navigateTo({ url: item.linkPath });
+      const documentId = Number(item && item.documentId);
+      if (!Number.isInteger(documentId) || documentId <= 0) return;
+      wx.navigateTo({ url: `/pages/document-detail/document-detail?id=${documentId}` });
     }
   }
 });
