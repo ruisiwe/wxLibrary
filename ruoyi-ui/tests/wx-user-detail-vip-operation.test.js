@@ -21,8 +21,8 @@ assert(page.includes('续期会员'), '有效会员详情应提供续期会员�
 assert(page.includes("v-hasPermi=\"['library:vip:operation']\""),
   '会员操作按钮应沿用VIP操作权限')
 assert(page.includes('formatDateTime'), '详情页应统一格式化日期时间')
-assert(page.includes("parseTime(value, '{y}-{m}-{d} {h}:{i}:{s}')"),
-  '最后登录时间应格式化到秒')
+assert(page.includes("parseTime(value, '{y}-{m}-{d}')"),
+  '会员到期和最后登录时间应只显示年月日')
 assert(page.includes('listVipPlans'), '开通会员时应查询启用套餐')
 assert(page.includes('openVip'), '确认开通时应复用人工开通接口')
 assert(page.includes('userIds: [this.detail.id]'), '会员操作应锁定当前详情用户')

@@ -8,7 +8,11 @@
       <el-table-column prop="openidMasked" label="OpenID（脱敏）" min-width="160" />
       <el-table-column prop="nickname" label="昵称" />
       <el-table-column prop="pointBalance" label="积分" />
-      <el-table-column prop="vipExpireTime" label="会员到期时间" min-width="180" />
+      <el-table-column label="会员到期时间" min-width="180">
+        <template slot-scope="scope">
+          {{ scope.row.vipExpireTime ? parseTime(scope.row.vipExpireTime, '{y}-{m}-{d}') : '未开通' }}
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态"><template slot-scope="scope">{{ scope.row.status === '0' ? '启用' : '停用' }}</template></el-table-column>
       <el-table-column label="操作" width="250" fixed="right">
         <template slot-scope="scope">
@@ -252,7 +256,7 @@ export default {
       return true
     },
     formatDateTime(value) {
-      return value ? this.parseTime(value, '{y}-{m}-{d} {h}:{i}:{s}') : '-'
+      return value ? this.parseTime(value, '{y}-{m}-{d}') : '-'
     },
     formatVipExpire(value) {
       return value ? this.formatDateTime(value) : '未开通'

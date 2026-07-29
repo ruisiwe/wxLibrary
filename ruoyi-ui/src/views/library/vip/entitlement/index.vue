@@ -30,8 +30,16 @@
       <el-table-column prop="userId" label="用户编号" />
       <el-table-column prop="sourceType" label="来源" />
       <el-table-column prop="sourceBizNo" label="业务编号" min-width="220" />
-      <el-table-column prop="oldExpireTime" label="原到期时间" />
-      <el-table-column prop="newExpireTime" label="新到期时间" />
+      <el-table-column label="原到期时间">
+        <template slot-scope="scope">
+          {{ scope.row.oldExpireTime ? parseTime(scope.row.oldExpireTime, '{y}-{m}-{d}') : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column label="新到期时间">
+        <template slot-scope="scope">
+          {{ scope.row.newExpireTime ? parseTime(scope.row.newExpireTime, '{y}-{m}-{d}') : '-' }}
+        </template>
+      </el-table-column>
       <el-table-column prop="giftPoints" label="赠送积分" />
     </el-table>
 
@@ -218,10 +226,8 @@ export default {
     },
     expireLabel(user) {
       if (!user.vipExpireTime) return '当前非VIP'
-      const date = new Date(user.vipExpireTime)
-      if (Number.isNaN(date.getTime())) return 'VIP到期时间未知'
-      const pad = value => String(value).padStart(2, '0')
-      return `VIP至 ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+      const expireDate = this.parseTime(user.vipExpireTime, '{y}-{m}-{d}')
+      return expireDate ? `VIP至 ${expireDate}` : 'VIP到期时间未知'
     },
     avatarUrl(user) {
       if (!user || !user.avatarPath) return ''

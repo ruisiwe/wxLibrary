@@ -15,7 +15,14 @@
     </el-row>
     <el-table v-loading="loading" :data="rows">
       <el-table-column prop="agreementType" label="协议类型"><template slot-scope="s">{{agreementTypeLabel(s.row.agreementType)}}</template></el-table-column>
-      <el-table-column prop="version" label="版本"/><el-table-column prop="title" label="标题" min-width="180"/><el-table-column prop="effectiveTime" label="生效时间" min-width="170"/><el-table-column prop="status" label="状态"><template slot-scope="s">{{s.row.status==='0'?'草稿':s.row.status==='1'?'已发布':'已替代'}}</template></el-table-column>
+      <el-table-column prop="version" label="版本"/>
+      <el-table-column prop="title" label="标题" min-width="180"/>
+      <el-table-column label="生效时间" min-width="170">
+        <template slot-scope="s">
+          {{ s.row.effectiveTime ? parseTime(s.row.effectiveTime, '{y}-{m}-{d}') : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态"><template slot-scope="s">{{s.row.status==='0'?'草稿':s.row.status==='1'?'已发布':'已替代'}}</template></el-table-column>
       <el-table-column label="操作" width="200">
         <template slot-scope="s">
           <el-button type="text" @click="view(s.row)">查看</el-button>

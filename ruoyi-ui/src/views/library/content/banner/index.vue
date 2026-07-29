@@ -68,8 +68,16 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="startTime" label="开始时间" width="165" />
-      <el-table-column prop="endTime" label="结束时间" width="165" />
+      <el-table-column label="开始时间" width="165">
+        <template slot-scope="scope">
+          {{ scope.row.startTime ? parseTime(scope.row.startTime, '{y}-{m}-{d}') : '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column label="结束时间" width="165">
+        <template slot-scope="scope">
+          {{ scope.row.endTime ? parseTime(scope.row.endTime, '{y}-{m}-{d}') : '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="150" fixed="right" align="center">
         <template slot-scope="scope">
           <el-button v-hasPermi="['library:banner:edit']" type="text" @click="openEdit(scope.row)">修改</el-button>
