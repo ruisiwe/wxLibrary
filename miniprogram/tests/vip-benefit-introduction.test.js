@@ -7,7 +7,7 @@ function read(relativePath) {
   return fs.readFileSync(path.resolve(__dirname, '..', relativePath), 'utf8')
 }
 
-test('VIP 权益介绍通过独立接口展示在套餐列表下方', () => {
+test('VIP 权益介绍在移除套餐后继续独立展示', () => {
   const service = read('services/vip.js')
   const logic = read('pages/vip-plans/vip-plans.js')
   const markup = read('pages/vip-plans/vip-plans.wxml')
@@ -17,6 +17,7 @@ test('VIP 权益介绍通过独立接口展示在套餐列表下方', () => {
   assert.match(markup, /VIP 权益/)
   assert.match(markup, /wx:for="\{\{pageConfig\.benefits\}\}"/)
   assert.match(markup, /wx:key="\*this"/)
+  assert.doesNotMatch(markup, /wx:for="\{\{plans\}\}"/)
   assert.match(logic, /loadPageConfig/)
   assert.match(logic, /vip\.pageConfig\(\)/)
 })
@@ -30,17 +31,16 @@ test('客服微信图片未配置时隐藏客服区域', () => {
   assert.match(markup, /开通 VIP 请添加客服微信/)
 })
 
-test('页面配置失败可独立重试且不清空套餐和会员信息', () => {
+test('页面配置失败可独立重试且不清空会员信息', () => {
   const logic = read('pages/vip-plans/vip-plans.js')
   const markup = read('pages/vip-plans/vip-plans.wxml')
   const start = logic.indexOf('  loadPageConfig() {')
-  const end = logic.indexOf('buy(event)')
-  const loader = logic.slice(start, end)
+  const loader = logic.slice(start)
 
-  assert.ok(start >= 0 && end > start)
+  assert.ok(start >= 0)
   assert.match(loader, /configError/)
   assert.match(loader, /VIP 权益介绍加载失败，请重试/)
-  assert.doesNotMatch(loader, /plans\s*:/)
+  assert.doesNotMatch(logic, /plans\s*:/)
   assert.doesNotMatch(loader, /profile\s*:/)
   assert.match(markup, /configError/)
   assert.match(markup, /bindtap="loadPageConfig"/)

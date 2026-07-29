@@ -3,19 +3,6 @@
     <view>当前会员</view>
     <view class="expiry">{{profile.vipActive ? '有效期至 '+profile.vipExpireTime : '尚未开通'}}</view>
   </view>
-  <view wx:if="{{paymentState}}" class="payment">{{paymentState}}</view>
-  <view class="plans">
-    <view wx:for="{{plans}}" wx:key="id" class="plan">
-      <view>
-        <view class="plan__name">{{item.planName}}</view>
-        <view class="plan__meta">{{item.validDays}} 天 · 赠送 {{item.giftPoints || 0}} 积分</view>
-      </view>
-      <view class="plan__right">
-        <view>¥{{item.priceCent / 100}}</view>
-        <button size="mini" data-id="{{item.id}}" bindtap="buy">购买/续费</button>
-      </view>
-    </view>
-  </view>
   <view wx:if="{{pageConfig.benefits.length}}" class="benefits">
     <view class="section-title">VIP 权益</view>
     <view

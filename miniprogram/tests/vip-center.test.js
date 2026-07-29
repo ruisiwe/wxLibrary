@@ -37,15 +37,22 @@ test('积分任务进度合并到任务列表并提示每日上限', () => {
   assert.match(logic, /points\.records/);
 });
 
-test('VIP 套餐和支付逻辑位于子页面', () => {
+test('VIP 子页面暂不展示套餐和支付入口', () => {
   assert.ok(app.pages.includes('pages/vip-plans/vip-plans'));
+  const service = read('services/vip.js');
   const logic = read('pages/vip-plans/vip-plans.js');
   const markup = read('pages/vip-plans/vip-plans.wxml');
 
-  assert.match(logic, /vip\.plans/);
-  assert.match(logic, /vip\.createOrder/);
-  assert.match(logic, /wx\.requestPayment/);
-  assert.match(markup, /wx:for="\{\{plans\}\}"/);
+  assert.match(logic, /vip\.profile/);
+  assert.doesNotMatch(logic, /vip\.plans/);
+  assert.doesNotMatch(logic, /vip\.createOrder/);
+  assert.doesNotMatch(logic, /vip\.queryOrder/);
+  assert.doesNotMatch(logic, /wx\.requestPayment/);
+  assert.doesNotMatch(markup, /wx:for="\{\{plans\}\}"/);
+  assert.doesNotMatch(markup, /购买\/续费/);
+  assert.doesNotMatch(markup, /paymentState/);
+  assert.match(service, /const plans =/);
+  assert.match(service, /const createOrder =/);
 });
 
 test('VIP 主页面提供套餐和积分明细入口', () => {
