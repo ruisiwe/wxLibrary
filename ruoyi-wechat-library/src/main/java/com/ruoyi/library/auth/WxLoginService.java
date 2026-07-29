@@ -1,5 +1,6 @@
 package com.ruoyi.library.auth;
 
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -22,7 +23,10 @@ import org.springframework.web.multipart.MultipartFile;
 public class WxLoginService
 {
     private static final Pattern CONTROL_OR_HTML = Pattern.compile("[<>\\p{Cc}\\p{Cf}]");
-    private static final String DEFAULT_NICKNAME = "微信用户";
+    private static final char[] RANDOM_NICKNAME_ALPHABET =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+    private static final int RANDOM_NICKNAME_LENGTH = 10;
+    private static final SecureRandom RANDOM = new SecureRandom();
     private final WechatCodeClient codeClient;
     private final WlWxUserMapper userMapper;
     private final WxAgreementService agreementService;
@@ -108,7 +112,7 @@ public class WxLoginService
             String acceptedIp, AvatarMutation mutation)
     {
         if (avatar == null || avatar.isEmpty()) throw new ServiceException("首次登录必须上传有效头像");
-        String nickname = resolveLoginNickname(request.getNickname());
+        String nickname = generateRandomNickname();
         String avatarPath = avatarStorageService.store(avatar);
         mutation.newAvatar = avatarPath;
         WlWxUser created = new WlWxUser();
@@ -177,10 +181,14 @@ public class WxLoginService
         return value;
     }
 
-    private String resolveLoginNickname(String nickname)
+    private String generateRandomNickname()
     {
-        String value = validateNickname(nickname, false);
-        return value.isEmpty() ? DEFAULT_NICKNAME : value;
+        char[] value = new char[RANDOM_NICKNAME_LENGTH];
+        for (int index = 0; index < value.length; index++)
+        {
+            value[index] = RANDOM_NICKNAME_ALPHABET[RANDOM.nextInt(RANDOM_NICKNAME_ALPHABET.length)];
+        }
+        return new String(value);
     }
 
     private void ensureEnabled(WlWxUser user)

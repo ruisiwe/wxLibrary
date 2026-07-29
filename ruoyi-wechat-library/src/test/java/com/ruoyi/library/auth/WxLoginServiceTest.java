@@ -75,7 +75,8 @@ class WxLoginServiceTest
         ArgumentCaptor<WlWxUser> captor = ArgumentCaptor.forClass(WlWxUser.class);
         verify(userMapper).insertWxUser(captor.capture());
         assertEquals("openid-secret", captor.getValue().getOpenid());
-        assertEquals("测试用户", captor.getValue().getNickname());
+        assertTrue(captor.getValue().getNickname().matches("[A-Za-z]{10}"));
+        assertFalse("测试用户".equals(captor.getValue().getNickname()));
         assertEquals("202607/avatar.jpg", captor.getValue().getAvatarPath());
         verify(agreementService, never()).validateCurrentAcceptance(anyBoolean(), any());
         verify(agreementService, never()).acceptCurrent(anyLong(), any(), any());
@@ -118,18 +119,29 @@ class WxLoginServiceTest
     }
 
     @Test
-    void firstLoginRequiresCompliantNickname()
+    void firstLoginIgnoresSubmittedNickname()
     {
         WxLoginRequest request = completeRequest();
         request.setNickname("<script>alert(1)</script>");
+        when(avatarStorageService.store(any())).thenReturn("202607/avatar.jpg");
+        doAnswer(invocation -> {
+            WlWxUser user = invocation.getArgument(0);
+            user.setId(18L);
+            return 1;
+        }).when(userMapper).insertWxUser(any(WlWxUser.class));
+        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(false);
+        when(tokenService.issue(18L)).thenReturn("wx-token");
 
-        ServiceException exception = assertThrows(ServiceException.class,
-                () -> loginService.login(request, avatar(), null));
-        assertEquals("昵称不能包含HTML标签或控制字符", exception.getMessage());
+        loginService.login(request, avatar(), null);
+
+        ArgumentCaptor<WlWxUser> captor = ArgumentCaptor.forClass(WlWxUser.class);
+        verify(userMapper).insertWxUser(captor.capture());
+        assertTrue(captor.getValue().getNickname().matches("[A-Za-z]{10}"));
+        assertFalse(request.getNickname().equals(captor.getValue().getNickname()));
     }
 
     @Test
-    void firstLoginUsesDefaultNicknameWhenNicknameIsMissing()
+    void firstLoginGeneratesRandomNicknameWhenNicknameIsMissing()
     {
         WxLoginRequest missingNickname = completeRequest();
         missingNickname.setNickname(" ");
@@ -146,21 +158,25 @@ class WxLoginServiceTest
 
         ArgumentCaptor<WlWxUser> captor = ArgumentCaptor.forClass(WlWxUser.class);
         verify(userMapper).insertWxUser(captor.capture());
-        assertEquals("微信用户", captor.getValue().getNickname());
+        assertTrue(captor.getValue().getNickname().matches("[A-Za-z]{10}"));
     }
 
     @Test
-    void firstLoginRejectsUnicodeControlAndFormatCharacters()
+    void existingUserNicknameUpdateRejectsUnicodeControlAndFormatCharacters()
     {
-        WxLoginRequest control = completeRequest();
+        WlWxUser existing = user(9L, "旧昵称", "202601/old.png", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(existing);
+        when(userMapper.selectByOpenidForUpdate("openid-secret")).thenReturn(existing);
+
+        WxLoginRequest control = codeOnly();
         control.setNickname("用户" + new String(Character.toChars(0x85)));
         assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
-                () -> loginService.login(control, avatar(), null)).getMessage());
+                () -> loginService.login(control, null, null)).getMessage());
 
-        WxLoginRequest format = completeRequest();
+        WxLoginRequest format = codeOnly();
         format.setNickname("用户" + new String(Character.toChars(0x202E)));
         assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
-                () -> loginService.login(format, avatar(), null)).getMessage());
+                () -> loginService.login(format, null, null)).getMessage());
     }
 
     @Test
