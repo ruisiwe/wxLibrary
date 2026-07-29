@@ -9,7 +9,21 @@
     <simple-list ref="vipCodeList" plain embedded title="会员码记录（仅显示掩码）" :loader="listVipCodes" :columns="columns"/>
     <el-dialog title="批量生成会员码" :visible.sync="visible" width="640px">
       <el-form label-width="100px">
-        <el-form-item label="套餐编号" required><el-input-number v-model="form.planId" :min="1"/></el-form-item>
+        <el-form-item label="会员套餐" required>
+          <el-select
+            v-model="form.planId"
+            :loading="planLoading"
+            placeholder="请选择会员套餐"
+            class="plan-select"
+          >
+            <el-option
+              v-for="plan in plans"
+              :key="plan.id"
+              :label="planOptionLabel(plan)"
+              :value="plan.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="生成数量" required><el-input-number v-model="form.count" :min="1" :max="1000"/></el-form-item>
         <el-form-item label="过期时间"><el-date-picker v-model="form.expiresTime" type="datetime" placeholder="不填则长期有效"/></el-form-item>
       </el-form>
@@ -24,7 +38,7 @@
 </template>
 <script>
 import SimpleList from '@/views/library/common/SimpleList'
-import { listVipCodes, generateVipCodes } from '@/api/library/vip'
+import { listVipCodes, generateVipCodes, listVipPlans } from '@/api/library/vip'
 export default {
   name: 'LibraryVipCode',
   components: { SimpleList },
@@ -32,7 +46,9 @@ export default {
     return {
       listVipCodes,
       visible: false,
-      form: { planId: 1, count: 10, expiresTime: null },
+      planLoading: false,
+      plans: [],
+      form: { planId: null, count: 10, expiresTime: null },
       codes: [],
       columns: [
         { prop: 'codeMask', label: '会员码掩码' },
@@ -51,10 +67,24 @@ export default {
   methods: {
     openGenerate() {
       this.codes = []
-      this.form = { planId: 1, count: 10, expiresTime: null }
+      this.plans = []
+      this.form = { planId: null, count: 10, expiresTime: null }
       this.visible = true
+      this.planLoading = true
+      listVipPlans({ status: '0', pageNum: 1, pageSize: 100 }).then(response => {
+        this.plans = response.rows || []
+      }).finally(() => {
+        this.planLoading = false
+      })
+    },
+    formatPlanPrice(value) {
+      return (Number(value || 0) / 100).toFixed(2)
+    },
+    planOptionLabel(plan) {
+      return `${plan.planName}（${plan.validDays}天，¥${this.formatPlanPrice(plan.priceCent)}，赠送${plan.giftPoints || 0}积分）`
     },
     generate() {
+      if (!this.form.planId) return this.$modal.msgError('请选择会员套餐')
       generateVipCodes(this.form).then(response => {
         this.codes = (response.data && response.data.plaintextCodes) || []
       })
@@ -62,4 +92,12 @@ export default {
   }
 }
 </script>
-<style scoped>.mt16{margin-top:16px}</style>
+<style scoped>
+.mt16 {
+  margin-top: 16px;
+}
+
+.plan-select {
+  width: 100%;
+}
+</style>
