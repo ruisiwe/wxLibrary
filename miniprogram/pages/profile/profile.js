@@ -9,7 +9,8 @@ Page({
     loginVisible: false,
     profileRequired: true,
     agreements: [],
-    authChecking: false
+    authChecking: false,
+    nicknameSaving: false
   },
   onShow() {
     if (this.getTabBar) this.getTabBar().setData({ value: '/pages/profile/profile' });
@@ -79,6 +80,40 @@ Page({
     }
     this.setData({
       profile: null, loginVisible: !rejected, profileRequired: true, authChecking: false
+    });
+  },
+  editNickname() {
+    if (this.data.nicknameSaving || !this.data.profile) return;
+    wx.showModal({
+      title: '修改昵称',
+      editable: true,
+      content: this.data.profile.nickname || '',
+      placeholderText: '请输入昵称',
+      success: result => {
+        if (result.confirm) this.saveNickname(result.content);
+      }
+    });
+  },
+  saveNickname(value) {
+    const nickname = (value || '').trim();
+    if (!nickname) {
+      wx.showToast({ title: '昵称不能为空', icon: 'none' });
+      return;
+    }
+    if (nickname === this.data.profile.nickname || this.data.nicknameSaving) return;
+
+    this.setData({ nicknameSaving: true });
+    return auth.updateNickname(nickname).then(profile => {
+      const cachedUser = session.getUser() || {};
+      session.save(session.getToken(), { ...cachedUser, nickname: profile.nickname });
+      this.setData({ profile, nicknameSaving: false });
+      wx.showToast({ title: '昵称修改成功', icon: 'success' });
+    }).catch(error => {
+      this.setData({ nicknameSaving: false });
+      wx.showToast({
+        title: error.message || '昵称修改失败，请稍后重试',
+        icon: 'none'
+      });
     });
   },
   load() { vip.profile().then(profile => this.setData({ profile })).catch(error => {

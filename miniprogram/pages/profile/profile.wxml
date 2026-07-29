@@ -6,8 +6,19 @@
   <view wx:else>
     <view class="user">
       <image src="{{profile.avatarUrl}}" />
-      <view>
-        <view class="nickname">{{profile.nickname}}</view>
+      <view class="user__details">
+        <view class="nickname-row">
+          <view class="nickname">{{profile.nickname}}</view>
+          <view
+            class="nickname-edit {{nicknameSaving ? 'nickname-edit--saving' : ''}}"
+            bindtap="editNickname"
+            aria-role="button"
+            aria-label="修改昵称"
+          >
+            <t-icon name="edit-1" size="24rpx" color="rgba(255,255,255,.72)" />
+            <text>修改昵称</text>
+          </view>
+        </view>
         <view>{{profile.pointBalance}} 积分 · {{profile.vipActive ? 'VIP 至 '+profile.vipExpireTime : '普通用户'}}</view>
       </view>
     </view>
