@@ -1,5 +1,6 @@
 const { request, apiBaseUrl, unwrapResponse } = require('./request');
 const session = require('../store/session');
+const { formatDate } = require('../utils/date');
 
 const FIRST_LOGIN_AVATAR_MESSAGE = '首次登录必须上传有效头像';
 
@@ -68,7 +69,11 @@ function firstLogin({ code, nickname, avatarPath }) {
 }
 
 function updateNickname(nickname) {
-  return request({ url: '/wx/profile', method: 'PUT', data: { nickname } });
+  return request({ url: '/wx/profile', method: 'PUT', data: { nickname } })
+    .then(profile => ({
+      ...profile,
+      vipExpireTime: formatDate(profile.vipExpireTime)
+    }));
 }
 
 module.exports = { loginWithCode, silentLogin, firstLogin, updateNickname, isFirstLoginRequired };

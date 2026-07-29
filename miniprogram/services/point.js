@@ -1,7 +1,15 @@
 const { request } = require('./request');
+const { formatDate } = require('../utils/date');
 
 const balance = () => request({ url: '/wx/points/balance' });
-const records = params => request({ url: '/wx/points/records', data: params });
+const records = params => request({ url: '/wx/points/records', data: params })
+  .then(result => ({
+    ...result,
+    items: (result.items || []).map(item => ({
+      ...item,
+      createDate: formatDate(item.createTime)
+    }))
+  }));
 const rules = () => request({ url: '/wx/points/rules' });
 const signIn = () => request({ url: '/wx/points/signin', method: 'POST' });
 const rewardAd = adBizNo => request({ url: '/wx/points/ad-reward', method: 'POST', data: { adBizNo } });

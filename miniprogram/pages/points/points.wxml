@@ -3,7 +3,7 @@
   <view class="ledger">
     <view class="heading">积分流水</view>
     <view wx:for="{{records}}" wx:key="id" class="record">
-      <view><text>{{item.sourceType}}</text><text class="time">{{item.createTime}}</text></view>
+      <view><text>{{item.sourceType}}</text><text class="time">{{item.createDate}}</text></view>
       <text class="change">{{item.changeAmount > 0 ? '+' : ''}}{{item.changeAmount}}</text>
     </view>
   </view>

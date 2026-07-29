@@ -1,4 +1,5 @@
 const { request, apiBaseUrl } = require('./request');
+const { formatDate } = require('../utils/date');
 
 function afterRequestPaymentSuccess() {
   return { nextAction: 'QUERY_ORDER', grantVipLocally: false };
@@ -17,6 +18,7 @@ const queryOrder = merchantOrderNo => request({ url: `/wx/vip/orders/status/${me
 const redeemCode = code => request({ url: '/wx/vip/code/redeem', method: 'POST', data: { code } });
 const profile = () => request({ url: '/wx/profile' }).then(data => ({
   ...data,
+  vipExpireTime: formatDate(data.vipExpireTime),
   avatarUrl: data.avatarPath ? `${apiBaseUrl()}/wx/public/avatar/${data.avatarPath}` : ''
 }));
 
