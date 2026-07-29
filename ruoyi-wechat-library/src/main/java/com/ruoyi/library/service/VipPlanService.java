@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class VipPlanService
 {
+    private static final int MAX_VALID_DAYS = 3650;
     private final WlVipPlanMapper planMapper;
 
     public VipPlanService(WlVipPlanMapper planMapper) { this.planMapper = planMapper; }
@@ -61,9 +62,9 @@ public class VipPlanService
         if (plan.getPlanCode().trim().length() > 32) throw new ServiceException("套餐编码不能超过32个字符");
         if (plan.getPlanName() == null || plan.getPlanName().trim().isEmpty()) throw new ServiceException("套餐名称不能为空");
         if (plan.getPriceCent() == null || plan.getPriceCent() < 0) throw new ServiceException("套餐价格不能小于0");
-        if (plan.getValidDays() == null || plan.getValidDays() <= 0) throw new ServiceException("套餐有效天数必须大于0");
-        if (plan.getValidDays() != 30 && plan.getValidDays() != 365)
-            throw new ServiceException("会员套餐有效天数只能为30天或365天");
+        if (plan.getValidDays() == null || plan.getValidDays() < 1
+                || plan.getValidDays() > MAX_VALID_DAYS)
+            throw new ServiceException("会员套餐有效天数必须在1到3650天之间");
         if (plan.getGiftPoints() == null || plan.getGiftPoints() < 0) throw new ServiceException("赠送积分不能小于0");
         if (!"0".equals(plan.getStatus()) && !"1".equals(plan.getStatus())) throw new ServiceException("套餐状态不正确");
         if (plan.getSortOrder() == null) plan.setSortOrder(0);

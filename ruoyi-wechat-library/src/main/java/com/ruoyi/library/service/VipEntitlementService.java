@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class VipEntitlementService
 {
     private static final Set<String> PLAN_SOURCES = new HashSet<>(Arrays.asList("PAYMENT", "MANUAL", "VIP_CODE"));
+    private static final int MAX_PLAN_VALID_DAYS = 3650;
     private final WlVipEntitlementMapper entitlementMapper;
     private final WlWxUserMapper userMapper;
     private final PointService pointService;
@@ -139,10 +140,9 @@ public class VipEntitlementService
     {
         if (plan == null || plan.getId() == null) throw new ServiceException("会员套餐不存在");
         if (!"0".equals(plan.getStatus())) throw new ServiceException("会员套餐已停用");
-        if (plan.getValidDays() == null || plan.getValidDays() <= 0)
-            throw new ServiceException("会员套餐有效天数不正确");
-        if (plan.getValidDays() != 30 && plan.getValidDays() != 365)
-            throw new ServiceException("会员套餐有效天数只能为30天或365天");
+        if (plan.getValidDays() == null || plan.getValidDays() < 1
+                || plan.getValidDays() > MAX_PLAN_VALID_DAYS)
+            throw new ServiceException("会员套餐有效天数必须在1到3650天之间");
         if (plan.getGiftPoints() == null || plan.getGiftPoints() < 0)
             throw new ServiceException("会员套餐赠送积分不正确");
     }

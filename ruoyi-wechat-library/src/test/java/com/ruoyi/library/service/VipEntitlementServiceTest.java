@@ -1,5 +1,6 @@
 package com.ruoyi.library.service;
 
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.domain.WlPointRecord;
 import com.ruoyi.library.domain.WlVipEntitlement;
 import com.ruoyi.library.domain.WlVipPlan;
@@ -16,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -70,6 +72,21 @@ class VipEntitlementServiceTest
     }
 
     @Test
+    void customPlanExtendsMembershipByConfiguredDays()
+    {
+        service.openOrRenew(1L, plan(90, 0L), "PAYMENT", "custom-90");
+
+        assertEquals("2026-10-14T00:00:00Z", user.getVipExpireTime().toInstant().toString());
+    }
+
+    @Test
+    void planValidDaysOutsideConfiguredRangeAreRejected()
+    {
+        assertPlanDaysMessage(plan(0, 0L));
+        assertPlanDaysMessage(plan(3651, 0L));
+    }
+
+    @Test
     void duplicateSourceReturnsExistingEntitlementWithoutSecondGift()
     {
         WlVipEntitlement existing = new WlVipEntitlement();
@@ -104,12 +121,19 @@ class VipEntitlementServiceTest
     {
         WlVipPlan plan = new WlVipPlan();
         plan.setId(3L);
-        plan.setPlanCode(validDays == 30 ? "MONTH" : "YEAR");
-        plan.setPlanName(validDays == 30 ? "月卡" : "年卡");
+        plan.setPlanCode("PLAN_" + validDays);
+        plan.setPlanName(validDays + "天套餐");
         plan.setPriceCent(990L);
         plan.setValidDays(validDays);
         plan.setGiftPoints(giftPoints);
         plan.setStatus("0");
         return plan;
+    }
+
+    private void assertPlanDaysMessage(WlVipPlan plan)
+    {
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.openOrRenew(1L, plan, "PAYMENT", "invalid-" + plan.getValidDays()));
+        assertEquals("会员套餐有效天数必须在1到3650天之间", exception.getMessage());
     }
 }
