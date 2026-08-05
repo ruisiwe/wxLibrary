@@ -11,7 +11,32 @@ Page({
     loginVisible: false, profileRequired: true, agreements: [], pendingAction: '', disclaimerVisible: false,
     fileDisclaimer: null, suppressReminder: false, sendingOriginal: false
   },
-  onLoad(options) { this.setData({ id: options.id }); this.load(); },
+  onLoad(options) {
+    wx.showShareMenu({
+      menus: ['shareAppMessage', 'shareTimeline']
+    });
+    this.setData({
+      id: options.id
+    });
+    this.load();
+  },
+  onShareAppMessage() {
+    const document = this.data.document || {};
+    return {
+      title: document.title || '文档详情',
+      path: `/pages/document-detail/document-detail?id=${this.data.id}`,
+      imageUrl: document.coverUrl || ''
+    };
+  },
+  onShareTimeline() {
+    const document = this.data.document || {};
+    return {
+      title: document.title || '文档详情',
+      query: `id=${this.data.id}`,
+      imageUrl: document.coverUrl || ''
+    };
+  },
+
   load() {
     this.setData({ loading: true, error: '' });
     documents.detail(this.data.id).then(document => {
