@@ -37,6 +37,7 @@ class HomeQueryServiceTest
     private HomeQueryService service;
     private PrivateFileUrlSigner signer;
     private ObjectProvider<PrivateFileUrlSigner> signerProvider;
+    private DocumentCoverUrlService coverUrlService;
 
     @BeforeEach
     void setUp()
@@ -48,7 +49,9 @@ class HomeQueryServiceTest
         @SuppressWarnings("unchecked") ObjectProvider<PrivateFileUrlSigner> provider = mock(ObjectProvider.class);
         signerProvider = provider;
         when(signerProvider.getIfAvailable()).thenReturn(signer);
-        service = new HomeQueryService(bannerMapper, categoryMapper, documentMapper, signerProvider);
+        coverUrlService = mock(DocumentCoverUrlService.class);
+        service = new HomeQueryService(bannerMapper, categoryMapper, documentMapper,
+                signerProvider, coverUrlService);
     }
 
     @Test
@@ -71,6 +74,7 @@ class HomeQueryServiceTest
         assertEquals(Collections.singletonList(category), result.getCategories());
         assertEquals(Collections.singletonList(document), result.getDocuments());
         verify(bannerMapper).selectPublicBanners(any(Date.class));
+        verify(coverUrlService).signCovers(Collections.singletonList(document));
     }
 
     @Test
@@ -86,6 +90,7 @@ class HomeQueryServiceTest
         assertEquals(50, result.getPageSize());
         assertEquals(1L, result.getTotal());
         assertEquals(1, result.getItems().size());
+        verify(coverUrlService).signCovers(result.getItems());
     }
 
     @Test
@@ -108,28 +113,16 @@ class HomeQueryServiceTest
     }
 
     @Test
-    void privateThumbnailObjectKeyIsReturnedAsShortLivedUrl() throws Exception
+    void documentDetailUsesSharedCoverSigning()
     {
         DocumentSummaryDto document = document(11L, "质量管理手册");
         document.setCoverUrl("documents/session/thumbnail/v1.jpg");
         when(documentMapper.selectPublishedDocumentById(11L)).thenReturn(document);
-        when(signer.signGetUrl(eq("documents/session/thumbnail/v1.jpg"), any(Duration.class), eq(null)))
-                .thenReturn(new URL("https://temporary.example/cover"));
 
         DocumentSummaryDto result = service.getDocument(11L);
 
-        assertEquals("https://temporary.example/cover", result.getCoverUrl());
-    }
-
-    @Test
-    void existingHttpsThumbnailDoesNotUseCosSigner()
-    {
-        DocumentSummaryDto document = document(11L, "质量管理手册");
-        document.setCoverUrl("https://legacy.example/cover.jpg");
-        when(documentMapper.selectPublishedDocumentById(11L)).thenReturn(document);
-
-        assertEquals("https://legacy.example/cover.jpg", service.getDocument(11L).getCoverUrl());
-        verify(signer, org.mockito.Mockito.never()).signGetUrl(any(), any(), any());
+        assertEquals(document, result);
+        verify(coverUrlService).signCover(document);
     }
 
     @Test

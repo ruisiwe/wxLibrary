@@ -12,12 +12,15 @@ public interface WlWxUserMapper
     WlWxUser selectByOpenidForUpdate(@Param("openid") String openid);
     WlWxUser selectById(@Param("id") Long id);
     WlWxUser selectByIdForUpdate(@Param("id") Long id);
+    int countByNickname(@Param("nickname") String nickname,
+            @Param("excludedUserId") Long excludedUserId);
     List<WlWxUser> selectWxUserList(WlWxUser user);
     List<WlWxUser> selectVipOperationCandidates(@Param("keyword") String keyword,
             @Param("userId") Long userId);
     int insertWxUser(WlWxUser user);
     int updateProfile(WlWxUser user);
     int updateLastLoginTime(@Param("id") Long id);
+    int insertDailyActive(@Param("id") Long id);
     int updateStatus(@Param("id") Long id, @Param("status") String status, @Param("operator") String operator);
     int updatePointBalance(@Param("id") Long id, @Param("beforeBalance") Long beforeBalance,
             @Param("afterBalance") Long afterBalance, @Param("operator") String operator);

@@ -1,0 +1,21 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="state">正在加载...</view>
+  <view wx:elif="{{error}}" class="state state--error">
+    <text>{{error}}</text>
+    <button size="mini" bindtap="load">重新加载</button>
+  </view>
+  <view wx:elif="{{config}}" class="qr-card">
+    <view class="title">{{config.menuName}}</view>
+    <view wx:if="{{config.guideText}}" class="guide">{{config.guideText}}</view>
+    <image
+      wx:if="{{imagePath}}"
+      class="qr-image"
+      src="{{imagePath}}"
+      mode="widthFix"
+      show-menu-by-longpress
+      bindtap="previewImage"
+    />
+    <view wx:else class="empty">二维码暂未配置</view>
+    <view wx:if="{{imagePath}}" class="hint">长按识别二维码，点击可预览大图</view>
+  </view>
+</view>

@@ -8,6 +8,7 @@ import com.ruoyi.library.mapper.WlWxUserMapper;
 import com.ruoyi.library.storage.AvatarStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.mock.web.MockMultipartFile;
 import java.util.Date;
 
@@ -61,7 +62,7 @@ class WxProfileServiceTest
     {
         WlWxUser user = user();
         when(mapper.selectByIdForUpdate(3L)).thenReturn(user);
-        when(loginService.validateNickname("新昵称", true)).thenReturn("新昵称");
+        when(loginService.validateUniqueNickname("新昵称", 3L)).thenReturn("新昵称");
         MockMultipartFile avatar = new MockMultipartFile("avatar", "a.png", "image/png", new byte[] {1});
         when(storage.store(avatar)).thenReturn("202607/new.png");
         when(mapper.updateProfile(user)).thenReturn(1);
@@ -95,8 +96,29 @@ class WxProfileServiceTest
                 mock(com.ruoyi.library.auth.WxTokenService.class));
         WxProfileService profileService = new WxProfileService(mapper, storage, realValidator);
 
-        assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
+        assertEquals("昵称只能包含中文、英文字母、数字、下划线和短横线", assertThrows(ServiceException.class,
                 () -> profileService.update(3L, "用户" + new String(Character.toChars(0x202E)), null)).getMessage());
+    }
+
+    @Test
+    void rejectsNullNicknameWhenNoAvatarIsSubmitted()
+    {
+        when(mapper.selectByIdForUpdate(3L)).thenReturn(user());
+
+        assertEquals("昵称不能为空", assertThrows(ServiceException.class,
+                () -> service.update(3L, null, null)).getMessage());
+    }
+
+    @Test
+    void convertsConcurrentNicknameConflictToChineseServiceError()
+    {
+        WlWxUser user = user();
+        when(mapper.selectByIdForUpdate(3L)).thenReturn(user);
+        when(loginService.validateUniqueNickname("重复昵称", 3L)).thenReturn("重复昵称");
+        when(mapper.updateProfile(user)).thenThrow(new DuplicateKeyException("uk_wx_user_nickname"));
+
+        assertEquals("昵称已被使用，请更换后重试", assertThrows(ServiceException.class,
+                () -> service.update(3L, "重复昵称", null)).getMessage());
     }
 
     private WlWxUser user()

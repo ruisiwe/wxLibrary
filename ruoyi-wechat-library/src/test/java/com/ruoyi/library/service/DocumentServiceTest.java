@@ -10,6 +10,7 @@ import com.ruoyi.library.mapper.WlBannerMapper;
 import com.ruoyi.library.mapper.WlCategoryMapper;
 import com.ruoyi.library.mapper.WlDocumentMapper;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -42,6 +43,47 @@ class DocumentServiceTest
         enabled.setId(3L);
         enabled.setStatus("0");
         when(categoryMapper.selectCategoryById(3L)).thenReturn(enabled);
+    }
+
+    @Test
+    void documentCategoryOptionsListOnlyEnabledCategories()
+    {
+        WlCategory enabled = new WlCategory();
+        enabled.setId(1L);
+        enabled.setName("质量管理");
+        enabled.setStatus("0");
+        when(categoryMapper.selectCategoryList(any(WlCategory.class)))
+                .thenReturn(Collections.singletonList(enabled));
+
+        List<WlCategory> result = service.listDocumentCategoryOptions(null);
+
+        assertEquals(1, result.size());
+        assertEquals(Long.valueOf(1L), result.get(0).getId());
+        ArgumentCaptor<WlCategory> queryCaptor = ArgumentCaptor.forClass(WlCategory.class);
+        verify(categoryMapper).selectCategoryList(queryCaptor.capture());
+        assertEquals("0", queryCaptor.getValue().getStatus());
+    }
+
+    @Test
+    void documentCategoryOptionsIncludeCurrentDisabledCategoryForEdit()
+    {
+        WlCategory enabled = new WlCategory();
+        enabled.setId(1L);
+        enabled.setName("质量管理");
+        enabled.setStatus("0");
+        WlCategory disabled = new WlCategory();
+        disabled.setId(9L);
+        disabled.setName("历史分类");
+        disabled.setStatus("1");
+        when(categoryMapper.selectCategoryList(any(WlCategory.class)))
+                .thenReturn(Collections.singletonList(enabled));
+        when(categoryMapper.selectCategoryById(9L)).thenReturn(disabled);
+
+        List<WlCategory> result = service.listDocumentCategoryOptions(9L);
+
+        assertEquals(2, result.size());
+        assertEquals(Long.valueOf(9L), result.get(1).getId());
+        assertEquals("1", result.get(1).getStatus());
     }
 
     @Test

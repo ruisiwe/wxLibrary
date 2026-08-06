@@ -40,6 +40,11 @@
         <include refid="selectWxUserColumns"/> where id = #{id} and del_flag = '0' for update
     </select>
 
+    <select id="countByNickname" resultType="int">
+        select count(1) from wl_wx_user where nickname = #{nickname}
+        <if test="excludedUserId != null">and id != #{excludedUserId}</if>
+    </select>
+
     <select id="selectWxUserList" parameterType="com.ruoyi.library.domain.WlWxUser" resultMap="WlWxUserResult">
         <include refid="selectWxUserColumns"/>
         <where>
@@ -75,6 +80,12 @@
     <update id="updateLastLoginTime">
         update wl_wx_user set last_login_time = now(), update_time = now() where id = #{id} and del_flag = '0'
     </update>
+
+    <insert id="insertDailyActive">
+        insert ignore into wl_wx_user_daily_active(user_id, active_date,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{id}, curdate(), concat('wx:', #{id}), now(), '', now(), '0')
+    </insert>
 
     <update id="updateStatus">
         update wl_wx_user set status = #{status}, update_by = #{operator}, update_time = now()

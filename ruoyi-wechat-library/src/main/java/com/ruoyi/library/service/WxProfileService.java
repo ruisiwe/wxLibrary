@@ -6,6 +6,7 @@ import com.ruoyi.library.domain.WlWxUser;
 import com.ruoyi.library.dto.WxProfileResponse;
 import com.ruoyi.library.mapper.WlWxUserMapper;
 import com.ruoyi.library.storage.AvatarStorageService;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -42,9 +43,11 @@ public class WxProfileService
         WlWxUser user = userMapper.selectByIdForUpdate(userId);
         if (user == null) throw new ServiceException("微信用户不存在");
         if (!"0".equals(user.getStatus())) throw new ServiceException("该微信用户已被停用，无法修改资料");
+        if (nickname == null && (avatar == null || avatar.isEmpty()))
+            throw new ServiceException("昵称不能为空");
         String oldAvatar = user.getAvatarPath();
         String newAvatar = null;
-        if (nickname != null) user.setNickname(loginService.validateNickname(nickname, true));
+        if (nickname != null) user.setNickname(loginService.validateUniqueNickname(nickname, userId));
         if (avatar != null && !avatar.isEmpty())
         {
             newAvatar = avatarStorageService.store(avatar);
@@ -55,6 +58,11 @@ public class WxProfileService
         try
         {
             if (userMapper.updateProfile(user) != 1) throw new ServiceException("用户资料修改失败");
+        }
+        catch (DuplicateKeyException exception)
+        {
+            if (newAvatar != null) avatarStorageService.deleteQuietly(newAvatar);
+            throw new ServiceException("昵称已被使用，请更换后重试");
         }
         catch (RuntimeException exception)
         {

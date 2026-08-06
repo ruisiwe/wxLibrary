@@ -4,6 +4,7 @@
     <resultMap id="WlDocumentResult" type="com.ruoyi.library.domain.WlDocument">
         <id property="id" column="id"/>
         <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
         <result property="title" column="title"/>
         <result property="summary" column="summary"/>
         <result property="tags" column="tags"/>
@@ -119,17 +120,29 @@
     <select id="selectDocumentById" resultMap="WlDocumentResult">
         <include refid="documentColumns"/> where id = #{id} and del_flag = '0'
     </select>
+    <select id="selectDocumentsForUpdate" resultMap="WlDocumentResult">
+        <include refid="documentColumns"/> where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        and del_flag = '0'
+        for update
+    </select>
     <select id="selectDocumentList" parameterType="com.ruoyi.library.domain.WlDocument" resultMap="WlDocumentResult">
-        <include refid="documentColumns"/>
+        select d.id, d.category_id, c.name as category_name, d.title, d.summary, d.tags, d.cover_url,
+            d.uploader_name, d.file_format, d.file_size, d.page_count, d.point_price, d.access_type,
+            d.preview_pages, d.original_object_key, d.full_object_key, d.preview_object_key,
+            d.conversion_status, d.publish_status, d.publish_time, d.view_count, d.sort_order,
+            d.create_by, d.create_time, d.update_by, d.update_time, d.remark
+        from wl_document d
+        left join wl_category c on c.id = d.category_id
         <where>
-            del_flag = '0'
-            <if test="categoryId != null">and category_id = #{categoryId}</if>
-            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
-            <if test="fileFormat != null and fileFormat != ''">and file_format = #{fileFormat}</if>
-            <if test="conversionStatus != null and conversionStatus != ''">and conversion_status = #{conversionStatus}</if>
-            <if test="publishStatus != null and publishStatus != ''">and publish_status = #{publishStatus}</if>
+            d.del_flag = '0'
+            <if test="categoryId != null">and d.category_id = #{categoryId}</if>
+            <if test="title != null and title != ''">and d.title like concat('%', #{title}, '%')</if>
+            <if test="fileFormat != null and fileFormat != ''">and d.file_format = #{fileFormat}</if>
+            <if test="conversionStatus != null and conversionStatus != ''">and d.conversion_status = #{conversionStatus}</if>
+            <if test="publishStatus != null and publishStatus != ''">and d.publish_status = #{publishStatus}</if>
         </where>
-        order by sort_order asc, id desc
+        order by d.sort_order asc, d.id desc
     </select>
     <select id="countDocumentsByCategoryIds" resultType="int">
         select count(1) from wl_document where del_flag = '0' and category_id in

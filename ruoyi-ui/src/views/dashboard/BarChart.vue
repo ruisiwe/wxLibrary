@@ -1,102 +1,81 @@
 <template>
-  <div :class="className" :style="{height:height,width:width}" />
+  <div class="chart-card">
+    <div class="chart-title">近12个月各分类付费文档</div>
+    <div v-if="!hasData" class="empty-state">暂无数据</div>
+    <div v-else ref="chart" :style="{ height: height, width: width }" />
+  </div>
 </template>
 
 <script>
 import * as echarts from 'echarts'
-require('echarts/theme/macarons') // echarts theme
+require('echarts/theme/macarons')
 import resize from './mixins/resize'
-
-const animationDuration = 6000
+const { categoryColor } = require('./categoryColors')
 
 export default {
+  name: 'BarChart',
   mixins: [resize],
   props: {
-    className: {
-      type: String,
-      default: 'chart'
-    },
-    width: {
-      type: String,
-      default: '100%'
-    },
-    height: {
-      type: String,
-      default: '300px'
+    width: { type: String, default: '100%' },
+    height: { type: String, default: '360px' },
+    chartData: {
+      type: Object,
+      default: () => ({ months: [], series: [] })
     }
   },
   data() {
-    return {
-      chart: null
+    return { chart: null }
+  },
+  computed: {
+    hasData() {
+      return this.chartData && Array.isArray(this.chartData.series) && this.chartData.series.length > 0
+    }
+  },
+  watch: {
+    chartData: {
+      deep: true,
+      handler() { this.$nextTick(this.renderChart) }
     }
   },
   mounted() {
-    this.$nextTick(() => {
-      this.initChart()
-    })
+    this.$nextTick(this.renderChart)
   },
   beforeDestroy() {
-    if (!this.chart) {
-      return
-    }
-    this.chart.dispose()
+    if (this.chart) this.chart.dispose()
     this.chart = null
   },
   methods: {
-    initChart() {
-      this.chart = echarts.init(this.$el, 'macarons')
-
+    renderChart() {
+      if (!this.hasData || !this.$refs.chart) {
+        if (this.chart) this.chart.dispose()
+        this.chart = null
+        return
+      }
+      if (!this.chart) this.chart = echarts.init(this.$refs.chart, 'macarons')
+      const series = this.chartData.series.map(item => ({
+        name: item.categoryName,
+        type: 'bar',
+        stack: 'paidDocuments',
+        barMaxWidth: 48,
+        emphasis: { focus: 'series' },
+        itemStyle: { color: categoryColor(item.categoryId) },
+        data: item.values || []
+      }))
       this.chart.setOption({
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: { // 坐标轴指示器，坐标轴触发有效
-            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
-          }
-        },
-        grid: {
-          top: 10,
-          left: '2%',
-          right: '2%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: [{
-          type: 'category',
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          axisTick: {
-            alignWithLabel: true
-          }
-        }],
-        yAxis: [{
-          type: 'value',
-          axisTick: {
-            show: false
-          }
-        }],
-        series: [{
-          name: 'pageA',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [79, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }, {
-          name: 'pageB',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [80, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }, {
-          name: 'pageC',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [30, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }]
-      })
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: { type: 'scroll', top: 4 },
+        grid: { left: 12, right: 18, bottom: 12, top: 48, containLabel: true },
+        xAxis: { type: 'category', data: this.chartData.months || [], axisTick: { alignWithLabel: true } },
+        yAxis: { type: 'value', minInterval: 1 },
+        series
+      }, true)
     }
   }
 }
 </script>
+
+<style scoped>
+.chart-card { position: relative; min-height: 380px; }
+.chart-title { color: #303133; font-size: 16px; font-weight: 600; }
+.empty-state { display: flex; align-items: center; justify-content: center; height: 360px; color: #909399; }
+</style>

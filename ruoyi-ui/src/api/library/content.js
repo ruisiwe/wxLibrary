@@ -23,6 +23,11 @@ export const listBannerDocumentOptions = query => request({
 })
 export const listCategories = query => request({ url: '/library/category/list', method: 'get', params: query })
 export const listCategoryIconOptions = () => request({ url: '/library/category/icon-options', method: 'get' })
+export const listDocumentCategoryOptions = currentCategoryId => request({
+  url: '/library/document/category-options',
+  method: 'get',
+  params: currentCategoryId ? { currentCategoryId } : {}
+})
 export const addCategory = data => request({ url: '/library/category', method: 'post', data })
 export const updateCategory = data => request({ url: '/library/category', method: 'put', data })
 export const deleteCategory = id => request({ url: `/library/category/${id}`, method: 'delete' })

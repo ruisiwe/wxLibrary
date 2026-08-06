@@ -28,6 +28,14 @@
                 {{ displayImageUrl ? '更换图片' : '选择图片' }}
               </el-button>
             </el-upload>
+            <el-button
+              v-if="displayImageUrl"
+              v-hasPermi="['library:vip:page-config:edit']"
+              size="small"
+              type="danger"
+              plain
+              @click="clearCustomerServiceImage"
+            >清空图片</el-button>
             <div class="upload-tip">支持 JPEG、PNG、WebP，图片大小不能超过 2 MB</div>
           </div>
         </el-form-item>
@@ -136,7 +144,8 @@ import {
   updateVipBenefit,
   deleteVipBenefit,
   getVipPageConfig,
-  updateVipPageConfig
+  updateVipPageConfig,
+  clearVipPageConfigImage
 } from '@/api/library/vipBenefit'
 
 const defaultConfig = () => ({
@@ -199,6 +208,9 @@ export default {
       return getVipPageConfig()
         .then(response => {
           this.configForm = { ...defaultConfig(), ...(response.data || {}) }
+          this.configForm.customerServiceImageUrl = this.normalizeServerImageUrl(
+            this.configForm.customerServiceImageUrl
+          )
         })
         .finally(() => { this.configLoading = false })
     },
@@ -242,6 +254,19 @@ export default {
         }).finally(() => { this.configSaving = false })
       })
     },
+    clearCustomerServiceImage() {
+      if (this.selectedImage) {
+        this.selectedImage = null
+        this.releaseLocalImage()
+        return
+      }
+      this.$modal.confirm('确认清空客服微信图片吗？')
+        .then(() => clearVipPageConfigImage())
+        .then(() => {
+          this.configForm.customerServiceImageUrl = ''
+          this.$modal.msgSuccess('客服微信图片已清空')
+        })
+    },
     openAdd() {
       this.benefitForm = defaultBenefit()
       this.benefitVisible = true
@@ -276,6 +301,10 @@ export default {
     releaseLocalImage() {
       if (this.localImageUrl) URL.revokeObjectURL(this.localImageUrl)
       this.localImageUrl = ''
+    },
+    normalizeServerImageUrl(value) {
+      if (!value || !value.startsWith('/')) return value || ''
+      return `${process.env.VUE_APP_BASE_API || ''}${value}`
     }
   }
 }

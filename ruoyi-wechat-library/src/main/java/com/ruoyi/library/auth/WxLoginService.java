@@ -22,10 +22,13 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class WxLoginService
 {
-    private static final Pattern CONTROL_OR_HTML = Pattern.compile("[<>\\p{Cc}\\p{Cf}]");
+    private static final Pattern NICKNAME_WHITELIST =
+            Pattern.compile("^[\\p{IsHan}A-Za-z0-9_-]+$");
+    private static final int MAX_NICKNAME_LENGTH = 20;
     private static final char[] RANDOM_NICKNAME_ALPHABET =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
     private static final int RANDOM_NICKNAME_LENGTH = 10;
+    private static final int MAX_RANDOM_NICKNAME_ATTEMPTS = 10;
     private static final SecureRandom RANDOM = new SecureRandom();
     private final WechatCodeClient codeClient;
     private final WlWxUserMapper userMapper;
@@ -104,6 +107,7 @@ public class WxLoginService
             }
             userMapper.updateLastLoginTime(user.getId());
         }
+        userMapper.insertDailyActive(user.getId());
         boolean agreementRequired = !agreementService.hasAcceptedAllCurrent(user.getId());
         return new LoginState(user, agreementRequired);
     }
@@ -112,43 +116,50 @@ public class WxLoginService
             String acceptedIp, AvatarMutation mutation)
     {
         if (avatar == null || avatar.isEmpty()) throw new ServiceException("首次登录必须上传有效头像");
-        String nickname = generateRandomNickname();
         String avatarPath = avatarStorageService.store(avatar);
         mutation.newAvatar = avatarPath;
         WlWxUser created = new WlWxUser();
         created.setOpenid(openid);
-        created.setNickname(nickname);
         created.setAvatarPath(avatarPath);
         created.setPointBalance(0L);
         created.setStatus("0");
         created.setLastLoginTime(new Date());
         created.setCreateBy("wx");
-        try
+        for (int attempt = 0; attempt < MAX_RANDOM_NICKNAME_ATTEMPTS; attempt++)
         {
-            userMapper.insertWxUser(created);
+            String nickname = generateRandomNickname();
+            if (userMapper.countByNickname(nickname, null) > 0) continue;
+            created.setNickname(nickname);
+            try
+            {
+                userMapper.insertWxUser(created);
+                return created;
+            }
+            catch (DuplicateKeyException exception)
+            {
+                WlWxUser concurrent = userMapper.selectByOpenidForUpdate(openid);
+                if (concurrent == null) continue;
+                avatarStorageService.deleteQuietly(avatarPath);
+                mutation.newAvatar = null;
+                ensureEnabled(concurrent);
+                userMapper.updateLastLoginTime(concurrent.getId());
+                if (request.hasAgreementSubmission())
+                    agreementService.acceptCurrent(concurrent.getId(), request.getPrivacyVersion(), acceptedIp);
+                return concurrent;
+            }
         }
-        catch (DuplicateKeyException exception)
-        {
-            avatarStorageService.deleteQuietly(avatarPath);
-            mutation.newAvatar = null;
-            WlWxUser concurrent = userMapper.selectByOpenidForUpdate(openid);
-            if (concurrent == null) throw exception;
-            ensureEnabled(concurrent);
-            userMapper.updateLastLoginTime(concurrent.getId());
-            if (request.hasAgreementSubmission())
-                agreementService.acceptCurrent(concurrent.getId(), request.getPrivacyVersion(), acceptedIp);
-            return concurrent;
-        }
-        return created;
+        avatarStorageService.deleteQuietly(avatarPath);
+        mutation.newAvatar = null;
+        throw new ServiceException("系统生成昵称失败，请稍后重试");
     }
 
     private void updateExistingProfile(WlWxUser user, WxLoginRequest request, MultipartFile avatar,
             AvatarMutation mutation)
     {
         boolean changed = false;
-        if (request.getNickname() != null && !request.getNickname().trim().isEmpty())
+        if (request.getNickname() != null)
         {
-            user.setNickname(validateNickname(request.getNickname(), true));
+            user.setNickname(validateUniqueNickname(request.getNickname(), user.getId()));
             changed = true;
         }
         if (avatar != null && !avatar.isEmpty())
@@ -164,7 +175,14 @@ public class WxLoginService
         if (changed)
         {
             user.setUpdateBy("wx");
-            userMapper.updateProfile(user);
+            try
+            {
+                userMapper.updateProfile(user);
+            }
+            catch (DuplicateKeyException exception)
+            {
+                throw new ServiceException("昵称已被使用，请更换后重试");
+            }
         }
     }
 
@@ -176,8 +194,20 @@ public class WxLoginService
             if (required) throw new ServiceException("昵称不能为空");
             return value;
         }
-        if (value.length() > 64) throw new ServiceException("昵称长度不能超过64个字符");
-        if (CONTROL_OR_HTML.matcher(value).find()) throw new ServiceException("昵称不能包含HTML标签或控制字符");
+        if (value.codePointCount(0, value.length()) > MAX_NICKNAME_LENGTH)
+            throw new ServiceException("昵称长度不能超过20个字符");
+        if ("null".equalsIgnoreCase(value) || "undefined".equalsIgnoreCase(value))
+            throw new ServiceException("昵称不能使用保留名称");
+        if (!NICKNAME_WHITELIST.matcher(value).matches())
+            throw new ServiceException("昵称只能包含中文、英文字母、数字、下划线和短横线");
+        return value;
+    }
+
+    public String validateUniqueNickname(String nickname, Long currentUserId)
+    {
+        String value = validateNickname(nickname, true);
+        if (userMapper.countByNickname(value, currentUserId) > 0)
+            throw new ServiceException("昵称已被使用，请更换后重试");
         return value;
     }
 

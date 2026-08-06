@@ -22,6 +22,7 @@ insert into sys_menu values('2040','文档解锁','2004','1','documentAccess','l
 insert into sys_menu values('2041','课程码','2004','2','courseCode','library/access/courseCode/index','','',1,0,'C','0','0','library:course:code','validCode','admin',sysdate(),'',null,'课程码管理');
 insert into sys_menu values('2042','播放进度','2004','3','progress','library/access/progress/index','','',1,0,'C','0','0','library:course:list','chart','admin',sysdate(),'',null,'播放进度');
 insert into sys_menu values('2050','协议版本','2000','5','agreement','library/agreement/index','','',1,0,'C','0','0','library:agreement:list','edit','admin',sysdate(),'',null,'协议版本');
+insert into sys_menu values('2051','二维码管理','2000','6','qrConfig','library/qr/index','','',1,0,'C','0','0','library:qr:query','qrcode','admin',sysdate(),'',null,'通用二维码管理');
 insert into sys_menu values('2090','用户菜单契约','2020','1','','','','',1,0,'F','0','0','library:user:list','#','admin',sysdate(),'',null,'兼容用户权限分组');
 insert into sys_menu values('2091','新增轮播图','2010','1','','','','',1,0,'F','0','0','library:banner:add','#','admin',sysdate(),'',null,'');
 insert into sys_menu values('2092','删除文档','2012','1','','','','',1,0,'F','0','0','library:document:remove','#','admin',sysdate(),'',null,'');
@@ -48,3 +49,7 @@ insert into sys_menu values('2112','修改VIP权益','2034','2','','','','',1,0,
 insert into sys_menu values('2113','删除VIP权益','2034','3','','','','',1,0,'F','0','0','library:vip:benefit:remove','#','admin',sysdate(),'',null,'');
 insert into sys_menu values('2114','查询VIP客服配置','2034','4','','','','',1,0,'F','0','0','library:vip:page-config:query','#','admin',sysdate(),'',null,'');
 insert into sys_menu values('2115','修改VIP客服配置','2034','5','','','','',1,0,'F','0','0','library:vip:page-config:edit','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2116','查询二维码','2051','1','','','','',1,0,'F','0','0','library:qr:query','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2117','新增二维码','2051','2','','','','',1,0,'F','0','0','library:qr:add','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2118','修改二维码','2051','3','','','','',1,0,'F','0','0','library:qr:edit','#','admin',sysdate(),'',null,'');
+insert into sys_menu values('2119','删除二维码','2051','4','','','','',1,0,'F','0','0','library:qr:remove','#','admin',sysdate(),'',null,'');

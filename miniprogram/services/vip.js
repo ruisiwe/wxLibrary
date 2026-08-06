@@ -12,7 +12,13 @@ function paymentDisplayState(status) {
 }
 
 const plans = () => request({ url: '/wx/vip/plans' });
-const pageConfig = () => request({ url: '/wx/vip/page-config' });
+const pageConfig = () => request({ url: '/wx/vip/page-config' }).then(data => ({
+  ...data,
+  customerServiceImageUrl: data.customerServiceImageUrl
+    && data.customerServiceImageUrl.startsWith('/')
+    ? `${apiBaseUrl()}${data.customerServiceImageUrl}`
+    : data.customerServiceImageUrl
+}));
 const createOrder = planId => request({ url: `/wx/vip/orders/${planId}`, method: 'POST' });
 const queryOrder = merchantOrderNo => request({ url: `/wx/vip/orders/status/${merchantOrderNo}` });
 const redeemCode = code => request({ url: '/wx/vip/code/redeem', method: 'POST', data: { code } });

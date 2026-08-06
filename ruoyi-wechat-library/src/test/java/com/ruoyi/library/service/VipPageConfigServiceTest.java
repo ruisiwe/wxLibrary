@@ -5,18 +5,12 @@ import com.ruoyi.library.domain.WlVipBenefit;
 import com.ruoyi.library.domain.WlVipPageConfig;
 import com.ruoyi.library.dto.VipPageConfigView;
 import com.ruoyi.library.mapper.WlVipPageConfigMapper;
-import com.ruoyi.library.storage.CosPrivateStorageService;
-import com.ruoyi.library.storage.VipCustomerServiceImageProcessor;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.URL;
+import com.ruoyi.library.storage.QrImageStorageService;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,11 +21,10 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -46,7 +39,7 @@ class VipPageConfigServiceTest
 
     private WlVipPageConfigMapper configMapper;
     private VipBenefitService benefitService;
-    private CosPrivateStorageService storage;
+    private QrImageStorageService storage;
     private RecordingTransactionManager transactionManager;
     private VipPageConfigService service;
 
@@ -55,12 +48,9 @@ class VipPageConfigServiceTest
     {
         configMapper = mock(WlVipPageConfigMapper.class);
         benefitService = mock(VipBenefitService.class);
-        storage = mock(CosPrivateStorageService.class);
+        storage = mock(QrImageStorageService.class);
         transactionManager = new RecordingTransactionManager();
-        service = new VipPageConfigService(configMapper, benefitService,
-                new VipCustomerServiceImageProcessor(root), storage, transactionManager);
-        when(storage.putPrivateObject(anyString(), any(InputStream.class), anyLong(), anyString()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        service = new VipPageConfigService(configMapper, benefitService, storage, transactionManager);
     }
 
     @Test
@@ -73,55 +63,92 @@ class VipPageConfigServiceTest
     }
 
     @Test
-    void publicViewReturnsEnabledBenefitsAndSignedImage() throws Exception
+    void publicViewReturnsEnabledBenefitsAndControlledLocalImageUrl()
     {
-        when(configMapper.selectConfig()).thenReturn(stored("vip/customer-service/old/wechat.webp"));
+        String path = "202607/customer.webp";
+        when(configMapper.selectConfig()).thenReturn(stored(path));
         when(benefitService.listEnabled()).thenReturn(Arrays.asList(
                 benefit("赠送积分"), benefit("VIP 文档免费下载")));
-        when(storage.signGetUrl("vip/customer-service/old/wechat.webp",
-                Duration.ofMinutes(30), null))
-                .thenReturn(new URL("https://signed.example/customer.webp"));
+        when(storage.resolveVipCustomerServiceForRead(path))
+                .thenReturn(root.resolve("vip-customer-service").resolve(path));
 
         VipPageConfigView view = service.getPublicView();
 
         assertEquals(Arrays.asList("赠送积分", "VIP 文档免费下载"), view.getBenefits());
         assertEquals("开通 VIP 请添加客服微信", view.getCustomerServiceTip());
-        assertEquals("https://signed.example/customer.webp", view.getCustomerServiceImageUrl());
+        assertEquals("/wx/public/vip-page-config/customer-service-image",
+                view.getCustomerServiceImageUrl());
     }
 
     @Test
-    void updateDeletesNewObjectWhenDatabaseUpdateLosesRace() throws Exception
+    void legacyCosKeyIsTreatedAsNotConfigured()
     {
-        when(configMapper.selectConfig()).thenReturn(stored("vip/customer-service/old/wechat.png"));
+        String legacy = "vip/customer-service/old/wechat.webp";
+        when(configMapper.selectConfig()).thenReturn(stored(legacy));
+        when(storage.resolveVipCustomerServiceForRead(legacy))
+                .thenThrow(new ServiceException("二维码图片不存在"));
+
+        assertNull(service.getPublicView().getCustomerServiceImageUrl());
+    }
+
+    @Test
+    void updateDeletesNewFileWhenDatabaseUpdateLosesRace()
+    {
+        when(configMapper.selectConfig()).thenReturn(stored("202607/old.png"));
+        when(storage.storeVipCustomerService(any())).thenReturn("202607/new.png");
         when(configMapper.updateConfigWithExpectedImage(any(WlVipPageConfig.class),
-                eq("vip/customer-service/old/wechat.png"))).thenReturn(0);
+                eq("202607/old.png"))).thenReturn(0);
 
         assertEquals("VIP 页面配置已发生变化，请刷新后重试", assertThrows(ServiceException.class,
                 () -> service.update(request("开通 VIP 请添加客服微信"),
                         validPng(), "admin")).getMessage());
 
-        verify(storage).deleteObjectAfterMetadataDeletion(
-                org.mockito.ArgumentMatchers.argThat(key ->
-                        key.startsWith("vip/customer-service/") && key.endsWith("/wechat.png")));
-        verify(storage, never()).deleteObjectAfterMetadataDeletion("vip/customer-service/old/wechat.png");
+        verify(storage).deleteVipCustomerServiceQuietly("202607/new.png");
+        verify(storage, never()).deleteVipCustomerServiceQuietly("202607/old.png");
+        assertEquals(Arrays.asList("begin", "rollback"), transactionManager.events);
+    }
+
+    @Test
+    void updateDeletesOldFileOnlyAfterCommit()
+    {
+        when(configMapper.selectConfig()).thenReturn(stored("202607/old.png"));
+        when(storage.storeVipCustomerService(any())).thenReturn("202607/new.png");
+        when(configMapper.updateConfigWithExpectedImage(any(WlVipPageConfig.class),
+                eq("202607/old.png"))).thenReturn(1);
+        doAnswer(invocation -> {
+            transactionManager.events.add("delete-old");
+            return null;
+        }).when(storage).deleteVipCustomerServiceQuietly("202607/old.png");
+
+        assertEquals(1, service.update(
+                request("  开通 VIP 请添加客服微信  "), validPng(), " admin "));
+
+        assertTrue(transactionManager.events.indexOf("commit")
+                < transactionManager.events.indexOf("delete-old"));
+    }
+
+    @Test
+    void clearImageCommitsBeforeDeletingLocalFile()
+    {
+        when(configMapper.selectConfig()).thenReturn(stored("202607/old.png"));
+        when(configMapper.updateConfigWithExpectedImage(any(WlVipPageConfig.class),
+                eq("202607/old.png"))).thenReturn(1);
+
+        assertEquals(1, service.clearImage("admin"));
+
+        verify(storage).deleteVipCustomerServiceQuietly("202607/old.png");
         assertEquals(Arrays.asList("begin", "commit"), transactionManager.events);
     }
 
     @Test
-    void updateDeletesOldObjectOnlyAfterCommit() throws Exception
+    void resolvesConfiguredCustomerServiceImageForControlledRead() throws Exception
     {
-        when(configMapper.selectConfig()).thenReturn(stored("vip/customer-service/old/wechat.png"));
-        when(configMapper.updateConfigWithExpectedImage(any(WlVipPageConfig.class),
-                eq("vip/customer-service/old/wechat.png"))).thenReturn(1);
-        doAnswer(invocation -> {
-            transactionManager.events.add("delete-old");
-            return null;
-        }).when(storage).deleteObjectAfterMetadataDeletion("vip/customer-service/old/wechat.png");
+        Path file = root.resolve("customer.png");
+        Files.write(file, new byte[] {1});
+        when(configMapper.selectConfig()).thenReturn(stored("202607/customer.png"));
+        when(storage.resolveVipCustomerServiceForRead("202607/customer.png")).thenReturn(file);
 
-        assertEquals(1, service.update(request("  开通 VIP 请添加客服微信  "), validPng(), " admin "));
-
-        assertTrue(transactionManager.events.indexOf("commit")
-                < transactionManager.events.indexOf("delete-old"));
+        assertEquals(file, service.resolveCustomerServiceImageForRead());
     }
 
     private WlVipPageConfig request(String tip)
@@ -146,11 +173,9 @@ class VipPageConfigServiceTest
         return benefit;
     }
 
-    private MockMultipartFile validPng() throws Exception
+    private MockMultipartFile validPng()
     {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ImageIO.write(new BufferedImage(120, 120, BufferedImage.TYPE_INT_RGB), "png", output);
-        return new MockMultipartFile("image", "wechat.png", "image/png", output.toByteArray());
+        return new MockMultipartFile("image", "wechat.png", "image/png", new byte[] {1});
     }
 
     private String repeat(String value, int count)

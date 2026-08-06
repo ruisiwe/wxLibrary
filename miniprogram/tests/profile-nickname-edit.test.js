@@ -10,6 +10,31 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8')
 }
 
+function loadAuthService(profileResponse) {
+  const module = { exports: {} }
+  const calls = []
+  vm.runInNewContext(read('services/auth.js'), {
+    module,
+    exports: module.exports,
+    require(modulePath) {
+      if (modulePath === './request') return {
+        request: options => {
+          calls.push(options)
+          return Promise.resolve(profileResponse)
+        },
+        apiBaseUrl: () => 'https://api.example.com',
+        unwrapResponse: value => value
+      }
+      if (modulePath === '../store/session') return { save: () => {} }
+      if (modulePath === '../utils/date') return { formatDate: value => value }
+      throw new Error(`未处理模块：${modulePath}`)
+    },
+    Promise,
+    wx: {}
+  })
+  return { auth: module.exports, calls }
+}
+
 function loadProfilePage(options = {}) {
   let definition
   let modalOptions
@@ -60,6 +85,7 @@ function loadProfilePage(options = {}) {
       if (modulePath === '../../store/session') return session
       if (modulePath === '../../services/request') return { request: () => Promise.resolve([]) }
       if (modulePath === '../../services/vip') return { profile: () => Promise.resolve(updatedProfile) }
+      if (modulePath === '../../services/qr') return { list: () => Promise.resolve([]) }
       throw new Error(`未处理模块：${modulePath}`)
     },
     wx,
@@ -104,6 +130,21 @@ test('昵称右侧显示编辑图标和修改昵称小字', () => {
   assert.match(markup, /修改昵称/)
   assert.match(markup, /bindtap="editNickname"/)
   assert.match(styles, /\.nickname-edit/)
+})
+
+test('修改昵称响应将头像路径转换为页面头像地址', async () => {
+  const harness = loadAuthService({
+    nickname: '新昵称',
+    avatarPath: '202607/a.jpg',
+    vipExpireTime: null
+  })
+
+  const profile = await harness.auth.updateNickname('新昵称')
+
+  assert.equal(harness.calls[0].url, '/wx/profile')
+  assert.equal(profile.avatarPath, '202607/a.jpg')
+  assert.equal(profile.avatarUrl,
+    'https://api.example.com/wx/public/avatar/202607/a.jpg')
 })
 
 test('点击修改昵称弹出带当前昵称的可编辑窗口', () => {

@@ -1,6 +1,7 @@
 package com.ruoyi.library.mapper;
 
 import com.ruoyi.library.domain.WlBanner;
+import com.ruoyi.library.domain.WlDocument;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ class LibraryMapperXmlContractTest
                 "mapper/library/WlVipPlanMapper.xml",
                 "mapper/library/WlVipBenefitMapper.xml",
                 "mapper/library/WlVipPageConfigMapper.xml",
+                "mapper/library/WlQrConfigMapper.xml",
                 "mapper/library/WlVipEntitlementMapper.xml",
                 "mapper/library/WlVipOrderMapper.xml",
                 "mapper/library/WlVipRefundMapper.xml",
@@ -51,6 +53,7 @@ class LibraryMapperXmlContractTest
         }
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlWxUserMapper.selectByOpenidForUpdate"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlWxUserMapper.selectByOpenid"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlWxUserMapper.countByNickname"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlAgreementMapper.disablePublishedByType"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlUserAgreementMapper.countAcceptedAgreementId"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlPointRecordMapper.insertPointRecord"));
@@ -68,11 +71,26 @@ class LibraryMapperXmlContractTest
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipBenefitMapper.selectEnabled"));
         assertTrue(configuration.hasStatement(
                 "com.ruoyi.library.mapper.WlVipPageConfigMapper.updateConfigWithExpectedImage"));
+        assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlQrConfigMapper.selectEnabled"));
+        assertTrue(configuration.hasStatement(
+                "com.ruoyi.library.mapper.WlQrConfigMapper.updateImageWithExpectedPath"));
+        assertTrue(configuration.hasStatement(
+                "com.ruoyi.library.mapper.WlQrConfigMapper.deleteConfigWithExpectedPath"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipEntitlementMapper.insertEntitlement"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipOrderMapper.markPaid"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVipRefundMapper.markSuccess"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlCourseCodeMapper.selectByDigestForUpdate"));
         assertTrue(configuration.hasStatement("com.ruoyi.library.mapper.WlVideoProgressMapper.upsertProgress"));
+
+        Map<String, Object> nicknameParameters = new HashMap<>();
+        nicknameParameters.put("nickname", "唯一昵称");
+        nicknameParameters.put("excludedUserId", 7L);
+        String nicknameSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlWxUserMapper.countByNickname")
+                .getBoundSql(nicknameParameters).getSql().toLowerCase();
+        assertTrue(nicknameSql.contains("where nickname = ?"));
+        assertTrue(nicknameSql.contains("and id != ?"));
+        assertFalse(nicknameSql.contains("del_flag"));
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("keyword", "质量");
@@ -118,6 +136,13 @@ class LibraryMapperXmlContractTest
         assertTrue(managementBannerSql.contains("document_category_name"));
         assertTrue(managementBannerSql.contains("document_file_format"));
         assertTrue(managementBannerSql.contains("document_selectable"));
+
+        String managementDocumentSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlDocumentMapper.selectDocumentList")
+                .getBoundSql(new WlDocument()).getSql().toLowerCase();
+        assertTrue(managementDocumentSql.contains("c.name as category_name"));
+        assertTrue(managementDocumentSql.contains("left join wl_category c"));
+        assertTrue(managementDocumentSql.contains("order by d.sort_order asc, d.id desc"));
 
         WlBanner banner = new WlBanner();
         banner.setId(4L);
@@ -165,5 +190,30 @@ class LibraryMapperXmlContractTest
                 .getBoundSql(pageConfigParameters).getSql().toLowerCase();
         assertTrue(configUpdateSql.contains("where id = 1"));
         assertTrue(configUpdateSql.contains("customer_service_image_key is null"));
+
+        String enabledQrSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlQrConfigMapper.selectEnabled")
+                .getBoundSql(null).getSql().toLowerCase();
+        assertTrue(enabledQrSql.contains("where del_flag = '0' and status = '0'"));
+        assertTrue(enabledQrSql.contains("order by sort_order asc, id asc"));
+
+        Map<String, Object> qrMutationParameters = new HashMap<>();
+        qrMutationParameters.put("id", 8L);
+        qrMutationParameters.put("newImagePath", "2026/07/new.png");
+        qrMutationParameters.put("expectedImagePath", "2026/07/old.png");
+        qrMutationParameters.put("operator", "admin");
+        String qrUpdateSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlQrConfigMapper.updateImageWithExpectedPath")
+                .getBoundSql(qrMutationParameters).getSql().toLowerCase();
+        assertTrue(qrUpdateSql.contains("image_path = ?"));
+        assertTrue(qrUpdateSql.contains("where id = ?"));
+        assertTrue(qrUpdateSql.contains("and image_path = ?"));
+
+        String qrDeleteSql = configuration
+                .getMappedStatement("com.ruoyi.library.mapper.WlQrConfigMapper.deleteConfigWithExpectedPath")
+                .getBoundSql(qrMutationParameters).getSql().toLowerCase();
+        assertTrue(qrDeleteSql.contains("del_flag = '2'"));
+        assertTrue(qrDeleteSql.contains("where id = ?"));
+        assertTrue(qrDeleteSql.contains("and image_path = ?"));
     }
 }

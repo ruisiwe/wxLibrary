@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.LibraryDashboardMapper">
+    <resultMap id="DashboardSummaryResult" type="com.ruoyi.library.dto.DashboardSummary">
+        <result property="userCount" column="user_count"/>
+        <result property="memberCount" column="member_count"/>
+        <result property="documentCount" column="document_count"/>
+        <result property="paidDocumentCount" column="paid_document_count"/>
+    </resultMap>
+    <resultMap id="DashboardCategoryCountResult" type="com.ruoyi.library.dto.DashboardCategoryCount">
+        <id property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="count" column="count_value"/>
+    </resultMap>
+    <resultMap id="DashboardPeriodCategoryCountResult" type="com.ruoyi.library.dto.DashboardPeriodCategoryCount">
+        <result property="period" column="period_value"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="count" column="count_value"/>
+    </resultMap>
+    <resultMap id="DashboardDailyCountResult" type="com.ruoyi.library.dto.DashboardDailyCount">
+        <result property="date" column="date_value"/>
+        <result property="count" column="count_value"/>
+    </resultMap>
+
+    <select id="selectSummary" resultMap="DashboardSummaryResult">
+        select
+            (select count(1) from wl_wx_user where del_flag = '0') as user_count,
+            (select count(1) from wl_wx_user
+                where del_flag = '0' and vip_expire_time &gt; #{now}) as member_count,
+            (select count(1) from wl_document where del_flag = '0') as document_count,
+            (select count(1) from wl_document_unlock
+                where del_flag = '0' and spent_points &gt; 0) as paid_document_count
+    </select>
+
+    <select id="selectMonthlyPaidExchangeCounts" resultMap="DashboardPeriodCategoryCountResult">
+        select date_format(u.unlock_time, '%Y-%m') as period_value,
+            c.id as category_id, c.name as category_name, count(1) as count_value
+        from wl_document_unlock u
+        inner join wl_document d on d.id = u.document_id
+        inner join wl_category c on c.id = d.category_id
+        where u.del_flag = '0' and u.spent_points &gt; 0
+          and u.unlock_time &gt;= #{start} and u.unlock_time &lt; #{end}
+          and c.del_flag = '0'
+        group by date_format(u.unlock_time, '%Y-%m'), c.id, c.name, c.sort_order
+        order by period_value asc, c.sort_order asc, c.id asc
+    </select>
+
+    <select id="selectDailyPaidExchangeCounts" resultMap="DashboardDailyCountResult">
+        select date_format(unlock_time, '%Y-%m-%d') as date_value, count(1) as count_value
+        from wl_document_unlock
+        where del_flag = '0' and spent_points &gt; 0
+          and unlock_time &gt;= #{start} and unlock_time &lt; #{end}
+        group by date_format(unlock_time, '%Y-%m-%d')
+        order by date_value asc
+    </select>
+
+    <select id="selectDailyActiveUserCounts" resultMap="DashboardDailyCountResult">
+        select date_format(active_date, '%Y-%m-%d') as date_value, count(1) as count_value
+        from wl_wx_user_daily_active
+        where del_flag = '0' and active_date &gt;= #{startDate} and active_date &lt; #{endDate}
+        group by active_date
+        order by active_date asc
+    </select>
+
+    <select id="selectCategoryDocumentCounts" resultMap="DashboardCategoryCountResult">
+        select c.id as category_id, c.name as category_name, count(d.id) as count_value
+        from wl_category c
+        left join wl_document d on d.category_id = c.id and d.del_flag = '0'
+        where c.del_flag = '0'
+        group by c.id, c.name, c.sort_order
+        order by c.sort_order asc, c.id asc
+    </select>
+
+    <select id="selectCategorySendCounts" resultMap="DashboardCategoryCountResult">
+        select c.id as category_id, c.name as category_name, count(1) as count_value
+        from wl_document_send_record s
+        inner join wl_document d on d.id = s.document_id
+        inner join wl_category c on c.id = d.category_id
+        where s.del_flag = '0' and c.del_flag = '0'
+        group by c.id, c.name, c.sort_order
+        having count(1) &gt; 0
+        order by c.sort_order asc, c.id asc
+    </select>
+</mapper>

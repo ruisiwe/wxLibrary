@@ -26,12 +26,13 @@
       <view data-url="/pages/my-documents/my-documents" bindtap="open">我的文档 <text>›</text></view>
       <view data-url="/pages/favorites/favorites" bindtap="open">我的收藏 <text>›</text></view>
       <view data-url="/pages/redeem-course/redeem-course" bindtap="open">会员兑换 <text>›</text></view>
-      <view data-url="/pages/agreement/agreement?type=PRIVACY" bindtap="open">用户隐私协议 <text>›</text></view>
-      <view class="menu-action">
-        <text>意见反馈</text>
-        <text>›</text>
-        <button class="menu-button" open-type="feedback" aria-label="意见反馈"></button>
-      </view>
+      <view
+        wx:for="{{qrMenus}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="openQr"
+      >{{item.menuName}} <text>›</text></view>
+      <!--<view data-url="/pages/agreement/agreement?type=PRIVACY" bindtap="open">小程序隐私保护指引<text>›</text></view>-->
       <view class="menu-action">
         <text>联系客服</text>
         <text>›</text>

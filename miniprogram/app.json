@@ -15,6 +15,7 @@
     "pages/course-player/course-player",
     "pages/my-courses/my-courses",
     "pages/redeem-course/redeem-course",
+    "pages/qr-code/qr-code",
     "pages/agreement/agreement"
   ],
   "window": {

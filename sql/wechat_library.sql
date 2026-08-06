@@ -4,7 +4,7 @@ CREATE TABLE `wl_wx_user` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `openid` varchar(64) NOT NULL COMMENT '微信用户唯一标识',
   `unionid` varchar(64) DEFAULT NULL COMMENT '微信开放平台统一标识',
-  `nickname` varchar(64) NOT NULL DEFAULT '' COMMENT '用户确认后的昵称',
+  `nickname` varchar(20) NOT NULL DEFAULT '' COMMENT '微信用户昵称',
   `avatar_url` varchar(255) NOT NULL DEFAULT '' COMMENT '本地头像访问地址',
   `point_balance` bigint NOT NULL DEFAULT 0 COMMENT '积分余额',
   `vip_expire_time` datetime DEFAULT NULL COMMENT '当前会员权益到期时间',
@@ -18,6 +18,7 @@ CREATE TABLE `wl_wx_user` (
   `remark` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_wx_user_openid` (`openid`),
+  UNIQUE KEY `uk_wx_user_nickname` (`nickname`),
   KEY `idx_wx_user_unionid` (`unionid`),
   KEY `idx_wx_user_status` (`status`),
   CONSTRAINT `chk_wx_user_point_balance` CHECK (`point_balance` >= 0)
@@ -477,6 +478,25 @@ CREATE TABLE `wl_vip_page_config` (
   `remark` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='VIP页面配置';
+
+CREATE TABLE `wl_qr_config` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `menu_name` varchar(50) NOT NULL,
+  `guide_text` varchar(200) NOT NULL DEFAULT '',
+  `image_path` varchar(512) DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `status` char(1) NOT NULL DEFAULT '0',
+  `create_by` varchar(64) NOT NULL DEFAULT '',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_by` varchar(64) NOT NULL DEFAULT '',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `del_flag` char(1) NOT NULL DEFAULT '0',
+  `remark` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_qr_config_status_sort` (`status`, `sort_order`),
+  CONSTRAINT `chk_qr_config_sort` CHECK (`sort_order` >= 0),
+  CONSTRAINT `chk_qr_config_status` CHECK (`status` IN ('0','1'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用二维码配置';
 
 CREATE TABLE `wl_vip_code` (
   `id` bigint NOT NULL AUTO_INCREMENT,

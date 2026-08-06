@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlQrConfigMapper">
+    <resultMap id="QrConfigResult" type="com.ruoyi.library.domain.WlQrConfig">
+        <id property="id" column="id"/>
+        <result property="menuName" column="menu_name"/>
+        <result property="guideText" column="guide_text"/>
+        <result property="imagePath" column="image_path"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="columns">
+        select id, menu_name, guide_text, image_path, sort_order, status,
+            create_by, create_time, update_by, update_time, remark
+        from wl_qr_config
+    </sql>
+
+    <select id="selectById" resultMap="QrConfigResult">
+        <include refid="columns"/>
+        where id = #{id} and del_flag = '0'
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.library.domain.WlQrConfig"
+            resultMap="QrConfigResult">
+        <include refid="columns"/>
+        <where>
+            del_flag = '0'
+            <if test="menuName != null and menuName != ''">
+                and menu_name like concat('%', #{menuName}, '%')
+            </if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by sort_order asc, id asc
+    </select>
+
+    <select id="selectEnabled" resultMap="QrConfigResult">
+        <include refid="columns"/>
+        where del_flag = '0' and status = '0'
+        order by sort_order asc, id asc
+    </select>
+
+    <insert id="insertConfig" parameterType="com.ruoyi.library.domain.WlQrConfig"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into wl_qr_config(menu_name, guide_text, image_path, sort_order, status,
+            create_by, create_time, update_by, update_time, del_flag, remark)
+        values(#{menuName}, #{guideText}, null, #{sortOrder}, #{status},
+            #{createBy}, now(), '', now(), '0', #{remark})
+    </insert>
+
+    <update id="updateConfig" parameterType="com.ruoyi.library.domain.WlQrConfig">
+        update wl_qr_config
+        set menu_name = #{menuName}, guide_text = #{guideText},
+            sort_order = #{sortOrder}, status = #{status},
+            update_by = #{updateBy}, update_time = now(), remark = #{remark}
+        where id = #{id} and del_flag = '0'
+    </update>
+
+    <update id="updateImageWithExpectedPath">
+        update wl_qr_config
+        set image_path = #{newImagePath}, update_by = #{operator}, update_time = now()
+        where id = #{id} and del_flag = '0'
+        <choose>
+            <when test="expectedImagePath == null">and image_path is null</when>
+            <otherwise>and image_path = #{expectedImagePath}</otherwise>
+        </choose>
+    </update>
+
+    <update id="deleteConfigWithExpectedPath">
+        update wl_qr_config
+        set del_flag = '2', update_by = #{operator}, update_time = now()
+        where id = #{id} and del_flag = '0'
+        <choose>
+            <when test="expectedImagePath == null">and image_path is null</when>
+            <otherwise>and image_path = #{expectedImagePath}</otherwise>
+        </choose>
+    </update>
+</mapper>

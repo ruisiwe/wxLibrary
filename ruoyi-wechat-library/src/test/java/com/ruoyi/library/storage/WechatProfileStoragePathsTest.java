@@ -14,12 +14,15 @@ class WechatProfileStoragePathsTest
     Path root;
 
     @Test
-    void resolvesSeparatedAvatarAndDocumentTempDirectories()
+    void resolvesSeparatedWechatProfileDirectories()
     {
         WechatProfileStoragePaths paths = new WechatProfileStoragePaths(() -> root.toString());
 
         assertEquals(root.resolve("avatar").toAbsolutePath().normalize(), paths.avatarRoot());
         assertEquals(root.resolve("document-temp").toAbsolutePath().normalize(), paths.documentTempRoot());
+        assertEquals(root.resolve("qr-config").toAbsolutePath().normalize(), paths.qrConfigRoot());
+        assertEquals(root.resolve("vip-customer-service").toAbsolutePath().normalize(),
+                paths.vipCustomerServiceRoot());
     }
 
     @Test

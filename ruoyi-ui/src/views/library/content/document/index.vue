@@ -16,7 +16,8 @@
     <el-table v-loading="loading" :data="rows">
       <el-table-column prop="id" label="编号" width="80" />
       <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="categoryId" label="分类编号" />
+      <el-table-column prop="categoryName" label="分类名称" min-width="120" show-overflow-tooltip />
+      <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
       <el-table-column prop="pointPrice" label="所需积分" />
       <el-table-column prop="accessType" label="访问方式" width="110">
         <template slot-scope="scope">{{ accessTypeText(scope.row.accessType) }}</template>
@@ -133,7 +134,22 @@
           <div class="form-tip">点击缩略图可放大查看；选择新图片后会立即替换已保存文档的缩略图。</div>
         </el-form-item>
         <el-form-item label="标题" required><el-input v-model="form.title" maxlength="200" /></el-form-item>
-        <el-form-item label="分类编号" required><el-input-number v-model="form.categoryId" :min="1" /></el-form-item>
+        <el-form-item label="文档分类" required>
+          <el-select
+            v-model="form.categoryId"
+            :loading="categoryOptionsLoading"
+            placeholder="请选择文档分类"
+            style="width:100%"
+          >
+            <el-option
+              v-for="category in categoryOptions"
+              :key="category.id"
+              :label="categoryOptionLabel(category)"
+              :value="category.id"
+              :disabled="category.status !== '0'"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="摘要"><el-input v-model="form.summary" type="textarea" maxlength="1000" /></el-form-item>
         <el-form-item label="标签"><el-input v-model="form.tags" placeholder="多个标签用逗号分隔" /></el-form-item>
         <el-form-item label="所需积分" required><el-input-number v-model="form.pointPrice" :min="0" /></el-form-item>
@@ -166,7 +182,8 @@ import {
   getSavedDocumentThumbnail,
   replaceSavedDocumentThumbnail,
   commitDocumentUpload,
-  cancelDocumentUpload
+  cancelDocumentUpload,
+  listDocumentCategoryOptions
 } from '@/api/library/content'
 
 export default {
@@ -179,6 +196,9 @@ export default {
       query: { pageNum: 1, pageSize: 10 },
       visible: false,
       form: {},
+      categoryOptions: [],
+      categoryOptionsLoading: false,
+      categoryOptionRequestSequence: 0,
       fileList: [],
       selectedFile: null,
       preparedSession: null,
@@ -231,7 +251,25 @@ export default {
         : { title: '', categoryId: null, summary: '', tags: '', pointPrice: 0, accessType: 'POINT', sortOrder: 0 }
       if (!this.form.accessType) this.form.accessType = 'POINT'
       this.visible = true
+      this.loadCategoryOptions(row && row.id ? row.categoryId : null)
       if (row && row.id) this.loadSavedThumbnail(row.id)
+    },
+    loadCategoryOptions(currentCategoryId) {
+      const sequence = ++this.categoryOptionRequestSequence
+      this.categoryOptions = []
+      this.categoryOptionsLoading = true
+      return listDocumentCategoryOptions(currentCategoryId).then(res => {
+        if (sequence === this.categoryOptionRequestSequence) {
+          this.categoryOptions = res.data || []
+        }
+      }).finally(() => {
+        if (sequence === this.categoryOptionRequestSequence) {
+          this.categoryOptionsLoading = false
+        }
+      })
+    },
+    categoryOptionLabel(category) {
+      return category.status === '0' ? category.name : `${category.name}（已停用）`
     },
     loadSavedThumbnail(documentId) {
       const sequence = ++this.thumbnailRequestSequence
@@ -304,7 +342,8 @@ export default {
       }).finally(() => { this.replacingThumbnail = false })
     },
     submit() {
-      if (!this.form.title || !this.form.categoryId) return this.$modal.msgError('请填写标题和分类编号')
+      if (!this.form.title) return this.$modal.msgError('请填写文档标题')
+      if (!this.form.categoryId) return this.$modal.msgError('请选择文档分类')
       if (this.form.id) {
         this.saving = true
         return updateDocument(this.form).then(() => this.onSaved()).finally(() => { this.saving = false })
@@ -348,6 +387,9 @@ export default {
     },
     resetUploadState() {
       this.thumbnailRequestSequence += 1
+      this.categoryOptionRequestSequence += 1
+      this.categoryOptions = []
+      this.categoryOptionsLoading = false
       this.selectedFile = null
       this.fileList = []
       this.preparedSession = null

@@ -45,3 +45,11 @@ test('页面配置失败可独立重试且不清空会员信息', () => {
   assert.match(markup, /configError/)
   assert.match(markup, /bindtap="loadPageConfig"/)
 })
+
+test('客服微信本地受控图片地址会拼接服务端根地址', () => {
+  const service = read('services/vip.js')
+
+  assert.match(service, /customerServiceImageUrl/)
+  assert.match(service, /apiBaseUrl\(\)/)
+  assert.match(service, /startsWith\(['"]\/['"]\)/)
+})

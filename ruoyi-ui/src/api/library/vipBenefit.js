@@ -46,3 +46,8 @@ export const updateVipPageConfig = (config, image) => request({
   data: pageConfigFormData(config, image),
   headers: { 'Content-Type': 'multipart/form-data', repeatSubmit: false }
 })
+
+export const clearVipPageConfigImage = () => request({
+  url: '/library/vip-page-config/image',
+  method: 'delete'
+})

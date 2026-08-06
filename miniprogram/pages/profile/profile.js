@@ -2,6 +2,7 @@ const auth = require('../../services/auth');
 const session = require('../../store/session');
 const { request } = require('../../services/request');
 const vip = require('../../services/vip');
+const qr = require('../../services/qr');
 
 Page({
   data: {
@@ -10,7 +11,8 @@ Page({
     profileRequired: true,
     agreements: [],
     authChecking: false,
-    nicknameSaving: false
+    nicknameSaving: false,
+    qrMenus: []
   },
   onShow() {
     if (this.getTabBar) this.getTabBar().setData({ value: '/pages/profile/profile' });
@@ -116,9 +118,22 @@ Page({
       });
     });
   },
-  load() { vip.profile().then(profile => this.setData({ profile })).catch(error => {
-    if (error.code === 40901) return this.openAgreementUpdate();
-    wx.showToast({ title: error.message, icon: 'none' });
-  }); },
+  load() {
+    this.loadQrMenus();
+    return vip.profile().then(profile => this.setData({ profile })).catch(error => {
+      if (error.code === 40901) return this.openAgreementUpdate();
+      wx.showToast({ title: error.message, icon: 'none' });
+    });
+  },
+  loadQrMenus() {
+    return qr.list()
+      .then(qrMenus => this.setData({ qrMenus: qrMenus || [] }))
+      .catch(() => this.setData({ qrMenus: [] }));
+  },
+  openQr(event) {
+    const id = Number(event.currentTarget.dataset.id);
+    if (!id) return;
+    wx.navigateTo({ url: `/pages/qr-code/qr-code?id=${id}` });
+  },
   open(event) { wx.navigateTo({ url: event.currentTarget.dataset.url }); }
 });

@@ -36,10 +36,12 @@ public class DocumentAccessService
     private final WlDocumentUnlockMapper unlockMapper;
     private final ObjectProvider<PrivateFileUrlSigner> signerProvider;
     private final WxAgreementService agreementService;
+    private final DocumentCoverUrlService coverUrlService;
 
     public DocumentAccessService(PointService pointService, WlWxUserMapper userMapper,
             WlDocumentMapper documentMapper, WlDocumentUnlockMapper unlockMapper,
-            ObjectProvider<PrivateFileUrlSigner> signerProvider, WxAgreementService agreementService)
+            ObjectProvider<PrivateFileUrlSigner> signerProvider, WxAgreementService agreementService,
+            DocumentCoverUrlService coverUrlService)
     {
         this.pointService = pointService;
         this.userMapper = userMapper;
@@ -47,10 +49,17 @@ public class DocumentAccessService
         this.unlockMapper = unlockMapper;
         this.signerProvider = signerProvider;
         this.agreementService = agreementService;
+        this.coverUrlService = coverUrlService;
     }
 
     @Transactional
     public DocumentUnlockResult unlock(Long userId, Long documentId, String requestId)
+    {
+        return unlock(userId, documentId, requestId, false);
+    }
+
+    @Transactional
+    public DocumentUnlockResult unlock(Long userId, Long documentId, String requestId, boolean freeOnly)
     {
         validateRequestId(requestId);
         WlWxUser currentUser = requireEnabledUser(userMapper.selectById(userId));
@@ -60,19 +69,11 @@ public class DocumentAccessService
         WlWxUser lockedUser = requireEnabledUser(userMapper.selectByIdForUpdate(userId));
         existing = unlockMapper.selectUnlock(userId, documentId);
         if (existing != null) return existingResult(existing, lockedUser);
-        if (isVipFreeForActiveVip(document, lockedUser))
-        {
-            WlDocumentUnlock unlock = new WlDocumentUnlock();
-            unlock.setUserId(userId);
-            unlock.setDocumentId(documentId);
-            unlock.setSpentPoints(0L);
-            unlock.setPointRecordId(null);
-            unlock.setUnlockTime(new Date());
-            unlock.setCreateBy("wx:" + userId);
-            if (unlockMapper.insertUnlock(unlock) != 1) throw new ServiceException("文档兑换失败，请重试");
-            return new DocumentUnlockResult(documentId, true, 0L, lockedUser.getPointBalance());
-        }
         long price = document.getPointPrice() == null ? 0L : document.getPointPrice();
+        if (price == 0L || isVipFreeForActiveVip(document, lockedUser))
+            return insertFreeUnlock(userId, documentId, lockedUser);
+        if (freeOnly)
+            throw new ServiceException("当前文档不再满足免费获取条件，请刷新后重试");
         WlPointRecord record = pointService.deductAfterLock(lockedUser, price,
                 "DOCUMENT_UNLOCK", pointBizNo(documentId, requestId),
                 "兑换文档：" + document.getTitle() + "（价格快照：" + price + "积分）");
@@ -85,6 +86,19 @@ public class DocumentAccessService
         unlock.setCreateBy("wx:" + userId);
         if (unlockMapper.insertUnlock(unlock) != 1) throw new ServiceException("文档兑换失败，请重试");
         return new DocumentUnlockResult(documentId, true, price, record.getAfterBalance());
+    }
+
+    private DocumentUnlockResult insertFreeUnlock(Long userId, Long documentId, WlWxUser user)
+    {
+        WlDocumentUnlock unlock = new WlDocumentUnlock();
+        unlock.setUserId(userId);
+        unlock.setDocumentId(documentId);
+        unlock.setSpentPoints(0L);
+        unlock.setPointRecordId(null);
+        unlock.setUnlockTime(new Date());
+        unlock.setCreateBy("wx:" + userId);
+        if (unlockMapper.insertUnlock(unlock) != 1) throw new ServiceException("文档兑换失败，请重试");
+        return new DocumentUnlockResult(documentId, true, 0L, user.getPointBalance());
     }
 
     public FileAuthorization authorizePreview(Long userId, Long documentId, String clientIp)
@@ -107,15 +121,18 @@ public class DocumentAccessService
     public FileAuthorization authorizeOriginalFile(Long userId, Long documentId,
             OriginalFileRequest request, String clientIp)
     {
-        requireEnabledUser(userMapper.selectById(userId));
-        WlDocument document = requirePublishedDocument(documentId);
-        requireUnlock(userId, documentId);
+        WlDocument document = requireOriginalFileSendPermission(userId, documentId);
         agreementService.validateFileDisclaimer(userId, request, clientIp);
-        requireObjectKey(document.getOriginalObjectKey(), "文档原文件暂不可用");
         String fileName = safeFileName(document.getTitle(), document.getFileFormat());
         FileAuthorization authorization = sign(document.getOriginalObjectKey(), fileName);
         recordView(userId, documentId, "ORIGINAL", clientIp, false);
         return authorization;
+    }
+
+    /** 校验当前微信用户仍具备该文档原文件的发送权限。 */
+    public void validateOriginalFileSendPermission(Long userId, Long documentId)
+    {
+        requireOriginalFileSendPermission(userId, documentId);
     }
 
     public boolean favorite(Long userId, Long documentId)
@@ -136,7 +153,9 @@ public class DocumentAccessService
     public List<DocumentSummaryDto> listUnlocked(Long userId)
     {
         requireEnabledUser(userMapper.selectById(userId));
-        return unlockMapper.selectUnlockedDocuments(userId);
+        List<DocumentSummaryDto> documents = unlockMapper.selectUnlockedDocuments(userId);
+        coverUrlService.signCovers(documents);
+        return documents;
     }
 
     public List<DocumentSummaryDto> listFavorites(Long userId)
@@ -178,6 +197,15 @@ public class DocumentAccessService
             throw new ServiceException("文档不存在或已下架");
         if (!"SUCCESS".equals(document.getConversionStatus()))
             throw new ServiceException("文档文件尚未准备完成");
+        return document;
+    }
+
+    private WlDocument requireOriginalFileSendPermission(Long userId, Long documentId)
+    {
+        requireEnabledUser(userMapper.selectById(userId));
+        WlDocument document = requirePublishedDocument(documentId);
+        requireUnlock(userId, documentId);
+        requireObjectKey(document.getOriginalObjectKey(), "文档原文件暂不可用");
         return document;
     }
 

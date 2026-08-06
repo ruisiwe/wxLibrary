@@ -16,7 +16,7 @@
 
 ## 方案
 
-新增独立的文档删除协调服务，由后台文档删除接口调用。协调服务负责读取待删除文档、执行现有数据库删除方法，并在数据库删除成功返回后清理 COS。现有 `DocumentService.removeDocuments` 继续只负责校验文档状态和数据库逻辑删除。
+新增独立的文档删除协调服务，由后台文档删除接口调用。协调服务在独立的 `REQUIRES_NEW` 数据库事务中锁定并读取待删除文档、执行现有数据库删除方法，并在该事务提交成功后清理 COS。现有 `DocumentService.removeDocuments` 继续只负责校验文档状态和数据库逻辑删除。
 
 采用独立服务的原因：
 
@@ -26,10 +26,10 @@
 
 ## 删除流程
 
-1. 校验待删除编号，并逐条读取尚未删除的文档。
-2. 保存每份文档关联的 `originalObjectKey`、`fullObjectKey`、`previewObjectKey` 和 `coverUrl`。
-3. 调用 `DocumentService.removeDocuments` 完成现有校验和数据库逻辑删除。
-4. 只有数据库删除成功返回后，才依次调用 `CosPrivateStorageService.deleteObjectAfterMetadataDeletion` 清理对象。
+1. 校验待删除编号并开启独立的 `REQUIRES_NEW` 数据库事务，避免加入外层事务后提前清理 COS。
+2. 使用 `SELECT ... FOR UPDATE` 锁定尚未删除的目标文档，保存每份文档关联的 `originalObjectKey`、`fullObjectKey`、`previewObjectKey` 和 `coverUrl`。
+3. 在同一事务中调用 `DocumentService.removeDocuments` 完成现有校验和数据库逻辑删除，防止缩略图替换或转换任务并发修改对象键。
+4. 只有事务提交成功后，才依次调用 `CosPrivateStorageService.deleteObjectAfterMetadataDeletion` 清理对象。
 5. 返回数据库实际删除条数，不因后续 COS 清理失败改变删除结果。
 
 已发布文档仍必须先下架再删除。并发状态变化或数据库删除失败时，不清理任何 COS 对象。
@@ -72,7 +72,8 @@
 新增文档删除协调服务单元测试，覆盖：
 
 - 数据库删除成功后清理原文件、历史完整文件、试看文件和缩略图。
-- 验证数据库删除发生在第一次 COS 清理之前。
+- 验证行锁读取和数据库删除处于同一个 `REQUIRES_NEW` 事务，并且事务提交发生在第一次 COS 清理之前。
+- Mapper 契约验证删除快照查询包含 `FOR UPDATE`。
 - 批量文档中重复对象键只清理一次。
 - 空对象键和外部缩略图地址不调用 COS 删除。
 - 数据库删除失败时不清理任何 COS 对象。

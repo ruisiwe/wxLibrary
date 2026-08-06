@@ -1,26 +1,56 @@
 const documents = require('../../services/document');
+const auth = require('../../services/auth');
+const session = require('../../store/session');
 
 Page({
-  data: { banners: [], categories: [], documents: [], searchKeyword: '', loading: true, error: '' },
-  onLoad() { this.load(); },
+  data: {
+    banners: [],
+    categories: [],
+    documents: [],
+    searchKeyword: '',
+    loading: true,
+    error: ''
+  },
+  onLoad() {
+    this.load();
+    this.checkLogin();
+  },
   onShow() {
-    if (this.getTabBar) this.getTabBar().setData({ value: '/pages/index/index' });
+    if (this.getTabBar) this.getTabBar().setData({
+      value: '/pages/index/index'
+    });
+  },
+  checkLogin() {
+    if (session.getToken()) return Promise.resolve();
+    return auth.silentLogin().catch(() => {});
   },
   load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({
+      loading: true,
+      error: ''
+    });
     documents.home().then(data => this.setData({
-      banners: data.banners || [], categories: (data.categories || []).slice(0, 8),
-      documents: data.documents || [], loading: false
-    })).catch(error => this.setData({ loading: false, error: error.message }));
+      banners: data.banners || [],
+      categories: (data.categories || []).slice(0, 8),
+      documents: data.documents || [],
+      loading: false
+    })).catch(error => this.setData({
+      loading: false,
+      error: error.message
+    }));
   },
   onSearchInput(event) {
-    this.setData({ searchKeyword: event.detail.value });
+    this.setData({
+      searchKeyword: event.detail.value
+    });
   },
   searchDocuments(event) {
-    const inputValue = event && event.detail && typeof event.detail.value === 'string'
-      ? event.detail.value : this.data.searchKeyword;
+    const inputValue = event && event.detail && typeof event.detail.value === 'string' ?
+      event.detail.value : this.data.searchKeyword;
     const keyword = (inputValue || '').trim();
     const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
-    wx.navigateTo({ url: `/pages/search/search${query}` });
+    wx.navigateTo({
+      url: `/pages/search/search${query}`
+    });
   }
 });

@@ -1,23 +1,40 @@
 .page {
   min-height: 100vh;
-  padding: 28rpx;
+  padding: 16rpx 28rpx 28rpx;
+  box-sizing: border-box;
   background: #fff
 }
 
 .search {
   display: flex;
-  gap: 20rpx;
+  align-items: center;
+  height: 68rpx;
+  gap: 16rpx;
   margin-bottom: 20rpx
 }
 
 .search input {
   flex: 1;
-  padding: 18rpx 24rpx;
+  min-width: 0;
+  height: 68rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
   background: #f1f5f9;
   border-radius: 40rpx
 }
 
 .search button {
+  flex: none;
+  height: 68rpx;
+  margin: 0;
+  padding: 0 24rpx;
+  box-sizing: border-box;
   background: #2457d6;
-  color: #fff
+  color: #fff;
+  font-size: 26rpx;
+  line-height: 68rpx
+}
+
+.search button::after {
+  border: 0
 }

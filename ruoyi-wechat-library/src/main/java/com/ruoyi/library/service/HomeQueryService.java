@@ -23,21 +23,23 @@ public class HomeQueryService
 {
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 50;
-    private static final Duration COVER_URL_TTL = Duration.ofMinutes(30);
     private static final Duration BANNER_URL_TTL = Duration.ofMinutes(30);
 
     private final WlBannerMapper bannerMapper;
     private final WlCategoryMapper categoryMapper;
     private final WlDocumentMapper documentMapper;
     private final ObjectProvider<PrivateFileUrlSigner> signerProvider;
+    private final DocumentCoverUrlService coverUrlService;
 
     public HomeQueryService(WlBannerMapper bannerMapper, WlCategoryMapper categoryMapper,
-            WlDocumentMapper documentMapper, ObjectProvider<PrivateFileUrlSigner> signerProvider)
+            WlDocumentMapper documentMapper, ObjectProvider<PrivateFileUrlSigner> signerProvider,
+            DocumentCoverUrlService coverUrlService)
     {
         this.bannerMapper = bannerMapper;
         this.categoryMapper = categoryMapper;
         this.documentMapper = documentMapper;
         this.signerProvider = signerProvider;
+        this.coverUrlService = coverUrlService;
     }
 
     public HomeData getHome(int pageNum, int pageSize)
@@ -47,7 +49,7 @@ public class HomeQueryService
         long offset = ((long) safePageNum - 1L) * safePageSize;
         List<DocumentSummaryDto> documents = documentMapper.selectPublishedDocuments(
                 null, null, offset, safePageSize);
-        signCovers(documents);
+        coverUrlService.signCovers(documents);
         List<BannerDto> banners = bannerMapper.selectPublicBanners(new Date());
         signBanners(banners);
         return new HomeData(banners,
@@ -71,7 +73,7 @@ public class HomeQueryService
         List<DocumentSummaryDto> items = total == 0L
                 ? java.util.Collections.<DocumentSummaryDto>emptyList()
                 : documentMapper.selectPublishedDocuments(escapedKeyword, categoryId, offset, safePageSize);
-        signCovers(items);
+        coverUrlService.signCovers(items);
         return new PageResult<>(items, total, safePageNum, safePageSize);
     }
 
@@ -80,14 +82,8 @@ public class HomeQueryService
         if (id == null) throw new ServiceException("文档编号不能为空");
         DocumentSummaryDto document = documentMapper.selectPublishedDocumentById(id);
         if (document == null) throw new ServiceException("文档不存在或已下架");
-        signCover(document);
+        coverUrlService.signCover(document);
         return document;
-    }
-
-    private void signCovers(List<DocumentSummaryDto> documents)
-    {
-        if (documents == null) return;
-        for (DocumentSummaryDto document : documents) signCover(document);
     }
 
     private void signBanners(List<BannerDto> banners)
@@ -114,18 +110,6 @@ public class HomeQueryService
         {
             throw new ServiceException("轮播图图片服务暂不可用，请稍后重试");
         }
-    }
-
-    private void signCover(DocumentSummaryDto document)
-    {
-        if (document == null || document.getCoverUrl() == null || document.getCoverUrl().trim().isEmpty()) return;
-        String cover = document.getCoverUrl().trim();
-        if (cover.startsWith("https://") || cover.startsWith("http://")) return;
-        PrivateFileUrlSigner signer = signerProvider.getIfAvailable();
-        if (signer == null) throw new ServiceException("缩略图服务暂不可用，请稍后重试");
-        URL url = signer.signGetUrl(cover, COVER_URL_TTL, null);
-        if (url == null) throw new ServiceException("缩略图服务暂不可用，请稍后重试");
-        document.setCoverUrl(url.toString());
     }
 
     private int normalizePageNum(int pageNum)

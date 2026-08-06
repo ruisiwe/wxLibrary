@@ -38,6 +38,16 @@ public class WechatProfileStoragePaths
         return child("document-temp");
     }
 
+    public Path qrConfigRoot()
+    {
+        return child("qr-config");
+    }
+
+    public Path vipCustomerServiceRoot()
+    {
+        return child("vip-customer-service");
+    }
+
     private Path child(String name)
     {
         String configured = rootSupplier.get();

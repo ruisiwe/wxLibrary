@@ -7,7 +7,7 @@
       <right-toolbar :search="false" @queryTable="$refs.vipCodeList.loadData()" />
     </el-row>
     <simple-list ref="vipCodeList" plain embedded title="会员码记录（仅显示掩码）" :loader="listVipCodes" :columns="columns"/>
-    <el-dialog title="批量生成会员码" :visible.sync="visible" width="640px">
+    <el-dialog title="批量生成会员码" :closeOnClickModal="false" :visible.sync="visible" width="640px">
       <el-form label-width="100px">
         <el-form-item label="会员套餐" required>
           <el-select

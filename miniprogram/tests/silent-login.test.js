@@ -23,3 +23,16 @@ test('无本地令牌时先按 openid 静默登录，首次用户才展示头像
   assert.match(detail, /auth\.silentLogin\(\)/, '文档详情受保护动作应先静默登录');
   assert.match(detail, /firstLoginRequired/, '文档详情仅在首次用户场景展示头像登录');
 });
+
+test('首页仅在首次加载时为无令牌用户执行一次隐性登录', () => {
+  const index = read('pages/index/index.js');
+
+  assert.match(index, /require\('\.\.\/\.\.\/services\/auth'\)/, '首页应复用现有登录服务');
+  assert.match(index, /require\('\.\.\/\.\.\/store\/session'\)/, '首页应先检查本地令牌');
+  assert.equal((index.match(/this\.checkLogin\(\)/g) || []).length, 1,
+    '登录检测只能由首页 onLoad 触发一次');
+  assert.match(index, /if\s*\(session\.getToken\(\)\)\s*return Promise\.resolve\(\)/,
+    '已有本地令牌时不应重复登录');
+  assert.match(index, /auth\.silentLogin\(\)\.catch\(\(\)\s*=>\s*\{\}\)/,
+    '首页静默登录失败应保持匿名可用且不弹窗');
+});

@@ -17,6 +17,7 @@ public interface WlDocumentMapper
     List<DocumentOptionDto> selectBannerDocumentOptions(@Param("keyword") String keyword,
             @Param("offset") long offset, @Param("limit") int limit);
     WlDocument selectDocumentById(@Param("id") Long id);
+    List<WlDocument> selectDocumentsForUpdate(@Param("ids") Long[] ids);
     List<WlDocument> selectDocumentList(WlDocument query);
     int countDocumentsByCategoryIds(@Param("categoryIds") Long[] categoryIds);
     int insertDocument(WlDocument document);

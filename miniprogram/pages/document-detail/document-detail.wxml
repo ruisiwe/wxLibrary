@@ -23,8 +23,8 @@
         </view>
         <view class="actions">
           <button class="secondary" bindtap="preview">试读</button>
-          <button wx:if="{{!unlocked}}" class="primary" bindtap="unlock">{{vipFreeDocument && vipActive ? '免费下载' : '积分兑换'}}</button>
-          <button wx:if="{{unlocked}}" class="primary" loading="{{sendingOriginal}}" bindtap="shareOriginal">发送原文件</button>
+          <button wx:if="{{!canSendOriginal}}" class="primary" bindtap="unlock">{{vipFreeDocument && vipActive ? '免费下载' : '积分兑换'}}</button>
+          <button wx:if="{{canSendOriginal}}" class="primary" loading="{{sendingOriginal}}" bindtap="shareAvailableOriginal">发送原文件</button>
         </view>
       </view>
     </view>

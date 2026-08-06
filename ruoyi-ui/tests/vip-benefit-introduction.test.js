@@ -39,6 +39,10 @@ assert(api.includes("formData.append('config'"), '客服配置应以JSON multipa
 assert(api.includes("formData.append('image'"), '客服图片应以multipart图片部件提交')
 assert(api.includes('repeatSubmit: false'), '客服图片上传应关闭重复提交拦截')
 
+assert(api.includes('clearVipPageConfigImage'), 'API应提供清空客服微信图片方法')
+assert(api.includes("url: '/library/vip-page-config/image'"), '清空客服微信图片应调用独立接口')
+assert(page.includes('@click="clearCustomerServiceImage"'), '已上传客服微信图片时应提供清空按钮')
+
 const component = compiler.parseComponent(page)
 const compiled = compiler.compile(component.template.content)
 assert.deepStrictEqual(compiled.errors, [], `VIP权益介绍页面模板编译失败：${compiled.errors.join('；')}`)

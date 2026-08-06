@@ -1,0 +1,53 @@
+.page {
+  min-height: 100vh;
+  padding: 32rpx;
+  background: #f5f7fa;
+  box-sizing: border-box;
+}
+.qr-card {
+  padding: 44rpx 32rpx 48rpx;
+  border-radius: 24rpx;
+  background: #fff;
+  text-align: center;
+}
+.title {
+  color: #0b1f3a;
+  font-size: 40rpx;
+  font-weight: 600;
+}
+.guide {
+  margin-top: 18rpx;
+  color: #64748b;
+  font-size: 28rpx;
+  line-height: 1.7;
+}
+.qr-image {
+  display: block;
+  width: 520rpx;
+  max-width: 100%;
+  margin: 36rpx auto 0;
+}
+.empty {
+  margin-top: 36rpx;
+  padding: 120rpx 20rpx;
+  border-radius: 16rpx;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 28rpx;
+}
+.hint {
+  margin-top: 24rpx;
+  color: #94a3b8;
+  font-size: 24rpx;
+}
+.state {
+  padding-top: 180rpx;
+  color: #64748b;
+  text-align: center;
+}
+.state button {
+  margin-top: 28rpx;
+}
+.state--error {
+  color: #ef4444;
+}

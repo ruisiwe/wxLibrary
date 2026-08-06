@@ -1,135 +1,81 @@
 <template>
-  <div :class="className" :style="{height:height,width:width}" />
+  <div class="chart-card">
+    <div class="chart-title">近7日兑换文档数与活跃用户数</div>
+    <div v-if="!hasData" class="empty-state">暂无数据</div>
+    <div v-else ref="chart" :style="{ height: height, width: width }" />
+  </div>
 </template>
 
 <script>
 import * as echarts from 'echarts'
-require('echarts/theme/macarons') // echarts theme
+require('echarts/theme/macarons')
 import resize from './mixins/resize'
 
 export default {
+  name: 'LineChart',
   mixins: [resize],
   props: {
-    className: {
-      type: String,
-      default: 'chart'
-    },
-    width: {
-      type: String,
-      default: '100%'
-    },
-    height: {
-      type: String,
-      default: '350px'
-    },
-    autoResize: {
-      type: Boolean,
-      default: true
-    },
+    width: { type: String, default: '100%' },
+    height: { type: String, default: '300px' },
     chartData: {
       type: Object,
-      required: true
+      default: () => ({ dates: [], paidExchangeCounts: [], activeUserCounts: [] })
     }
   },
   data() {
-    return {
-      chart: null
+    return { chart: null }
+  },
+  computed: {
+    hasData() {
+      return this.chartData && Array.isArray(this.chartData.dates) && this.chartData.dates.length > 0
     }
   },
   watch: {
     chartData: {
       deep: true,
-      handler(val) {
-        this.setOptions(val)
-      }
+      handler() { this.$nextTick(this.renderChart) }
     }
   },
   mounted() {
-    this.$nextTick(() => {
-      this.initChart()
-    })
+    this.$nextTick(this.renderChart)
   },
   beforeDestroy() {
-    if (!this.chart) {
-      return
-    }
-    this.chart.dispose()
+    if (this.chart) this.chart.dispose()
     this.chart = null
   },
   methods: {
-    initChart() {
-      this.chart = echarts.init(this.$el, 'macarons')
-      this.setOptions(this.chartData)
-    },
-    setOptions({ expectedData, actualData } = {}) {
+    renderChart() {
+      if (!this.hasData || !this.$refs.chart) {
+        if (this.chart) this.chart.dispose()
+        this.chart = null
+        return
+      }
+      if (!this.chart) this.chart = echarts.init(this.$refs.chart, 'macarons')
+      const data = this.chartData || {}
       this.chart.setOption({
+        color: ['#409EFF', '#F56C6C'],
+        tooltip: { trigger: 'axis' },
+        legend: { top: 4, data: ['兑换文档数', '活跃用户数'] },
+        grid: { left: 8, right: 12, bottom: 8, top: 46, containLabel: true },
         xAxis: {
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          type: 'category',
           boundaryGap: false,
-          axisTick: {
-            show: false
-          }
+          data: data.dates || [],
+          axisTick: { show: false }
         },
-        grid: {
-          left: 10,
-          right: 10,
-          bottom: 20,
-          top: 30,
-          containLabel: true
-        },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'cross'
-          },
-          padding: [5, 10]
-        },
-        yAxis: {
-          axisTick: {
-            show: false
-          }
-        },
-        legend: {
-          data: ['expected', 'actual']
-        },
-        series: [{
-          name: 'expected', itemStyle: {
-            normal: {
-              color: '#FF005A',
-              lineStyle: {
-                color: '#FF005A',
-                width: 2
-              }
-            }
-          },
-          smooth: true,
-          type: 'line',
-          data: expectedData,
-          animationDuration: 2800,
-          animationEasing: 'cubicInOut'
-        },
-        {
-          name: 'actual',
-          smooth: true,
-          type: 'line',
-          itemStyle: {
-            normal: {
-              color: '#3888fa',
-              lineStyle: {
-                color: '#3888fa',
-                width: 2
-              },
-              areaStyle: {
-                color: '#f3f8ff'
-              }
-            }
-          },
-          data: actualData,
-          animationDuration: 2800,
-          animationEasing: 'quadraticOut'
-        }]
-      })
+        yAxis: { type: 'value', minInterval: 1, axisTick: { show: false } },
+        series: [
+          { name: '兑换文档数', type: 'line', smooth: true, data: data.paidExchangeCounts || [] },
+          { name: '活跃用户数', type: 'line', smooth: true, data: data.activeUserCounts || [] }
+        ]
+      }, true)
     }
   }
 }
 </script>
+
+<style scoped>
+.chart-card { position: relative; }
+.chart-title { color: #303133; font-size: 16px; font-weight: 600; }
+.empty-state { display: flex; align-items: center; justify-content: center; height: 300px; color: #909399; }
+</style>

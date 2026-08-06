@@ -39,7 +39,8 @@ public class WxDocumentController
             @RequestBody DocumentUnlockRequest request)
     {
         return WxApiResponse.success(documentAccessService.unlock(
-                WxUserContext.get(), id, request == null ? null : request.getRequestId()));
+                WxUserContext.get(), id, request == null ? null : request.getRequestId(),
+                request != null && request.isFreeOnly()));
     }
 
     /** 获取试读 PDF 的短时访问地址。 */

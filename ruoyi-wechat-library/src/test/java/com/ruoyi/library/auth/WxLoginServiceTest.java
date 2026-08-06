@@ -25,10 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.inOrder;
@@ -78,6 +81,7 @@ class WxLoginServiceTest
         assertTrue(captor.getValue().getNickname().matches("[A-Za-z]{10}"));
         assertFalse("测试用户".equals(captor.getValue().getNickname()));
         assertEquals("202607/avatar.jpg", captor.getValue().getAvatarPath());
+        verify(userMapper).insertDailyActive(18L);
         verify(agreementService, never()).validateCurrentAcceptance(anyBoolean(), any());
         verify(agreementService, never()).acceptCurrent(anyLong(), any(), any());
         assertEquals("wx-token", response.getToken());
@@ -162,6 +166,50 @@ class WxLoginServiceTest
     }
 
     @Test
+    void firstLoginChecksGeneratedNicknameUntilItIsAvailable()
+    {
+        when(avatarStorageService.store(any())).thenReturn("202607/avatar.jpg");
+        when(userMapper.countByNickname(anyString(), isNull())).thenReturn(1, 0);
+        doAnswer(invocation -> {
+            WlWxUser user = invocation.getArgument(0);
+            user.setId(18L);
+            return 1;
+        }).when(userMapper).insertWxUser(any(WlWxUser.class));
+        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(false);
+        when(tokenService.issue(18L)).thenReturn("wx-token");
+
+        WxLoginResponse response = loginService.login(completeRequest(), avatar(), null);
+
+        assertEquals(18L, response.getUserId());
+        verify(userMapper, times(2)).countByNickname(anyString(), isNull());
+        verify(userMapper).insertWxUser(any(WlWxUser.class));
+    }
+
+    @Test
+    void firstLoginRetriesWhenNicknameConflictsDuringInsert()
+    {
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(null);
+        when(avatarStorageService.store(any())).thenReturn("202607/avatar.jpg");
+        when(userMapper.countByNickname(anyString(), isNull())).thenReturn(0);
+        when(userMapper.insertWxUser(any(WlWxUser.class)))
+                .thenThrow(new DuplicateKeyException("uk_wx_user_nickname"))
+                .thenAnswer(invocation -> {
+                    WlWxUser user = invocation.getArgument(0);
+                    user.setId(18L);
+                    return 1;
+                });
+        when(agreementService.hasAcceptedAllCurrent(18L)).thenReturn(false);
+        when(tokenService.issue(18L)).thenReturn("wx-token");
+
+        WxLoginResponse response = loginService.login(completeRequest(), avatar(), null);
+
+        assertEquals(18L, response.getUserId());
+        verify(userMapper, times(2)).insertWxUser(any(WlWxUser.class));
+        verify(avatarStorageService).store(any());
+        verify(avatarStorageService, never()).deleteQuietly("202607/avatar.jpg");
+    }
+
+    @Test
     void existingUserNicknameUpdateRejectsUnicodeControlAndFormatCharacters()
     {
         WlWxUser existing = user(9L, "旧昵称", "202601/old.png", "0");
@@ -170,13 +218,83 @@ class WxLoginServiceTest
 
         WxLoginRequest control = codeOnly();
         control.setNickname("用户" + new String(Character.toChars(0x85)));
-        assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
+        assertEquals("昵称只能包含中文、英文字母、数字、下划线和短横线", assertThrows(ServiceException.class,
                 () -> loginService.login(control, null, null)).getMessage());
 
         WxLoginRequest format = codeOnly();
         format.setNickname("用户" + new String(Character.toChars(0x202E)));
-        assertEquals("昵称不能包含HTML标签或控制字符", assertThrows(ServiceException.class,
+        assertEquals("昵称只能包含中文、英文字母、数字、下划线和短横线", assertThrows(ServiceException.class,
                 () -> loginService.login(format, null, null)).getMessage());
+    }
+
+    @Test
+    void nicknameValidationAcceptsWhitelistAndTwentyUnicodeCharacters()
+    {
+        assertEquals("中文Abc_12-", loginService.validateNickname(" 中文Abc_12- ", true));
+        assertEquals("一二三四五六七八九十一二三四五六七八九十",
+                loginService.validateNickname("一二三四五六七八九十一二三四五六七八九十", true));
+    }
+
+    @Test
+    void nicknameValidationRejectsNullBlankAndTooLongValues()
+    {
+        assertEquals("昵称不能为空", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname(null, true)).getMessage());
+        assertEquals("昵称不能为空", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("   ", true)).getMessage());
+        assertEquals("昵称长度不能超过20个字符", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("一二三四五六七八九十一二三四五六七八九十一", true)).getMessage());
+    }
+
+    @Test
+    void nicknameValidationRejectsReservedNamesIgnoringCase()
+    {
+        assertEquals("昵称不能使用保留名称", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("NuLl", true)).getMessage());
+        assertEquals("昵称不能使用保留名称", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("UNDEFINED", true)).getMessage());
+    }
+
+    @Test
+    void nicknameValidationRejectsCharactersOutsideWhitelist()
+    {
+        assertEquals("昵称只能包含中文、英文字母、数字、下划线和短横线", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("用户 名", true)).getMessage());
+        assertEquals("昵称只能包含中文、英文字母、数字、下划线和短横线", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("用户!", true)).getMessage());
+        assertEquals("昵称只能包含中文、英文字母、数字、下划线和短横线", assertThrows(ServiceException.class,
+                () -> loginService.validateNickname("用户😀", true)).getMessage());
+    }
+
+    @Test
+    void existingUserNicknameUpdateRejectsNicknameOwnedByAnotherUser()
+    {
+        WlWxUser existing = user(9L, "旧昵称", "202601/old.png", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(existing);
+        when(userMapper.selectByOpenidForUpdate("openid-secret")).thenReturn(existing);
+        when(userMapper.countByNickname("重复昵称", 9L)).thenReturn(1);
+        WxLoginRequest request = codeOnly();
+        request.setNickname("重复昵称");
+
+        assertEquals("昵称已被使用，请更换后重试", assertThrows(ServiceException.class,
+                () -> loginService.login(request, null, null)).getMessage());
+
+        verify(userMapper, never()).updateProfile(any(WlWxUser.class));
+    }
+
+    @Test
+    void existingUserNicknameUpdateRejectsBlankNicknameInsteadOfIgnoringIt()
+    {
+        WlWxUser existing = user(9L, "旧昵称", "202601/old.png", "0");
+        when(userMapper.selectByOpenid("openid-secret")).thenReturn(existing);
+        when(userMapper.selectByOpenidForUpdate("openid-secret")).thenReturn(existing);
+        WxLoginRequest request = codeOnly();
+        request.setNickname("   ");
+
+        assertEquals("昵称不能为空", assertThrows(ServiceException.class,
+                () -> loginService.login(request, null, null)).getMessage());
+
+        verify(userMapper, never()).updateProfile(any(WlWxUser.class));
     }
 
     @Test
@@ -197,6 +315,7 @@ class WxLoginServiceTest
         verify(avatarStorageService, never()).store(any());
         verify(userMapper, never()).updateProfile(any(WlWxUser.class));
         verify(userMapper).updateLastLoginTime(9L);
+        verify(userMapper).insertDailyActive(9L);
     }
 
     @Test

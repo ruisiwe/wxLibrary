@@ -6,6 +6,7 @@ import com.ruoyi.library.domain.WlDocumentUnlock;
 import com.ruoyi.library.domain.WlPointRecord;
 import com.ruoyi.library.domain.WlWxUser;
 import com.ruoyi.library.dto.DocumentUnlockResult;
+import com.ruoyi.library.dto.DocumentSummaryDto;
 import com.ruoyi.library.dto.FileAuthorization;
 import com.ruoyi.library.dto.FileDisclaimerDto;
 import com.ruoyi.library.dto.OriginalFileRequest;
@@ -16,6 +17,8 @@ import com.ruoyi.library.mapper.WlWxUserMapper;
 import com.ruoyi.library.storage.PrivateFileUrlSigner;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -38,6 +41,7 @@ class DocumentAccessServiceTest
     private WlDocumentUnlockMapper unlockMapper;
     private PrivateFileUrlSigner urlSigner;
     private WxAgreementService agreementService;
+    private DocumentCoverUrlService coverUrlService;
     private DocumentAccessService service;
 
     @SuppressWarnings("unchecked")
@@ -50,10 +54,23 @@ class DocumentAccessServiceTest
         unlockMapper = mock(WlDocumentUnlockMapper.class);
         urlSigner = mock(PrivateFileUrlSigner.class);
         agreementService = mock(WxAgreementService.class);
+        coverUrlService = mock(DocumentCoverUrlService.class);
         ObjectProvider<PrivateFileUrlSigner> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(urlSigner);
         service = new DocumentAccessService(pointService, userMapper, documentMapper, unlockMapper,
-                provider, agreementService);
+                provider, agreementService, coverUrlService);
+    }
+
+    @Test
+    void unlockedDocumentsUseSharedCoverSigning()
+    {
+        List<DocumentSummaryDto> documents = Collections.singletonList(new DocumentSummaryDto());
+        when(userMapper.selectById(11L)).thenReturn(user(11L, 5L));
+        when(unlockMapper.selectUnlockedDocuments(11L)).thenReturn(documents);
+
+        assertEquals(documents, service.listUnlocked(11L));
+
+        verify(coverUrlService).signCovers(documents);
     }
 
     @Test
@@ -165,6 +182,45 @@ class DocumentAccessServiceTest
     }
 
     @Test
+    void zeroPointDocumentUnlocksWithoutPointRecord()
+    {
+        WlDocument document = document();
+        document.setPointPrice(0L);
+        WlWxUser locked = user(11L, 50L);
+        when(userMapper.selectById(11L)).thenReturn(locked);
+        when(userMapper.selectByIdForUpdate(11L)).thenReturn(locked);
+        when(documentMapper.selectDocumentById(22L)).thenReturn(document);
+        when(unlockMapper.selectUnlock(11L, 22L)).thenReturn(null);
+        when(unlockMapper.insertUnlock(any())).thenReturn(1);
+
+        DocumentUnlockResult result = service.unlock(11L, 22L, "request-free", true);
+
+        assertEquals(0L, result.getSpentPoints());
+        assertEquals(50L, result.getPointBalance());
+        verify(pointService, never()).deductAfterLock(any(), any(), any(), any(), any());
+        verify(unlockMapper).insertUnlock(any(WlDocumentUnlock.class));
+    }
+
+    @Test
+    void freeOnlyRequestNeverChargesExpiredMember()
+    {
+        WlDocument document = document();
+        document.setAccessType("VIP_FREE");
+        WlWxUser locked = user(11L, 50L);
+        when(userMapper.selectById(11L)).thenReturn(locked);
+        when(userMapper.selectByIdForUpdate(11L)).thenReturn(locked);
+        when(documentMapper.selectDocumentById(22L)).thenReturn(document);
+        when(unlockMapper.selectUnlock(11L, 22L)).thenReturn(null);
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> service.unlock(11L, 22L, "request-expired", true));
+
+        assertEquals("当前文档不再满足免费获取条件，请刷新后重试", exception.getMessage());
+        verify(pointService, never()).deductAfterLock(any(), any(), any(), any(), any());
+        verify(unlockMapper, never()).insertUnlock(any());
+    }
+
+    @Test
     void previewSignsOnlyPreviewObjectKey() throws Exception
     {
         WlDocument document = document();
@@ -205,6 +261,19 @@ class DocumentAccessServiceTest
                 () -> service.authorizeOriginalFile(11L, 22L, originalRequest(), "127.0.0.1")).getMessage());
         verify(agreementService, never()).validateFileDisclaimer(any(), any(), any());
         verify(urlSigner, never()).signGetUrl(any(), any(), any());
+    }
+
+    @Test
+    void successfulSendRecordRequiresCurrentlyAvailableOriginalFile()
+    {
+        WlDocument document = document();
+        document.setOriginalObjectKey("");
+        when(documentMapper.selectDocumentById(22L)).thenReturn(document);
+        when(userMapper.selectById(11L)).thenReturn(user(11L, 5L));
+        when(unlockMapper.selectUnlock(11L, 22L)).thenReturn(unlock(11L, 22L, 20L, 31L));
+
+        assertEquals("文档原文件暂不可用", assertThrows(ServiceException.class,
+                () -> service.validateOriginalFileSendPermission(11L, 22L)).getMessage());
     }
 
     @Test

@@ -72,7 +72,10 @@ function updateNickname(nickname) {
   return request({ url: '/wx/profile', method: 'PUT', data: { nickname } })
     .then(profile => ({
       ...profile,
-      vipExpireTime: formatDate(profile.vipExpireTime)
+      vipExpireTime: formatDate(profile.vipExpireTime),
+      avatarUrl: profile.avatarPath
+        ? `${apiBaseUrl()}/wx/public/avatar/${profile.avatarPath}`
+        : ''
     }));
 }
 

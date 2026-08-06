@@ -16,7 +16,7 @@ class CategoryIconCatalogTest
     {
         List<CategoryIconOptionDto> options = CategoryIconCatalog.listOptions();
 
-        assertEquals(24, options.size());
+        assertEquals(31, options.size());
         assertEquals("book", options.get(0).getName());
         assertEquals("图书", options.get(0).getLabel());
         assertTrue(CategoryIconCatalog.isSupported("time"));

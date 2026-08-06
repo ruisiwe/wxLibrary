@@ -8,6 +8,7 @@ import com.ruoyi.library.domain.WlVipPageConfig;
 import com.ruoyi.library.service.VipPageConfigService;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,5 +44,14 @@ public class LibraryVipPageConfigController extends BaseController
             @RequestPart(value = "image", required = false) MultipartFile image)
     {
         return toAjax(configService.update(config, image, getUsername()));
+    }
+
+    /** 清空客服微信图片，保留客服提示语。 */
+    @PreAuthorize("@ss.hasPermi('library:vip:page-config:edit')")
+    @Log(title = "VIP 权益介绍", businessType = BusinessType.UPDATE)
+    @DeleteMapping("/image")
+    public AjaxResult clearImage()
+    {
+        return toAjax(configService.clearImage(getUsername()));
     }
 }

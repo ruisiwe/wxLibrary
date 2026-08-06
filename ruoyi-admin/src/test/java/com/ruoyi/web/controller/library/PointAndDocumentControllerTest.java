@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,7 +56,7 @@ class PointAndDocumentControllerTest
     @Test
     void unlockUsesRequestIdAndWxResponseEnvelope() throws Exception
     {
-        when(documentAccessService.unlock(11L, 22L, "request-1"))
+        when(documentAccessService.unlock(11L, 22L, "request-1", false))
                 .thenReturn(new DocumentUnlockResult(22L, true, 20L, 30L));
 
         mockMvc.perform(post("/wx/documents/22/unlock").contentType(MediaType.APPLICATION_JSON)
@@ -64,6 +65,22 @@ class PointAndDocumentControllerTest
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.unlocked").value(true))
                 .andExpect(jsonPath("$.data.pointBalance").value(30));
+        verify(documentAccessService).unlock(11L, 22L, "request-1", false);
+    }
+
+    @Test
+    void unlockPropagatesFreeOnlyFlag() throws Exception
+    {
+        when(documentAccessService.unlock(11L, 22L, "request-free", true))
+                .thenReturn(new DocumentUnlockResult(22L, true, 0L, 30L));
+
+        mockMvc.perform(post("/wx/documents/22/unlock").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"requestId\":\"request-free\",\"freeOnly\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.spentPoints").value(0));
+
+        verify(documentAccessService).unlock(11L, 22L, "request-free", true);
     }
 
     @Test

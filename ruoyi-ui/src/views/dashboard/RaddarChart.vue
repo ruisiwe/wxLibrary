@@ -1,116 +1,79 @@
 <template>
-  <div :class="className" :style="{height:height,width:width}" />
+  <div class="chart-card">
+    <div class="chart-title">各分类文档数</div>
+    <div v-if="!hasData" class="empty-state">暂无数据</div>
+    <div v-else ref="chart" :style="{ height: height, width: width }" />
+  </div>
 </template>
 
 <script>
 import * as echarts from 'echarts'
-require('echarts/theme/macarons') // echarts theme
+require('echarts/theme/macarons')
 import resize from './mixins/resize'
-
-const animationDuration = 3000
+const { categoryColor } = require('./categoryColors')
 
 export default {
+  name: 'RaddarChart',
   mixins: [resize],
   props: {
-    className: {
-      type: String,
-      default: 'chart'
-    },
-    width: {
-      type: String,
-      default: '100%'
-    },
-    height: {
-      type: String,
-      default: '300px'
-    }
+    width: { type: String, default: '100%' },
+    height: { type: String, default: '300px' },
+    chartData: { type: Array, default: () => [] }
   },
   data() {
-    return {
-      chart: null
+    return { chart: null }
+  },
+  computed: {
+    hasData() { return Array.isArray(this.chartData) && this.chartData.length > 0 }
+  },
+  watch: {
+    chartData: {
+      deep: true,
+      handler() { this.$nextTick(this.renderChart) }
     }
   },
   mounted() {
-    this.$nextTick(() => {
-      this.initChart()
-    })
+    this.$nextTick(this.renderChart)
   },
   beforeDestroy() {
-    if (!this.chart) {
-      return
-    }
-    this.chart.dispose()
+    if (this.chart) this.chart.dispose()
     this.chart = null
   },
   methods: {
-    initChart() {
-      this.chart = echarts.init(this.$el, 'macarons')
-
+    renderChart() {
+      if (!this.hasData || !this.$refs.chart) {
+        if (this.chart) this.chart.dispose()
+        this.chart = null
+        return
+      }
+      if (!this.chart) this.chart = echarts.init(this.$refs.chart, 'macarons')
+      const maximum = Math.max(1, ...this.chartData.map(item => Number(item.count) || 0))
       this.chart.setOption({
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: { // 坐标轴指示器，坐标轴触发有效
-            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
-          }
-        },
+        color: ['#409EFF'],
+        tooltip: { trigger: 'item' },
         radar: {
-          radius: '66%',
-          center: ['50%', '42%'],
-          splitNumber: 8,
-          splitArea: {
-            areaStyle: {
-              color: 'rgba(127,95,132,.3)',
-              opacity: 1,
-              shadowBlur: 45,
-              shadowColor: 'rgba(0,0,0,.5)',
-              shadowOffsetX: 0,
-              shadowOffsetY: 15
-            }
-          },
-          indicator: [
-            { name: 'Sales', max: 10000 },
-            { name: 'Administration', max: 20000 },
-            { name: 'Information Techology', max: 20000 },
-            { name: 'Customer Support', max: 20000 },
-            { name: 'Development', max: 20000 },
-            { name: 'Marketing', max: 20000 }
-          ]
-        },
-        legend: {
-          left: 'center',
-          bottom: '10',
-          data: ['Allocated Budget', 'Expected Spending', 'Actual Spending']
+          radius: '62%',
+          center: ['50%', '52%'],
+          indicator: this.chartData.map(item => ({
+            name: item.categoryName,
+            max: maximum,
+            color: categoryColor(item.categoryId)
+          }))
         },
         series: [{
+          name: '文档数',
           type: 'radar',
-          symbolSize: 0,
-          areaStyle: {
-            normal: {
-              shadowBlur: 13,
-              shadowColor: 'rgba(0,0,0,.2)',
-              shadowOffsetX: 0,
-              shadowOffsetY: 10,
-              opacity: 1
-            }
-          },
-          data: [
-            {
-              value: [5000, 7000, 12000, 11000, 15000, 14000],
-              name: 'Allocated Budget'
-            },
-            {
-              value: [4000, 9000, 15000, 15000, 13000, 11000],
-              name: 'Expected Spending'
-            },
-            {
-              value: [5500, 11000, 12000, 15000, 12000, 12000],
-              name: 'Actual Spending'
-            }
-          ],
-          animationDuration: animationDuration
+          data: [{ value: this.chartData.map(item => Number(item.count) || 0), name: '文档数' }],
+          areaStyle: { opacity: 0.2 }
         }]
-      })
+      }, true)
     }
   }
 }
 </script>
+
+<style scoped>
+.chart-card { position: relative; min-height: 320px; }
+.chart-title { color: #303133; font-size: 16px; font-weight: 600; }
+.empty-state { display: flex; align-items: center; justify-content: center; height: 300px; color: #909399; }
+</style>

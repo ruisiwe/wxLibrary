@@ -7,6 +7,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.library.domain.WlDocument;
 import com.ruoyi.library.service.DocumentConversionService;
+import com.ruoyi.library.service.DocumentDeletionService;
 import com.ruoyi.library.service.DocumentService;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 后台文档元数据与上下架管理接口。 */
@@ -26,11 +28,14 @@ public class LibraryDocumentController extends BaseController
 {
     private final DocumentService documentService;
     private final DocumentConversionService conversionService;
+    private final DocumentDeletionService deletionService;
 
-    public LibraryDocumentController(DocumentService documentService, DocumentConversionService conversionService)
+    public LibraryDocumentController(DocumentService documentService,
+            DocumentConversionService conversionService, DocumentDeletionService deletionService)
     {
         this.documentService = documentService;
         this.conversionService = conversionService;
+        this.deletionService = deletionService;
     }
 
     /** 分页查询文档元数据。 */
@@ -41,6 +46,14 @@ public class LibraryDocumentController extends BaseController
         startPage();
         List<WlDocument> list = documentService.listDocuments(query);
         return getDataTable(list);
+    }
+
+    /** 查询文档新增和修改表单可选择的分类。 */
+    @PreAuthorize("@ss.hasAnyPermi('library:document:add,library:document:edit')")
+    @GetMapping("/category-options")
+    public AjaxResult categoryOptions(@RequestParam(required = false) Long currentCategoryId)
+    {
+        return success(documentService.listDocumentCategoryOptions(currentCategoryId));
     }
 
     /** 查询文档详情。 */
@@ -66,13 +79,13 @@ public class LibraryDocumentController extends BaseController
         return toAjax(documentService.updateDocument(document, getUsername()));
     }
 
-    /** 删除未上架的文档。 */
+    /** 删除未上架的文档，并在数据库删除成功后清理云存储文件。 */
     @PreAuthorize("@ss.hasPermi('library:document:remove')")
     @Log(title = "文档管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {
-        return toAjax(documentService.removeDocuments(ids, getUsername()));
+        return toAjax(deletionService.remove(ids, getUsername()));
     }
 
     /** 上架转换成功且分类已启用的文档。 */

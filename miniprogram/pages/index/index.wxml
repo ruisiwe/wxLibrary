@@ -22,6 +22,6 @@
   </view>
   <promotion-strip items="{{banners}}" />
   <category-grid items="{{categories}}" />
-  <view class="documents"><document-row wx:for="{{documents}}" wx:key="id" document="{{item}}" /></view>
+  <view class="documents"><document-row wx:for="{{documents}}" wx:key="id" document="{{item}}" show-file-type="{{true}}" /></view>
   <state-view loading="{{loading}}" error="{{error}}" empty="{{!loading && !error && !documents.length}}" bindretry="load" />
 </view>

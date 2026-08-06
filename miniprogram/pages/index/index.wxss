@@ -6,8 +6,8 @@
 }
 
 .home__hero {
-  height: 112rpx;
-  padding: 18rpx 32rpx 0;
+  height: 80rpx;
+  padding: 12rpx 32rpx 0;
   box-sizing: border-box;
   background: #0B1F3A;
   position: relative;
@@ -80,20 +80,20 @@
 
 .home promotion-strip {
   display: block;
-  margin: 0 0 8rpx;
-  padding: 0 28rpx 12rpx;
+  margin: 0 0 28rpx;
+  padding: 0 28rpx;
   box-sizing: border-box;
   background: #fff
 }
 
 .home category-grid {
   display: block;
-  margin: 0 0 8rpx
+  margin: 0 0 12rpx
 }
 
 .documents {
   margin: 0;
   background: #fff;
   border-radius: 0;
-  padding: 0 14rpx
+  padding: 0 28rpx
 }

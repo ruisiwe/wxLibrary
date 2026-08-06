@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.library.mapper.WlDocumentSendRecordMapper">
+    <resultMap id="DocumentSendRecordResult" type="com.ruoyi.library.domain.WlDocumentSendRecord">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="requestId" column="request_id"/>
+        <result property="sendTime" column="send_time"/>
+    </resultMap>
+
+    <select id="selectByRequestId" resultMap="DocumentSendRecordResult">
+        select id, user_id, document_id, request_id, send_time
+        from wl_document_send_record
+        where request_id = #{requestId} and del_flag = '0'
+    </select>
+
+    <select id="selectByRequestIdForUpdate" resultMap="DocumentSendRecordResult">
+        select id, user_id, document_id, request_id, send_time
+        from wl_document_send_record
+        where request_id = #{requestId} and del_flag = '0'
+        for update
+    </select>
+
+    <insert id="insertRecord" parameterType="com.ruoyi.library.domain.WlDocumentSendRecord"
+            useGeneratedKeys="true" keyProperty="id">
+        insert ignore into wl_document_send_record(user_id, document_id, request_id, send_time,
+            create_by, create_time, update_by, update_time, del_flag)
+        values(#{userId}, #{documentId}, #{requestId}, #{sendTime},
+            #{createBy}, now(), '', now(), '0')
+    </insert>
+</mapper>

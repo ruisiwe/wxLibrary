@@ -1,5 +1,6 @@
 package com.ruoyi.library.service;
 
+import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.library.category.CategoryIconCatalog;
 import com.ruoyi.library.domain.WlBanner;
@@ -11,6 +12,7 @@ import com.ruoyi.library.dto.PageResult;
 import com.ruoyi.library.mapper.WlBannerMapper;
 import com.ruoyi.library.mapper.WlCategoryMapper;
 import com.ruoyi.library.mapper.WlDocumentMapper;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -98,6 +100,22 @@ import org.springframework.transaction.annotation.Transactional;
 
     public List<WlCategory> listCategories(WlCategory query) { return categoryMapper.selectCategoryList(query); }
 
+    /** 查询文档表单可选择的启用分类，并保留修改时当前已停用分类用于回显。 */
+    public List<WlCategory> listDocumentCategoryOptions(Long currentCategoryId)
+    {
+        WlCategory query = new WlCategory();
+        query.setStatus("0");
+        List<WlCategory> options = new ArrayList<>(categoryMapper.selectCategoryList(query));
+        if (currentCategoryId == null || currentCategoryId <= 0) return options;
+        for (WlCategory option : options)
+        {
+            if (currentCategoryId.equals(option.getId())) return options;
+        }
+        WlCategory current = categoryMapper.selectCategoryById(currentCategoryId);
+        if (current != null) options.add(current);
+        return options;
+    }
+
     public List<CategoryIconOptionDto> listCategoryIconOptions()
     {
         return CategoryIconCatalog.listOptions();
@@ -149,6 +167,16 @@ import org.springframework.transaction.annotation.Transactional;
         WlDocument document = documentMapper.selectDocumentById(id);
         if (document == null) throw new ServiceException("文档不存在");
         return document;
+    }
+
+    /** 在当前事务中锁定并读取待删除文档，防止文件对象键并发变化。 */
+    public List<WlDocument> lockDocumentsForDeletion(Long[] ids)
+    {
+        requireIds(ids);
+        List<WlDocument> documents = documentMapper.selectDocumentsForUpdate(ids);
+        if (documents == null || documents.size() != ids.length)
+            throw new ServiceException("文档状态已变化，请刷新后重试");
+        return documents;
     }
 
     public int addDocument(WlDocument document, String operator)

@@ -7,7 +7,7 @@
     <view class="member-card">
       <view class="member-card__label">当前会员</view>
       <view class="member-card__status">{{profile.vipActive ? 'VIP 会员' : '普通用户'}}</view>
-      <view class="member-card__expiry">{{profile.vipActive ? '有效期至 '+profile.vipExpireTime : '开通 VIP 获得会员权益'}}</view>
+      <view class="member-card__expiry">{{profile.vipActive ? '有效期至 '+profile.vipExpireTime : '开通获得会员权益'}}</view>
       <button size="mini" bindtap="openPlans">{{profile.vipActive ? '续费' : '立即开通'}}</button>
     </view>
     <view class="points-card" bindtap="openPoints">
@@ -17,7 +17,14 @@
     <view class="tasks">
       <view class="heading">积分任务</view>
       <view class="rule-list">
-        <view class="rule" wx:for="{{taskRows}}" wx:key="eventType">
+        <view
+          class="rule"
+          wx:for="{{taskRows}}"
+          wx:key="eventType"
+          data-event="{{item.eventType}}"
+          bindtap="handleTask"
+          aria-label="{{item.title}}"
+        >
           <view class="rule__main">
             <text class="rule__title">{{item.title}}</text>
             <text class="rule__progress">今日进度 {{item.count}}/{{item.limit}}</text>
@@ -27,15 +34,6 @@
             wx:if="{{item.shareOpen && !item.reachedLimit}}"
             class="rule__trigger"
             open-type="share"
-            data-event="{{item.eventType}}"
-            bindtap="handleTask"
-            aria-label="{{item.title}}"
-          ></button>
-          <button
-            wx:else
-            class="rule__trigger"
-            data-event="{{item.eventType}}"
-            bindtap="handleTask"
             aria-label="{{item.title}}"
           ></button>
         </view>
